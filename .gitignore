@@ -1,3 +1,5 @@
 
 # Ignore the virtual environment
 smp0/venv/
+.DS_Store
+smp0/.DS_Store

@@ -1,12 +1,9 @@
 import numpy as np
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('TkAgg')  # Use a non-interactive backend
+matplotlib.use('MacOSX')  # Use a non-interactive backend
 
 from smp0.load_data import load_mov, load_dat
-
-# test git
-
 
 def align_force_to_stim(force, time, num_chan=5):
     pre_stim_time = 1  # minimum planTime (s)
@@ -46,15 +43,18 @@ def average_response(experiment, participant_id, block, finger, datatype='raw', 
     else:
         raise RuntimeError('Wrong input to datatype')
 
-    mean = aligned_force[trial, :, finger].mean(axis=1).squeeze()
-    sd = aligned_force[trial, :, finger].std(axis=1).squeeze()
+    mean = aligned_force[trial, :, finger].mean(axis=1).squeeze().astype(np.float64)
+    sd = aligned_force[trial, :, finger].std(axis=1).squeeze().astype(np.float64)
 
     if plot==True:
 
         fig, axs = plt.subplots()
 
+        # axs.plot([1, 2, 3], [4, 5, 6])
         axs.plot(tAx, mean)
-        axs.fill_between(tAx, mean - sd, mean + sd, lw='none', alpha=.2)
+        axs.fill_between(tAx, mean - sd, mean + sd, alpha=.2)
+
+        plt.show()
 
     if out==True:
 
