@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/mnlmrc/Documents/GitHub/sensori-motor-prediction/venv"
+set -gx VIRTUAL_ENV "/Users/mnlmrc/Documents/GitHub/sensori-motor-prediction/smp0/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

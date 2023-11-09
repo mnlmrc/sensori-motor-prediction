@@ -1,4 +1,4 @@
-#!/Users/mnlmrc/Documents/GitHub/sensori-motor-prediction/venv/bin/python3.12
+#!/Users/mnlmrc/Documents/GitHub/sensori-motor-prediction/smp0/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys
