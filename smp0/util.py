@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
+# import matplotlib
 
-matplotlib.use('MacOSX')  # Use a non-interactive backend
+# matplotlib.use('MacOSX')  # Use a non-interactive backend
 
 from smp0.load_data import load_mov, load_dat, count_blocks
 
