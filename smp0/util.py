@@ -5,6 +5,26 @@ matplotlib.use('MacOSX')  # Use a non-interactive backend
 
 from smp0.load_data import load_mov, load_dat
 
+def merge_blocks_mov(experiment, participant_id):
+
+    dat = load_dat(experiment, participant_id)
+    rawF = []
+    vizF = []
+    t = []
+
+    for block in range(dat.BN.max()):
+
+        rawForce, vizForce, time = load_mov(experiment, participant_id, str(block))
+        num_of_trials = len(time)
+
+        for ntrial in range(num_of_trials):
+            rawF.append(rawForce[ntrial])
+            vizF.append(vizForce[ntrial])
+            t.append(time[ntrial])
+
+    return rawF, vizF, t
+
+
 def align_force_to_stim(force, time, num_chan=5):
     pre_stim_time = 1  # minimum planTime (s)
     post_stim_time = 2  # time after stimulus in aligned data (s)
@@ -23,18 +43,19 @@ def align_force_to_stim(force, time, num_chan=5):
 
     return aligned_force, tAx
 
-def average_response(experiment, participant_id, block, finger, datatype='raw', num_chan=5, plot=True, out=True):
+def average_response_finger(experiment, participant_id, block, finger, datatype='raw', num_chan=5, plot=True, out=True):
 
     # finger: value from 1 to 5
     finger = finger - 1
 
-    stim = '99999'
-    stim = int(stim[:finger] + '1' + stim[finger + 1:])
+    fstim = [19999, 91999, 99199, 99919, 99991]
+    stim = fstim[finger]
 
     rawForce, vizForce, time = load_mov(experiment, participant_id, block)
     dat = load_dat(experiment, participant_id)
+    dat_block = dat[dat.BN == int(block)]
 
-    trial = np.where(dat.stimFinger == stim)
+    trial_indices = dat_block.index[dat_block['stimFinger'] == stim]
 
     if datatype == 'raw':
         aligned_force, tAx = align_force_to_stim(rawForce, time, num_chan)
@@ -43,8 +64,8 @@ def average_response(experiment, participant_id, block, finger, datatype='raw', 
     else:
         raise RuntimeError('Wrong input to datatype')
 
-    mean = aligned_force[trial, :, finger].mean(axis=1).squeeze().astype(np.float64)
-    sd = aligned_force[trial, :, finger].std(axis=1).squeeze().astype(np.float64)
+    mean = aligned_force[trial_indices, :, finger].mean(axis=0).squeeze().astype(np.float64)
+    sd = aligned_force[trial_indices, :, finger].std(axis=0).squeeze().astype(np.float64)
 
     if plot==True:
 
@@ -59,6 +80,8 @@ def average_response(experiment, participant_id, block, finger, datatype='raw', 
     if out==True:
 
         return mean, sd
+
+
 
 
 

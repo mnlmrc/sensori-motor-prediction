@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 # Replace 'your_data_file.txt' with the path to your data file
-path = '/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/'  # replace with data path
+path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
 
 
 def load_mov(experiment, participant_id, block):
@@ -22,7 +22,7 @@ def load_mov(experiment, participant_id, block):
         A list of numpy arrays, each containing the data for one trial.
     """
 
-    fname = path + experiment + '/' + experiment + '_' + participant_id + '_' + block + '.mov'
+    fname = path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '_' + block + '.mov'
 
     try:
         with open(fname, 'rt') as fid:
@@ -60,7 +60,16 @@ def load_dat(experiment, participant_id):
 
     # This function loads the .dat file
 
-    dat = pd.read_csv(path + experiment + '/' + experiment + '_' + participant_id + '.dat', delimiter='\t')
+    fname = path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '.dat'
+
+    try:
+        fid = open(fname, 'rt')
+        dat = pd.read_csv(fid, delimiter='\t', engine='python')
+
+    except IOError as e:
+        raise IOError(f"Could not open {fname}") from e
+
+    # dat = pd.read_csv(path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '.dat', delimiter='\t')
 
     return dat
 
