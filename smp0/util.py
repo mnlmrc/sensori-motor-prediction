@@ -68,8 +68,8 @@ def sort_by_probability(experiment, participant_id, stimFinger, datatype='raw'):
         case _:
             force, time = None, None
 
-    force = force[indices.to_numpy()]
-    time = time[indices]
+    force = [force[i] for i in indices if i < len(force)]
+    time = [time[i] for i in indices if i < len(time)]
 
     aligned_force, tAx = align_force_to_stim(force, time)
 
