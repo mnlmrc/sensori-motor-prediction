@@ -1,7 +1,8 @@
-from smp0.util import average_response_finger
+from smp0.util import merge_blocks_mov, sort_by_probability
 
 experiment = 'smp0'
-participant_id = 'clamped'
-block = '01'
+participant_id = '100'
+# block = '01'
 
-average_response_finger(experiment, participant_id, block, 2)
+
+probCues_index, tAx = sort_by_probability(experiment, participant_id, 91999)
