@@ -34,15 +34,19 @@ def align_force_to_stim(force, time, num_chan=5, pre_stim_time=1, post_stim_time
 
     aligned_force = np.zeros((num_of_trials, fsample * (pre_stim_time + post_stim_time),
                               num_chan))
+    NoResp = []
     for ntrial in range(num_of_trials):
-        stim_idx = np.where(time[ntrial][:, 0] > 2)[0][0]
-        aligned_force[ntrial] = force[ntrial][stim_idx - fsample * pre_stim_time:
-                                              stim_idx + fsample * post_stim_time]
+        try:
+            stim_idx = np.where(time[ntrial][:, 0] > 2)[0][0]
+            aligned_force[ntrial] = force[ntrial][stim_idx - fsample * pre_stim_time:
+                                                  stim_idx + fsample * post_stim_time]
+        except:
+            NoResp.append(ntrial + 1)
 
     tAx = np.linspace(-pre_stim_time, post_stim_time,
                       int(fsample * (pre_stim_time + post_stim_time)))
 
-    return aligned_force, tAx
+    return aligned_force, tAx, NoResp
 
 
 def sort_by_probability(experiment, participant_id, stimFinger, datatype='raw'):
@@ -71,23 +75,31 @@ def sort_by_probability(experiment, participant_id, stimFinger, datatype='raw'):
     force = [force[i] for i in indices if i < len(force)]
     time = [time[i] for i in indices if i < len(time)]
 
-    aligned_force, tAx = align_force_to_stim(force, time)
+    aligned_force, tAx, NoResp = align_force_to_stim(force, time)
 
     probCues = [[], [], [], [], []]
 
-    for c, chordID in enumerate(dat.chordID):
+    for index, (chordID, TN) in enumerate(zip(dat.chordID, dat.TN)):
 
-        match chordID:
-            case '39':
-                probCues[0].append(aligned_force[c])
-            case '93':
-                probCues[1].append(aligned_force[c])
-            case '12':
-                probCues[2].append(aligned_force[c])
-            case '21':
-                probCues[3].append(aligned_force[c])
-            case '44':
-                probCues[4].append(aligned_force[c])
+        if not TN in NoResp:
+
+            match chordID:
+                case 39:
+                    probCues[3].append(aligned_force[index])
+                case 93:
+                    probCues[3].append(aligned_force[index])
+                case 12:
+                    if stimFinger == 91999:
+                        probCues[0].append(aligned_force[index])
+                    elif stimFinger == 99919:
+                        probCues[2].append(aligned_force[index])
+                case 21:
+                    if stimFinger == 91999:
+                        probCues[2].append(aligned_force[index])
+                    elif stimFinger == 99919:
+                        probCues[0].append(aligned_force[index])
+                case 44:
+                    probCues[1].append(aligned_force[index])
 
     return probCues, tAx
 
