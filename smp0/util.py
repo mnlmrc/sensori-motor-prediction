@@ -36,12 +36,19 @@ def align_force_to_stim(force, time, num_chan=5, pre_stim_time=1, post_stim_time
                               num_chan))
     NoResp = []
     for ntrial in range(num_of_trials):
+<<<<<<< Updated upstream
         try:
             stim_idx = np.where(time[ntrial][:, 0] > 2)[0][0]
             aligned_force[ntrial] = force[ntrial][stim_idx - fsample * pre_stim_time:
                                                   stim_idx + fsample * post_stim_time]
         except:
             NoResp.append(ntrial + 1)
+=======
+        print('trial: %d' % ntrial)
+        stim_idx = np.where(time[ntrial][:, 0] > 2)[0][0]
+        aligned_force[ntrial] = force[ntrial][stim_idx - fsample * pre_stim_time:
+                                              stim_idx + fsample * post_stim_time]
+>>>>>>> Stashed changes
 
     tAx = np.linspace(-pre_stim_time, post_stim_time,
                       int(fsample * (pre_stim_time + post_stim_time)))
@@ -72,10 +79,14 @@ def sort_by_probability(experiment, participant_id, stimFinger, datatype='raw'):
         case _:
             force, time = None, None
 
-    force = [force[i] for i in indices if i < len(force)]
-    time = [time[i] for i in indices if i < len(time)]
+    fforce = [force[i] for i in indices if i < len(force)]
+    ftime = [time[i] for i in indices if i < len(time)]
 
+<<<<<<< Updated upstream
     aligned_force, tAx, NoResp = align_force_to_stim(force, time)
+=======
+    aligned_force, tAx = align_force_to_stim(fforce, ftime)
+>>>>>>> Stashed changes
 
     probCues = [[], [], [], [], []]
 
