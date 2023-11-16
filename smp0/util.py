@@ -36,19 +36,19 @@ def align_force_to_stim(force, time, num_chan=5, pre_stim_time=1, post_stim_time
                               num_chan))
     NoResp = []
     for ntrial in range(num_of_trials):
-<<<<<<< Updated upstream
+# <<<<<<< Updated upstream
         try:
             stim_idx = np.where(time[ntrial][:, 0] > 2)[0][0]
             aligned_force[ntrial] = force[ntrial][stim_idx - fsample * pre_stim_time:
                                                   stim_idx + fsample * post_stim_time]
         except:
             NoResp.append(ntrial + 1)
-=======
-        print('trial: %d' % ntrial)
-        stim_idx = np.where(time[ntrial][:, 0] > 2)[0][0]
-        aligned_force[ntrial] = force[ntrial][stim_idx - fsample * pre_stim_time:
-                                              stim_idx + fsample * post_stim_time]
->>>>>>> Stashed changes
+# =======
+#         print('trial: %d' % ntrial)
+#         stim_idx = np.where(time[ntrial][:, 0] > 2)[0][0]
+#         aligned_force[ntrial] = force[ntrial][stim_idx - fsample * pre_stim_time:
+#                                               stim_idx + fsample * post_stim_time]
+# >>>>>>> Stashed changes
 
     tAx = np.linspace(-pre_stim_time, post_stim_time,
                       int(fsample * (pre_stim_time + post_stim_time)))
@@ -82,13 +82,13 @@ def sort_by_probability(experiment, participant_id, stimFinger, datatype='raw'):
     fforce = [force[i] for i in indices if i < len(force)]
     ftime = [time[i] for i in indices if i < len(time)]
 
-<<<<<<< Updated upstream
-    aligned_force, tAx, NoResp = align_force_to_stim(force, time)
-=======
-    aligned_force, tAx = align_force_to_stim(fforce, ftime)
->>>>>>> Stashed changes
+# <<<<<<< Updated upstream
+    aligned_force, tAx, NoResp = align_force_to_stim(fforce, ftime)
+# =======
+#     aligned_force, tAx = align_force_to_stim(fforce, ftime)
+# >>>>>>> Stashed changes
 
-    probCues = [[], [], [], [], []]
+    probCues = [[], [], [], []]
 
     for index, (chordID, TN) in enumerate(zip(dat.chordID, dat.TN)):
 
@@ -114,6 +114,17 @@ def sort_by_probability(experiment, participant_id, stimFinger, datatype='raw'):
 
     return probCues, tAx
 
+def average_within_timewin(probCues, timewin, pre_stim_time=1, fsample=500):
+
+    meanTimewin = [[[], [], [], []], [[], [], [], []]]
+    for finger in range(2):
+        for cue in range(len(probCues[finger][0])):
+            for ntrial in range(len(probCues[finger][0][cue])):
+
+                pc = np.array(probCues[finger][0][cue][ntrial][int((pre_stim_time - timewin[0]) * fsample):int((pre_stim_time+ timewin[1]) * fsample)])
+                meanTimewin[finger][cue].append(pc.mean(axis=0))
+
+    return meanTimewin
 
 # def average_response_finger(experiment, participant_id, block, finger, datatype='raw', num_chan=5, plot=True, out=True):
 #     # finger: value from 1 to 5

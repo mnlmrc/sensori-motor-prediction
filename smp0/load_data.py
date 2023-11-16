@@ -6,8 +6,8 @@ import pandas as pd
 import numpy as np
 
 # Replace 'your_data_file.txt' with the path to your data file
-#path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
-path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'
+path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
+# path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'
 
 def count_blocks(experiment, participant_id, extension='.mov'):
     """Count the number of files with a given extension in a directory."""
