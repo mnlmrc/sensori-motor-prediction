@@ -6,8 +6,8 @@ import pandas as pd
 import numpy as np
 
 # Replace 'your_data_file.txt' with the path to your data file
-path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
-# path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'
+# path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
+path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'
 
 def count_blocks(experiment, participant_id, extension='.mov'):
     """Count the number of files with a given extension in a directory."""
@@ -34,7 +34,11 @@ def load_mov(experiment, participant_id, block):
         A list of numpy arrays, each containing the data for one trial.
     """
 
-    fname = path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '_' + block + '.mov'
+    try:
+        int(participant_id)
+        fname = path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '_' + block + '.mov'
+    except:
+        fname = path + experiment + '/' + participant_id + '/' + experiment + '_' + participant_id + '_' + block + '.mov'
 
     try:
         with open(fname, 'rt') as fid:
@@ -72,7 +76,11 @@ def load_dat(experiment, participant_id):
 
     # This function loads the .dat file
 
-    fname = path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '.dat'
+    try:
+        int(participant_id)
+        fname = path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '.dat'
+    except:
+        fname = path + experiment + '/' + participant_id + '/' + experiment + '_' + participant_id + '.dat'
 
     try:
         fid = open(fname, 'rt')

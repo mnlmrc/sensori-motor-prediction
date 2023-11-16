@@ -124,7 +124,38 @@ def average_within_timewin(probCues, timewin, pre_stim_time=1, fsample=500):
                 pc = np.array(probCues[finger][0][cue][ntrial][int((pre_stim_time - timewin[0]) * fsample):int((pre_stim_time+ timewin[1]) * fsample)])
                 meanTimewin[finger][cue].append(pc.mean(axis=0))
 
+            meanTimewin[finger][cue] = np.array(meanTimewin[finger][cue])
+
+
     return meanTimewin
+
+def subtract_baseline(probCues, experiment='smp0', baseline_type='clamped', block='01'):
+
+    baseline, _, time = load_mov(experiment, baseline_type, block)
+    baseline_dat = load_dat(experiment, baseline_type)
+
+    indices1 = baseline_dat.index[baseline_dat.stimFinger == 91999].to_numpy()
+    indices2 = baseline_dat.index[baseline_dat.stimFinger == 99919].to_numpy()
+
+    baseline1 = [baseline[idx] for idx in indices1]
+    baseline2 = [baseline[idx] for idx in indices2]
+
+    aligned_baseline1, _, _ = align_force_to_stim(baseline1, time)
+    aligned_baseline2, _, _ = align_force_to_stim(baseline2, time)
+
+    mbaseline = aligned_baseline1.mean(axis=0), aligned_baseline2.mean(axis=0)
+
+    for finger in range(len(probCues)):
+        for cue in range(len(probCues[finger][0])):
+            for ntrial in range(len(probCues[finger][0][cue])):
+
+                probCues[finger][0][cue][ntrial] = probCues[finger][0][cue][ntrial] - mbaseline[finger]
+
+    return probCues
+
+
+
+
 
 # def average_response_finger(experiment, participant_id, block, finger, datatype='raw', num_chan=5, plot=True, out=True):
 #     # finger: value from 1 to 5
