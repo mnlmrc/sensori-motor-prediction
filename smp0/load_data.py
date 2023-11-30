@@ -12,7 +12,7 @@ path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/
 def count_blocks(experiment, participant_id, extension='.mov'):
     """Count the number of files with a given extension in a directory."""
 
-    directory = path + experiment + '/subj' + participant_id + '/'
+    directory = path + experiment + '/subj' + participant_id + '/' + extension[1:] + '/'
 
     count = 0
     for filename in os.listdir(directory):
@@ -36,9 +36,9 @@ def load_mov(experiment, participant_id, block):
 
     try:
         int(participant_id)
-        fname = path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '_' + block + '.mov'
+        fname = path + experiment + '/subj' + participant_id + '/mov/' + experiment + '_' + participant_id + '_' + block + '.mov'
     except:
-        fname = path + experiment + '/' + participant_id + '/' + experiment + '_' + participant_id + '_' + block + '.mov'
+        fname = path + experiment + '/' + participant_id + '/mov/' + experiment + '_' + participant_id + '_' + block + '.mov'
 
     try:
         with open(fname, 'rt') as fid:
@@ -93,8 +93,13 @@ def load_dat(experiment, participant_id):
 
     return dat
 
+def load_emg(experiment='smp0', participant_id='100', block=1):
 
+    fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(block) + '.csv'
 
+    fid = open(fname, 'rt')
+    emg = pd.read_csv(fid, engine='python')
 
-
+    header = emg[:6]
+    emg = emg[6:].to_numpy()
 
