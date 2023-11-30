@@ -9,10 +9,10 @@ import numpy as np
 path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
 # path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'
 
-def count_blocks(experiment, participant_id, extension='.mov'):
+def count_blocks(experiment, participant_id, folder='mov', extension='.mov'):
     """Count the number of files with a given extension in a directory."""
 
-    directory = path + experiment + '/subj' + participant_id + '/' + extension[1:] + '/'
+    directory = path + experiment + '/subj' + participant_id + '/' + folder + '/'
 
     count = 0
     for filename in os.listdir(directory):
@@ -93,13 +93,58 @@ def load_dat(experiment, participant_id):
 
     return dat
 
-def load_emg(experiment='smp0', participant_id='100', block=1):
+def find_muscle_columns(df, muscle_names):
+    muscle_columns = {}
+    for muscle in muscle_names:
+        for col in df.columns:
+            if any(df[col].astype(str).str.contains(muscle, na=False)):
+                muscle_columns[muscle] = col
+                break
+    return muscle_columns
 
-    fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(block) + '.csv'
+def load_emg(experiment, participant_id, block,
+             muscle_names=["thumb_flex", "index_flex", "middle_flex", "ring_flex", "pinkie_flex",
+                        "thumb_ext", "index_ext", "middle_ext", "ring_ext", "pinkie_ext"],
+             trigger_name="trigger"):
+
+    fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
+        block) + '.csv'
 
     fid = open(fname, 'rt')
-    emg = pd.read_csv(fid, engine='python')
+    df = pd.read_csv(fid)
 
-    header = emg[:6]
-    emg = emg[6:].to_numpy()
+    # Find the columns that contain the muscle names
+    muscle_columns = find_muscle_columns(df, muscle_names)
+
+    # Adjust to take the column immediately to the right of the named muscle column for EMG data
+    correct_emg_columns = [df.columns[df.columns.get_loc(muscle_columns[muscle]) + 1] for muscle in muscle_names]
+
+    # Find the trigger column and adjust to take the column immediately to its right
+    trigger_column = find_muscle_columns(df, [trigger_name])[trigger_name]
+    correct_trigger_column = df.columns[df.columns.get_loc(trigger_column) + 1]
+
+    # Extracting EMG data and correct trigger data starting from row 6
+    correct_emg_data = df[correct_emg_columns].iloc[6:]
+    correct_trigger_data = df[correct_trigger_column].iloc[6:]
+
+    # Renaming the columns to the muscle names
+    correct_emg_data.columns = muscle_names
+
+    # Combining EMG data with the corrected trigger data
+    combined_data = pd.concat([correct_emg_data, correct_trigger_data], axis=1)
+    combined_data.rename(columns={'Unnamed: 3': trigger_name}, inplace=True)
+
+    return combined_data
+
+# # Example usage
+# file_path = 'path_to_your_emg_data_file.csv'
+# muscle_names = ["thumb_flex", "index_flex", "middle_flex", "ring_flex", "pinkie_flex",
+#     "thumb_ext", "index_ext", "middle_ext", "ring_ext", "pinkie_ext"]
+# experiment = 'smp0'
+# participant_id = '100'
+# block = 1
+#
+# combined_df = extract_emg_and_correct_trigger_data(experiment, participant_id, block, muscle_names)
+# print(combined_df.head())
+
 

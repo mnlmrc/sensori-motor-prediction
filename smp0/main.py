@@ -1,18 +1,30 @@
 import matplotlib
 
+from smp0.load_data import load_emg, count_blocks, path
+
 matplotlib.use('MacOSX')
 
 from smp0.util import experiment_dataframe
 
 experiment = 'smp0'
-participants_id = ['100']
+participants_id = ['100', '101']
 
 process = input('input process')
 
 match process:
 
+    case 'emg dataframe':
 
-    case 'create dataframe':
+        for part in participants_id:
+
+            nblocks = count_blocks(experiment, part, folder='emg', extension='.csv')
+
+            for block in range(nblocks):
+                df_emg = load_emg(experiment, part, block + 1)
+                df_emg.to_csv(path + experiment + '/subj' + part + '/emg/' + experiment + '_' + part + '_' + str(
+                    block + 1) + '.emg')
+
+    case 'force dataframe':
         data = experiment_dataframe(experiment, participants_id)
 
     case _:
