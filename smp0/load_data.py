@@ -2,12 +2,18 @@
 import os
 import warnings
 
+import chardet
 import pandas as pd
 import numpy as np
 
-# Replace 'your_data_file.txt' with the path to your data file
-path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
-# path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'
+
+def load_participants(experiment):
+    fname = path + experiment + '/' + 'participants.tsv'
+    fid = open(fname, 'rt')
+    participants = pd.read_csv(fid, delimiter='\t', engine='python')
+
+    return participants
+
 
 def count_blocks(experiment, participant_id, folder='mov', extension='.mov'):
     """Count the number of files with a given extension in a directory."""
@@ -19,6 +25,7 @@ def count_blocks(experiment, participant_id, folder='mov', extension='.mov'):
         if filename.endswith(extension):
             count += 1
     return count
+
 
 def load_mov(experiment, participant_id, block):
     """
@@ -72,8 +79,8 @@ def load_mov(experiment, participant_id, block):
 
     return rawForce, vizForce, time
 
-def load_dat(experiment, participant_id):
 
+def load_dat(experiment, participant_id):
     # This function loads the .dat file
 
     try:
@@ -93,6 +100,7 @@ def load_dat(experiment, participant_id):
 
     return dat
 
+
 def find_muscle_columns(df, muscle_names):
     muscle_columns = {}
     for muscle in muscle_names:
@@ -102,49 +110,50 @@ def find_muscle_columns(df, muscle_names):
                 break
     return muscle_columns
 
-def load_emg(experiment, participant_id, block,
-             muscle_names=["thumb_flex", "index_flex", "middle_flex", "ring_flex", "pinkie_flex",
-                        "thumb_ext", "index_ext", "middle_ext", "ring_ext", "pinkie_ext"],
-             trigger_name="trigger"):
 
+def load_emg(experiment, participant_id, block, muscle_names, trigger_name="trigger"):
     fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
         block) + '.csv'
 
-    fid = open(fname, 'rt')
-    df = pd.read_csv(fid)
+    # read data from .csv file (Delsys output)
+    with open(fname, 'rt') as fid:
+        A = []
+        for line in fid:
+            # Strip whitespace and newline characters, then split
+            split_line = [elem.strip() for elem in line.strip().split(',')]
+            A.append(split_line)
 
-    # Find the columns that contain the muscle names
-    muscle_columns = find_muscle_columns(df, muscle_names)
+    # identify columns with data from each muscle
+    muscle_columns = {}
+    for muscle in muscle_names:
+        for c, col in enumerate(A[3]):
+            if muscle in col:
+                muscle_columns[muscle] = c + 1  # EMG is on the right of Timeseries data (that's why + 1)
+                break
+        for c, col in enumerate(A[5]):
+            if muscle in col:
+                muscle_columns[muscle] = c + 1
+                break
 
-    # Adjust to take the column immediately to the right of the named muscle column for EMG data
-    correct_emg_columns = [df.columns[df.columns.get_loc(muscle_columns[muscle]) + 1] for muscle in muscle_names]
+    df_raw = pd.DataFrame(A[7:])  # get rid of header
+    df_out = pd.DataFrame()  # init final dataframe
 
-    # Find the trigger column and adjust to take the column immediately to its right
-    trigger_column = find_muscle_columns(df, [trigger_name])[trigger_name]
-    correct_trigger_column = df.columns[df.columns.get_loc(trigger_column) + 1]
+    for muscle in muscle_columns:
+        df_out[muscle] = df_raw[muscle_columns[muscle]]  # add EMG to dataframe
 
-    # Extracting EMG data and correct trigger data starting from row 6
-    correct_emg_data = df[correct_emg_columns].iloc[6:]
-    correct_trigger_data = df[correct_trigger_column].iloc[6:]
+    # add trigger column
+    for c, col in enumerate(A[3]):
+        if trigger_name in col:
+            trigger_column = c + 1
 
-    # Renaming the columns to the muscle names
-    correct_emg_data.columns = muscle_names
+    df_out[trigger_name] = df_raw[trigger_column]
 
-    # Combining EMG data with the corrected trigger data
-    combined_data = pd.concat([correct_emg_data, correct_trigger_data], axis=1)
-    combined_data.rename(columns={'Unnamed: 3': trigger_name}, inplace=True)
+    # add time column
+    df_out['time'] = df_raw.loc[:, 0]
 
-    return combined_data
-
-# # Example usage
-# file_path = 'path_to_your_emg_data_file.csv'
-# muscle_names = ["thumb_flex", "index_flex", "middle_flex", "ring_flex", "pinkie_flex",
-#     "thumb_ext", "index_ext", "middle_ext", "ring_ext", "pinkie_ext"]
-# experiment = 'smp0'
-# participant_id = '100'
-# block = 1
-#
-# combined_df = extract_emg_and_correct_trigger_data(experiment, participant_id, block, muscle_names)
-# print(combined_df.head())
+    return df_out
 
 
+# Replace 'your_data_file.txt' with the path to your data file
+path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
+# path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'

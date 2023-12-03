@@ -1,37 +1,64 @@
+import argparse
 import matplotlib
-
-from smp0.load_data import load_emg, count_blocks, path
+from load_data import load_emg, count_blocks, path, load_participants
 
 matplotlib.use('MacOSX')
 
-from smp0.util import experiment_dataframe
 
-experiment = 'smp0'
-participants_id = ['100', '101']
+def main(experiment=None, participant_id=None, step=None):
 
-process = input('input process')
+    # parse input
+    if (experiment is None) and (participant_id is None) and (step is None):
+        parser = argparse.ArgumentParser(description="SensoriMotorPrediction")
+        parser.add_argument('--step', help='step to perform', required=True)
+        parser.add_argument('--experiment', help='experiment code (e.g., smp0)', required=True)
+        parser.add_argument('--participant_id', help='participant_id (e.g., 100, 101...)', required=True)
+        args = parser.parse_args()
 
-match process:
+        # define experiment, participant and step
+        experiment = args.experiment
+        participant_id = args.participant_id
+        step = args.step
 
-    case 'emg dataframe':
+    # load participants.tsv
+    info = load_participants(experiment)
 
-        for part in participants_id:
-
-            nblocks = count_blocks(experiment, part, folder='emg', extension='.csv')
+    # navigate through analysis steps
+    match step:
+        case 'create emg dataframe':
+            nblocks = count_blocks(experiment, participant_id, folder='emg', extension='.csv')
+            muscle_names = info[info.participant_id == 'subj' + participant_id].iloc[0]['muscles'].split(', ')
 
             for block in range(nblocks):
-                df_emg = load_emg(experiment, part, block + 1)
-                df_emg.to_csv(path + experiment + '/subj' + part + '/emg/' + experiment + '_' + part + '_' + str(
-                    block + 1) + '.emg')
-
-    case 'force dataframe':
-        data = experiment_dataframe(experiment, participants_id)
-
-    case _:
-        print('command not recognized')
+                print('creating .emg - participant ' + participant_id + ', block %d' % (block + 1))
+                df_emg = load_emg(experiment, participant_id, block + 1, muscle_names=muscle_names)
+                df_emg.to_csv(
+                    path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
+                        block + 1) + '.emg')
 
 
+if __name__ == "__main__":
+    main()
 
+# experiment = 'smp0'
+# participants_id = ['100', '101']
+#
+# info = load_participants(experiment)
+#
+# process = input('input process')
+#
+# match process:
+#
+#     case 'emg dataframe':
+#
+#         for participant_id in participants_id:
+#
+#
+#     case _:
+#         print('command not recognized')
+#
+#
+#
 
 
 # participant_id = '100'
