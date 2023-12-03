@@ -90,8 +90,16 @@ def load_dat(experiment, participant_id):
         fname = path + experiment + '/' + participant_id + '/' + experiment + '_' + participant_id + '.dat'
 
     try:
-        fid = open(fname, 'rt')
-        dat = pd.read_csv(fid, delimiter='\t', engine='python')
+        # fid = open(fname, 'rt')
+        # dat = pd.read_csv(fid, delimiter='\t', engine='python')
+        with open(fname, 'rt') as fid:
+            A = []
+            for line in fid:
+                # Strip whitespace and newline characters, then split
+                split_line = [elem.strip() for elem in line.strip().split(',')]
+                A.append(split_line)
+
+        dat = pd.DataFrame(A)  # get rid of header
 
     except IOError as e:
         raise IOError(f"Could not open {fname}") from e

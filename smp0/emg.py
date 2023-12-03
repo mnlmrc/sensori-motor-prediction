@@ -38,13 +38,15 @@ def detect_trig(trig_sig, time_trig, amp_threshold, num_trials, debugging=False)
     locs, _ = find_peaks(diff_trig)
     locs_inv, _ = find_peaks(diff_inv_trig)
 
-    # Printing the number of triggers detected and number of trials
-    print("\nNum Trigs Detected = {} , inv {}".format(len(locs), len(locs_inv)))
-    print("Num Trials in Run = {}".format(num_trials))
-    print("====NumTrial should be equal to NumTrigs====\n\n\n")
-
     # Debugging plots
-    if debugging:
+    if debugging==True:
+
+        # Printing the number of triggers detected and number of trials
+        print("\nNum Trigs Detected = {} , inv {}".format(len(locs), len(locs_inv)))
+        print("Num Trials in Run = {}".format(num_trials))
+        print("====NumTrial should be equal to NumTrigs====\n\n\n")
+
+        # plotting block
         plt.figure()
         plt.plot(trig_sig, 'k', linewidth=1.5)
         plt.plot(diff_trig, '--r', linewidth=1)
@@ -75,7 +77,9 @@ def segment_emg(experiment, participant_id, block, num_trials=20, amp_threshold=
 
     trig_sig = df_emg['trigger'].to_numpy()
     time = df_emg['time'].to_numpy()
-    emg = df_emg.drop(['trigger', 'time'], axis=1).to_numpy()
+    df_emg_clean = df_emg.drop(['trigger', 'time'], axis=1)
+    channels = df_emg_clean.columns
+    emg = df_emg_clean.to_numpy()
 
     # detect triggers
     rise_times, rise_idx, fall_times, fall_idx = detect_trig(trig_sig, time, amp_threshold, num_trials)
@@ -85,25 +89,25 @@ def segment_emg(experiment, participant_id, block, num_trials=20, amp_threshold=
         segmented_emg[c] = emg[idx - np.round(prestim * fsample).astype(int):
                                idx + np.round(poststim * fsample).astype(int)].T
 
-    return segmented_emg
+    return segmented_emg, channels
 
 
-# Replace 'your_data_file.txt' with the path to your data file
+# # Replace 'your_data_file.txt' with the path to your data file
 path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
 # path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'
-experiment = 'smp0'
-participant_id = '100'
-block = 1
-
-fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
-    block) + '.emg'
-df_emg = pd.read_csv(fname)
-trig_sig = df_emg['trigger'].to_numpy()
-time = df_emg['time'].to_numpy()
-
-rise_times, rise_idx, fall_times, fall_idx = detect_trig(trig_sig, time, 0.5, 20, debugging=True)
-
-segmented_emg = segment_emg(experiment, participant_id, block)
+# experiment = 'smp0'
+# participant_id = '100'
+# block = 1
+#
+# fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
+#     block) + '.emg'
+# df_emg = pd.read_csv(fname)
+# trig_sig = df_emg['trigger'].to_numpy()
+# time = df_emg['time'].to_numpy()
+#
+# rise_times, rise_idx, fall_times, fall_idx = detect_trig(trig_sig, time, 0.5, 20, debugging=True)
+#
+# segmented_emg = segment_emg(experiment, participant_id, block)
 
 
 

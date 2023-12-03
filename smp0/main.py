@@ -1,12 +1,14 @@
 import argparse
 import matplotlib
-from load_data import load_emg, count_blocks, path, load_participants
+import numpy as np
+
+from load_data import load_emg, count_blocks, path, load_participants, load_dat
+from emg import segment_emg
 
 matplotlib.use('MacOSX')
 
 
 def main(experiment=None, participant_id=None, step=None):
-
     # parse input
     if (experiment is None) and (participant_id is None) and (step is None):
         parser = argparse.ArgumentParser(description="SensoriMotorPrediction")
@@ -22,19 +24,29 @@ def main(experiment=None, participant_id=None, step=None):
 
     # load participants.tsv
     info = load_participants(experiment)
+    dat = load_dat(experiment, participant_id)
 
     # navigate through analysis steps
     match step:
-        case 'create emg dataframe':
+
+        case 'dataframe:emg':
             nblocks = count_blocks(experiment, participant_id, folder='emg', extension='.csv')
             muscle_names = info[info.participant_id == 'subj' + participant_id].iloc[0]['muscles'].split(', ')
-
             for block in range(nblocks):
                 print('creating .emg - participant ' + participant_id + ', block %d' % (block + 1))
                 df_emg = load_emg(experiment, participant_id, block + 1, muscle_names=muscle_names)
                 df_emg.to_csv(
                     path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
                         block + 1) + '.emg')
+
+        case 'response:emg':
+            nblocks = count_blocks(experiment, participant_id, folder='emg', extension='.csv')
+            segmented_emg = []
+            for block in range(nblocks):
+                print('segmenting - participant ' + participant_id + ', block %d' % (block + 1))
+                s, channels = segment_emg(experiment, participant_id, block + 1)
+                segmented_emg.append(s)
+            segmented_emg = np.array(segmented_emg)
 
 
 if __name__ == "__main__":
