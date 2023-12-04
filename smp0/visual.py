@@ -124,10 +124,16 @@ def plot_response_emg_by_probability(experiment, participant_id):
 
     base = 255
     red = [
-        (1, base / 255, base / 255),
+        (1, (base - 30) / 255, (base - 30) / 255),
         (1, (base - 60) / 255, (base - 60) / 255),
         (1, (base - 120) / 255, (base - 120) / 255),
         (1, (base - 180) / 255, (base - 180) / 255)]
+    blue = [
+        ((base - 30) / 255, (base - 30) / 255, 1),
+        ((base - 60) / 255, (base - 60) / 255, 1),
+        ((base - 120) / 255, (base - 120) / 255, 1),
+        ((base - 180) / 255, (base - 180) / 255, 1)
+    ]
 
     meanIndex25 = emg_index_25.mean(axis=1)
     meanIndex50 = emg_index_50.mean(axis=1)
@@ -146,14 +152,23 @@ def plot_response_emg_by_probability(experiment, participant_id):
         axs[m, 0].axvline(x=0, ls='-', color='k', lw=.8)
         axs[m, 0].axvline(x=.05, ls=':', color='k', lw=.8)
         axs[m, 0].axvline(x=.1, ls='--', color='k', lw=.8)
-        # axs[m, 1].plot(time, meanRing[m], color='b')
-        # axs[m, 1].set_title(muscle, fontsize=6)
-        # axs[m, 1].axvline(x=0, ls='-', color='k', lw=.8)
-        # axs[m, 1].axvline(x=.05, ls=':', color='k', lw=.8)
-        # axs[m, 1].axvline(x=.1, ls='--', color='k', lw=.8)
+
+        axs[m, 1].plot(time, meanRing25[m], color=blue[0])
+        axs[m, 1].plot(time, meanRing50[m], color=blue[1])
+        axs[m, 1].plot(time, meanRing75[m], color=blue[2])
+        axs[m, 1].plot(time, meanRing100[m], color=blue[3])
+        axs[m, 1].set_title(muscle, fontsize=6)
+        axs[m, 1].axvline(x=0, ls='-', color='k', lw=.8)
+        axs[m, 1].axvline(x=.05, ls=':', color='k', lw=.8)
+        axs[m, 1].axvline(x=.1, ls='--', color='k', lw=.8)
+        axs[m, 1].axvline(x=0, ls='-', color='k', lw=.8)
+        axs[m, 1].axvline(x=.05, ls=':', color='k', lw=.8)
+        axs[m, 1].axvline(x=.1, ls='--', color='k', lw=.8)
 
     axs[0, 0].set_xlim([-.1, .5])
     axs[0, 0].set_ylim([0, None])
+    axs[0, 0].legend(['25%', '50%', '75%', '100%'], ncol=4, fontsize=6)
+    axs[0, 1].legend(['25%', '50%', '75%', '100%'], ncol=4, fontsize=6)
     # fig.tight_layout()
     fig.supylabel('EMG (mV)')
     fig.supxlabel('time (s)')
