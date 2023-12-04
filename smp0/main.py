@@ -1,9 +1,12 @@
 import argparse
-import matplotlib
-import numpy as np
+import os
 
-from load_data import load_emg, count_blocks, path, load_participants, load_dat
-from emg import segment_emg
+import matplotlib
+from matplotlib import pyplot as plt
+
+from emg import participant
+from load_data import path
+from visual import plot_response_emg_by_finger
 
 matplotlib.use('MacOSX')
 
@@ -22,31 +25,27 @@ def main(experiment=None, participant_id=None, step=None):
         participant_id = args.participant_id
         step = args.step
 
-    # load participants.tsv
-    info = load_participants(experiment)
-    dat = load_dat(experiment, participant_id)
-
     # navigate through analysis steps
     match step:
 
         case 'dataframe:emg':
-            nblocks = count_blocks(experiment, participant_id, folder='emg', extension='.csv')
-            muscle_names = info[info.participant_id == 'subj' + participant_id].iloc[0]['muscles'].split(', ')
-            for block in range(nblocks):
-                print('creating .emg - participant ' + participant_id + ', block %d' % (block + 1))
-                df_emg = load_emg(experiment, participant_id, block + 1, muscle_names=muscle_names)
-                df_emg.to_csv(
-                    path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
-                        block + 1) + '.emg')
+
+            df_emg = participant(experiment, participant_id)
+            fname = f"{experiment}_{participant_id}.emg"
+            savedir = os.path.join(path, experiment, f"subj{participant_id}", 'emg', fname)
+            df_emg.to_pickle(savedir)
 
         case 'response:emg':
-            nblocks = count_blocks(experiment, participant_id, folder='emg', extension='.csv')
-            segmented_emg = []
-            for block in range(nblocks):
-                print('segmenting - participant ' + participant_id + ', block %d' % (block + 1))
-                s, channels = segment_emg(experiment, participant_id, block + 1)
-                segmented_emg.append(s)
-            segmented_emg = np.array(segmented_emg)
+
+            _, _, _ = plot_response_emg_by_finger(experiment=experiment,
+                                                                     participant_id=participant_id)
+        # case 'response-by-probability:emg':
+
+
+
+        case _:
+
+            print('command not recognized')
 
 
 if __name__ == "__main__":

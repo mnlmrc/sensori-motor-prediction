@@ -5,6 +5,7 @@ import warnings
 import chardet
 import pandas as pd
 import numpy as np
+from scipy.signal import firwin, filtfilt
 
 
 def load_participants(experiment):
@@ -28,19 +29,6 @@ def count_blocks(experiment, participant_id, folder='mov', extension='.mov'):
 
 
 def load_mov(experiment, participant_id, block):
-    """
-    Loads a .mov file, parsed into single trials.
-    Checks for consecutive numbering of the trials and warns if trials are missing or out of order.
-
-    Parameters:
-    fname : str
-        Filename of the .mov file to load.
-
-    Returns:
-    A : list
-        A list of numpy arrays, each containing the data for one trial.
-    """
-
     try:
         int(participant_id)
         fname = path + experiment + '/subj' + participant_id + '/mov/' + experiment + '_' + participant_id + '_' + block + '.mov'
@@ -81,8 +69,6 @@ def load_mov(experiment, participant_id, block):
 
 
 def load_dat(experiment, participant_id):
-    # This function loads the .dat file
-
     try:
         int(participant_id)
         fname = path + experiment + '/subj' + participant_id + '/' + experiment + '_' + participant_id + '.dat'
@@ -90,17 +76,8 @@ def load_dat(experiment, participant_id):
         fname = path + experiment + '/' + participant_id + '/' + experiment + '_' + participant_id + '.dat'
 
     try:
-        # fid = open(fname, 'rt')
-        # dat = pd.read_csv(fid, delimiter='\t', engine='python')
-        with open(fname, 'rt') as fid:
-            A = []
-            for line in fid:
-                # Strip whitespace and newline characters, then split
-                split_line = [elem.strip() for elem in line.strip().split(',')]
-                A.append(split_line)
-
-        dat = pd.DataFrame(A)  # get rid of header
-
+        fid = open(fname, 'rt')
+        dat = pd.read_csv(fid, delimiter='\t', engine='python')
     except IOError as e:
         raise IOError(f"Could not open {fname}") from e
 
@@ -109,19 +86,18 @@ def load_dat(experiment, participant_id):
     return dat
 
 
-def find_muscle_columns(df, muscle_names):
-    muscle_columns = {}
-    for muscle in muscle_names:
-        for col in df.columns:
-            if any(df[col].astype(str).str.contains(muscle, na=False)):
-                muscle_columns[muscle] = col
-                break
-    return muscle_columns
+def hp_filter(data, fs, cutoff_freq=30, nOrd=4):
+
+    numtaps = int(nOrd * fs / cutoff_freq)
+    b = firwin(numtaps + 1, cutoff_freq, fs=fs, pass_zero='highpass')
+    filtered_data = filtfilt(b, 1, data)
+
+    return filtered_data
 
 
-def load_emg(experiment, participant_id, block, muscle_names, trigger_name="trigger"):
-    fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
-        block) + '.csv'
+def load_emg(fname, muscle_names=None, fsample=None, trigger_name="trigger"):
+    # fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
+    #     block) + '.csv'
 
     # read data from .csv file (Delsys output)
     with open(fname, 'rt') as fid:
@@ -148,6 +124,12 @@ def load_emg(experiment, participant_id, block, muscle_names, trigger_name="trig
 
     for muscle in muscle_columns:
         df_out[muscle] = df_raw[muscle_columns[muscle]]  # add EMG to dataframe
+
+    # High-pass filter and rectify EMG
+    for col in df_out.columns:
+        df_out[col] = pd.to_numeric(df_out[col], errors='coerce')  # convert to floats
+        df_out[col] = hp_filter(df_out[col], fsample)
+        df_out[col] = df_out[col].abs()  # Rectify
 
     # add trigger column
     for c, col in enumerate(A[3]):

@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -5,21 +7,12 @@ from scipy.signal import find_peaks
 
 import matplotlib
 
+from load_data import load_dat, load_participants, load_emg
+
 matplotlib.use('MacOSX')
 
 
-def detect_trig(trig_sig, time_trig, amp_threshold, num_trials, debugging=False):
-    """
-    Detects the rising and falling edges of the trigger signals.
-    Args:
-        trig_sig: Trigger signal
-        time_trig: Time vector for the trigger signal
-        amp_threshold: Threshold factor for edge detection
-        num_trials: Number of trials
-        debugging: Boolean for debugging figures
-    Returns:
-        rise_times, rise_idx, fall_times, fall_idx
-    """
+def detect_trig(trig_sig, time_trig, amp_threshold=0.4, debugging=False):
     # Normalizing the trigger signal
     trig_sig = trig_sig / np.max(trig_sig)
 
@@ -39,8 +32,7 @@ def detect_trig(trig_sig, time_trig, amp_threshold, num_trials, debugging=False)
     locs_inv, _ = find_peaks(diff_inv_trig)
 
     # Debugging plots
-    if debugging==True:
-
+    if debugging == True:
         # Printing the number of triggers detected and number of trials
         print("\nNum Trigs Detected = {} , inv {}".format(len(locs), len(locs_inv)))
         print("Num Trials in Run = {}".format(num_trials))
@@ -64,50 +56,78 @@ def detect_trig(trig_sig, time_trig, amp_threshold, num_trials, debugging=False)
     fall_idx = locs_inv
     fall_times = time_trig[fall_idx]
 
+    # sanity check
+    if (len(rise_idx) != num_trials) | (len(fall_idx) != num_trials):
+        raise ValueError("Wrong number of trials")
+
     return rise_times, rise_idx, fall_times, fall_idx
 
 
-def segment_emg(experiment, participant_id, block, num_trials=20, amp_threshold=0.5, prestim=1, poststim=2,
-                fsample=2148.1481):
-
-    # load participant and block
-    fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
-        block) + '.emg'
-    df_emg = pd.read_csv(fname, index_col=0)
-
-    trig_sig = df_emg['trigger'].to_numpy()
-    time = df_emg['time'].to_numpy()
+def segment_emg(df_emg, prestim=1, poststim=2):
+    trig_sig = pd.to_numeric(df_emg['trigger']).to_numpy()
+    time = pd.to_numeric(df_emg['time']).to_numpy()
     df_emg_clean = df_emg.drop(['trigger', 'time'], axis=1)
-    channels = df_emg_clean.columns
-    emg = df_emg_clean.to_numpy()
+    muscle_names = df_emg_clean.columns.to_list()
 
     # detect triggers
-    rise_times, rise_idx, fall_times, fall_idx = detect_trig(trig_sig, time, amp_threshold, num_trials)
+    _, rise_idx, _, _ = detect_trig(trig_sig, time)
 
-    segmented_emg = np.zeros((num_trials, emg.shape[-1], np.round((prestim + poststim) * fsample).astype(int)))
+    df_emg_segmented = pd.DataFrame(index=range(len(rise_idx)),
+                                    columns=muscle_names + ['time'])
     for c, idx in enumerate(rise_idx):
-        segmented_emg[c] = emg[idx - np.round(prestim * fsample).astype(int):
-                               idx + np.round(poststim * fsample).astype(int)].T
+        df_emg_segmented.at[c, 'time'] = np.linspace(-prestim, poststim, int((prestim + poststim) * fsample))
+        for muscle in muscle_names:
+            df_emg_segmented.at[c, muscle] = df_emg[muscle][idx - np.round(prestim * fsample).astype(int):
+                                                            idx + np.round(poststim * fsample).astype(int)].to_numpy()
 
-    return segmented_emg, channels
+    return df_emg_segmented
 
 
-# # Replace 'your_data_file.txt' with the path to your data file
+def participant(experiment, participant_id):
+    D = load_dat(experiment, participant_id)
+
+    ana = pd.DataFrame()
+
+    oldBlock = -1
+    for i, (block, ntrial, subj) in enumerate(zip(D.BN, D.TN, D.subNum)):
+
+        # check if blocks chnages
+        if oldBlock != block:
+            # load the emg file of the block
+            print(f"Loading emg file - participant: {subj}, block: {block}")
+            emg_file_name = f"{experiment}_{subj}_{block}.csv"
+            emg_path = os.path.join(path, experiment, f"subj{subj}", 'emg', emg_file_name)
+            df_emg = load_emg(emg_path, muscle_names=muscle_names, fsample=fsample, trigger_name="trigger")
+
+            # segment emg
+            df_emg_segmented = segment_emg(df_emg, prestim=1, poststim=2)
+
+            oldBlock = block
+
+        print(f"adding block: {block}, trial: {ntrial}")
+
+        combined_row = {**D[['BN', 'TN', 'subNum', 'chordID', 'stimFinger']].iloc[i].to_dict(),
+                        **df_emg_segmented.iloc[ntrial - 1].to_dict()}
+
+        ana = ana._append(combined_row, ignore_index=True)
+
+    return ana
+
+
+# Replace 'your_data_file.txt' with the path to your data file
 path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
-# path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'
-# experiment = 'smp0'
-# participant_id = '100'
-# block = 1
-#
-# fname = path + experiment + '/subj' + participant_id + '/emg/' + experiment + '_' + participant_id + '_' + str(
-#     block) + '.emg'
-# df_emg = pd.read_csv(fname)
-# trig_sig = df_emg['trigger'].to_numpy()
-# time = df_emg['time'].to_numpy()
-#
-# rise_times, rise_idx, fall_times, fall_idx = detect_trig(trig_sig, time, 0.5, 20, debugging=True)
-#
-# segmented_emg = segment_emg(experiment, participant_id, block)
+num_trials = 20
+fsample = 2148.1481
+muscle_names = ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext', 'index_ext',
+                'middle_ext', 'ring_ext', 'pinkie_ext']
 
+# Test participant
+# df_emg = participant(experiment='smp0', participant_id='100')
 
-
+# Test detect_trigger
+# emg_file_name = f"smp0_100_2.csv"
+# emg_path = os.path.join(path, 'smp0', f"subj100", 'emg', emg_file_name)
+# df_emg = load_emg(emg_path, muscle_names=muscle_names, fsample=fsample, trigger_name="trigger")
+# trig_sig = pd.to_numeric(df_emg['trigger']).to_numpy()
+# time = pd.to_numeric(df_emg['time']).to_numpy()
+# detect_trig(trig_sig, time, amp_threshold=0.4, debugging=True)
