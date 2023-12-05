@@ -66,52 +66,43 @@ def detect_trig(trig_sig, time_trig, amp_threshold=0.4, debugging=False):
 def segment_emg(df_emg, prestim=1, poststim=2):
     trig_sig = pd.to_numeric(df_emg['trigger']).to_numpy()
     time = pd.to_numeric(df_emg['time']).to_numpy()
-    df_emg_clean = df_emg.drop(['trigger', 'time'], axis=1)
-    muscle_names = df_emg_clean.columns.to_list()
+    # df_emg_clean = df_emg.drop(['trigger', 'time'], axis=1)
+    timeS = np.linspace(-prestim, poststim, int((prestim + poststim) * fsample))
 
     # detect triggers
     _, rise_idx, _, _ = detect_trig(trig_sig, time)
 
-    df_emg_segmented = pd.DataFrame(index=range(len(rise_idx)),
-                                    columns=muscle_names + ['time'])
-    for c, idx in enumerate(rise_idx):
-        df_emg_segmented.at[c, 'time'] = np.linspace(-prestim, poststim, int((prestim + poststim) * fsample))
-        for muscle in muscle_names:
-            df_emg_segmented.at[c, muscle] = df_emg[muscle][idx - np.round(prestim * fsample).astype(int):
+    emg_segmented = np.zeros((len(rise_idx), len(muscle_names) + 1, int(fsample * (prestim + poststim))))
+    for tr, idx in enumerate(rise_idx):
+        for m, muscle in enumerate(muscle_names):
+            emg_segmented[tr, m] = df_emg[muscle][idx - np.round(prestim * fsample).astype(int):
                                                             idx + np.round(poststim * fsample).astype(int)].to_numpy()
+        emg_segmented[tr, -1] = timeS
 
-    return df_emg_segmented
+    return emg_segmented
 
 
-def participant(experiment, participant_id):
+def participant(experiment, participant_id, prestim=1, poststim=2):
+
+    # load .dat file to read subj and blocks
     D = load_dat(experiment, participant_id)
 
-    ana = pd.DataFrame()
+    # loop through blocks
+    emg = None
+    for block in D.BN.unique():
 
-    oldBlock = -1
-    for i, (block, ntrial, subj) in enumerate(zip(D.BN, D.TN, D.subNum)):
+        # load raw emg data in delsys format
+        print(f"Loading emg file - participant: {participant_id}, block: {block}")
+        emg_file_name = f"{experiment}_{participant_id}_{block}.csv"
+        emg_path = os.path.join(path, experiment, f"subj{participant_id}", 'emg', emg_file_name)
+        df_emg = load_emg(emg_path, muscle_names=muscle_names, fsample=fsample, trigger_name="trigger")
 
-        # check if blocks chnages
-        if oldBlock != block:
-            # load the emg file of the block
-            print(f"Loading emg file - participant: {subj}, block: {block}")
-            emg_file_name = f"{experiment}_{subj}_{block}.csv"
-            emg_path = os.path.join(path, experiment, f"subj{subj}", 'emg', emg_file_name)
-            df_emg = load_emg(emg_path, muscle_names=muscle_names, fsample=fsample, trigger_name="trigger")
+        # segment emg data
+        segment = segment_emg(df_emg, prestim=prestim, poststim=poststim)
+        emg = segment if emg is None else np.concatenate((emg, segment), axis=0)
 
-            # segment emg
-            df_emg_segmented = segment_emg(df_emg, prestim=1, poststim=2)
+    return emg
 
-            oldBlock = block
-
-        print(f"adding block: {block}, trial: {ntrial}")
-
-        combined_row = {**D[['BN', 'TN', 'subNum', 'chordID', 'stimFinger']].iloc[i].to_dict(),
-                        **df_emg_segmented.iloc[ntrial - 1].to_dict()}
-
-        ana = ana._append(combined_row, ignore_index=True)
-
-    return ana
 
 
 # Replace 'your_data_file.txt' with the path to your data file

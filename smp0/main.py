@@ -2,11 +2,12 @@ import argparse
 import os
 
 import matplotlib
+import numpy as np
 from matplotlib import pyplot as plt
 
 from emg import participant
 from load_data import path
-from visual import plot_response_emg_by_finger
+from visual import plot_response_emg_by_finger, plot_response_emg_by_probability
 
 matplotlib.use('MacOSX')
 
@@ -30,18 +31,19 @@ def main(experiment=None, participant_id=None, step=None):
 
         case 'dataframe:emg':
 
-            df_emg = participant(experiment, participant_id)
-            fname = f"{experiment}_{participant_id}.emg"
+            emg = participant(experiment, participant_id)
+            fname = f"{experiment}_{participant_id}"
             savedir = os.path.join(path, experiment, f"subj{participant_id}", 'emg', fname)
-            df_emg.to_pickle(savedir)
+            np.save(savedir, emg, allow_pickle=False)
 
         case 'response:emg':
 
             _, _, _ = plot_response_emg_by_finger(experiment=experiment,
-                                                                     participant_id=participant_id)
-        # case 'response-by-probability:emg':
+                                                  participant_id=participant_id)
+        case 'probability:emg':
 
-
+            plot_response_emg_by_probability(experiment=experiment,
+                                             participant_id=participant_id)
 
         case _:
 

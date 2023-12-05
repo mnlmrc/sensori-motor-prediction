@@ -2,9 +2,8 @@
 import os
 import warnings
 
-import chardet
-import pandas as pd
 import numpy as np
+import pandas as pd
 from scipy.signal import firwin, filtfilt
 
 
