@@ -143,6 +143,7 @@ def load_emg(fname, muscle_names=None, fsample=None, trigger_name="trigger"):
     return df_out
 
 
+
 # Replace 'your_data_file.txt' with the path to your data file
 path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
 # path = '/Volumes/Diedrichsen_data$/data/SensoriMotorPrediction/'

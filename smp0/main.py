@@ -1,12 +1,8 @@
 import argparse
-import os
 
 import matplotlib
-import numpy as np
-from matplotlib import pyplot as plt
 
-from emg import participant
-from load_data import path
+from emg import Emg
 from visual import plot_response_emg_by_finger, plot_response_emg_by_probability
 
 matplotlib.use('MacOSX')
@@ -26,15 +22,15 @@ def main(experiment=None, participant_id=None, step=None):
         participant_id = args.participant_id
         step = args.step
 
+    MyEmg = Emg(experiment, participant_id)
+
     # navigate through analysis steps
     match step:
 
-        case 'dataframe:emg':
+        case 'segment:emg':
 
-            emg = participant(experiment, participant_id)
-            fname = f"{experiment}_{participant_id}"
-            savedir = os.path.join(path, experiment, f"subj{participant_id}", 'emg', fname)
-            np.save(savedir, emg, allow_pickle=False)
+            MyEmg.segment_participant()
+            MyEmg.save_segmented()
 
         case 'response:emg':
 

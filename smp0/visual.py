@@ -1,11 +1,10 @@
 import os
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-import matplotlib
-
+from emg import Emg
 from load_data import load_dat
 
 matplotlib.use('MacOSX')
@@ -13,24 +12,20 @@ matplotlib.use('MacOSX')
 
 def plot_response_emg_by_finger(experiment, participant_id):
 
-    # load segmented emg
-    fname = f"{experiment}_{participant_id}.npy"
-    filepath = os.path.join(path, experiment, f"subj{participant_id}", 'emg', fname)
-    emg = np.load(filepath)
-
-    # load .dat file
-    D = load_dat(experiment, participant_id)
+    myEmg = Emg(experiment, participant_id)
 
     # sort by stimulated finger
-    emg_index = emg[D[D['stimFinger'] == 91999].index, :-1]
-    emg_ring = emg[D[D['stimFinger'] == 99919].index, :-1]
+    emg_index = myEmg.sort_by_stimulated_finger("index")
+    emg_ring = myEmg.sort_by_stimulated_finger("ring")
 
     # time axis
-    time = emg[0, -1]
+    time = myEmg.timeS
 
     # plot
-    fig, axs = plt.subplots(len(muscle_names), 2,
+    fig, axs = plt.subplots(len(myEmg.muscle_names), 2,
                             sharex=True, sharey=True, constrained_layout=True, figsize=(6.4, 7))
+
+    muscle_names = myEmg.muscle_names
 
     meanIndex = emg_index.mean(axis=0)
     meanRing = emg_ring.mean(axis=0)
@@ -139,9 +134,9 @@ def plot_response_emg_by_probability(experiment, participant_id):
     plt.show()
 
 
-path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
-muscle_names = ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext', 'index_ext',
-                'middle_ext', 'ring_ext', 'pinkie_ext']
+# path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
+# muscle_names = ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext', 'index_ext',
+#                 'middle_ext', 'ring_ext', 'pinkie_ext']
 # emg_index, emg_ring, time = plot_response_emg_by_finger(experiment='smp0', participant_id='100')
 
 # X = plot_response_emg_by_probability(experiment='smp0', participant_id='100')
