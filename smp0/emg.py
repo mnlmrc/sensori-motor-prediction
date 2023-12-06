@@ -54,11 +54,11 @@ class SensoriMotorPrediction:
 
         try:
             fid = open(filepath, 'rt')
-            dat = pd.read_csv(fid, delimiter='\t', engine='python')
+            D = pd.read_csv(fid, delimiter='\t', engine='python')
         except IOError as e:
             raise IOError(f"Could not open {filepath}") from e
 
-        return dat
+        return D
 
 
 class Emg(SensoriMotorPrediction):
