@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from scipy.signal import find_peaks, firwin, filtfilt
+from scipy.signal import find_peaks, firwin, filtfilt, resample
 
 import matplotlib
 
@@ -12,7 +12,7 @@ from load_data import load_dat, load_participants, load_emg
 matplotlib.use('MacOSX')
 
 
-class SensoriMotorPrediction:
+class Smp:
     # Path to data
     path = ('/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My '
             'Drive/UWO/SensoriMotorPrediction/')
@@ -38,8 +38,8 @@ class SensoriMotorPrediction:
     def __init__(self, experiment=None, participant_id=None):
         self.experiment = experiment
         self.participant_id = participant_id
-        self.D = self.load_dat(SensoriMotorPrediction.path)
-        self.participants = self.load_participant(SensoriMotorPrediction.path)
+        self.D = self.load_dat(Smp.path)
+        self.participants = self.load_participant(Smp.path)
 
     def load_participant(self, path):
         filepath = os.path.join(path, self.experiment, "participants.tsv")
@@ -61,13 +61,13 @@ class SensoriMotorPrediction:
         return D
 
 
-class Emg(SensoriMotorPrediction):
+class Emg(Smp):
     # EMG general parameters
     fsample = 2148.1481  # sampling rate EMG
     muscle_names = ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext',
                     'index_ext', 'middle_ext', 'ring_ext', 'pinkie_ext']  # approx recorded muscles
 
-    def __init__(self, experiment=None, participant_id=None, amp_threshold=.4, prestim=1, poststim=2, cutoff=30,
+    def __init__(self, experiment=None, participant_id=None, amp_threshold=2, prestim=1, poststim=2, cutoff=30,
                  nOrd=4):
         super().__init__(experiment, participant_id)  # Initialize the parent class
 
@@ -92,28 +92,33 @@ class Emg(SensoriMotorPrediction):
         else:
             self.emg = None  # set to None if it doesn't exist
 
-    def detect_trig(self, trig_sig, time_trig, debugging=False):
+    def detect_trig(self, trig_sig, time_trig, debugging=True):
 
         # Normalizing the trigger signal
-        trig_sig = trig_sig / np.max(trig_sig)
+        # trig_sig = trig_sig / np.max(trig_sig)
+        trig_sig[trig_sig < self.amp_threshold] = 0
+        trig_sig[trig_sig > self.amp_threshold] = 1
 
         # Inverting the trigger signal to find falling edges
         inv_trig = -trig_sig
 
         # Detecting the edges
         diff_trig = np.diff(trig_sig)
-        diff_inv_trig = np.diff(inv_trig)
 
-        # Thresholding the deviations
-        diff_trig[diff_trig < self.amp_threshold] = 0
-        diff_inv_trig[diff_inv_trig < self.amp_threshold] = 0
+        locs = np.where(diff_trig == 1)[0]
+        locs_inv = np.where(diff_trig == -1)[0]
+        # diff_inv_trig = np.diff(inv_trig)
 
-        # Finding the locations of the peaks
-        locs, _ = find_peaks(diff_trig)
-        locs_inv, _ = find_peaks(diff_inv_trig)
+        # # Thresholding the deviations
+        # diff_trig[diff_trig < self.amp_threshold] = 0
+        # diff_inv_trig[diff_inv_trig < self.amp_threshold] = 0
+        #
+        # # Finding the locations of the peaks
+        # locs, _ = find_peaks(diff_trig)
+        # locs_inv, _ = find_peaks(diff_inv_trig)
 
         # Debugging plots
-        if debugging == True:
+        if debugging:
             # Printing the number of triggers detected and number of trials
             print("\nNum Trigs Detected = {} , inv {}".format(len(locs), len(locs_inv)))
             print("Num Trials in Run = {}".format(Emg.ntrials))
@@ -124,7 +129,7 @@ class Emg(SensoriMotorPrediction):
             plt.plot(trig_sig, 'k', linewidth=1.5)
             plt.plot(diff_trig, '--r', linewidth=1)
             plt.scatter(locs, diff_trig[locs], color='red', marker='o', s=30)
-            plt.scatter(locs_inv, diff_inv_trig[locs_inv], color='blue', marker='o', s=30)
+            plt.scatter(locs_inv, diff_trig[locs_inv], color='blue', marker='o', s=30)
             plt.xlabel("Time (index)")
             plt.ylabel("Trigger Signal (black), Diff Trigger (red dashed), Detected triggers (red/blue points)")
             plt.ylim([-1.5, 1.5])
@@ -159,13 +164,35 @@ class Emg(SensoriMotorPrediction):
 
         return emg_segmented
 
-    def hp_filter(self, data):
+    def hp_filter(self, data, fsample=fsample):
 
         numtaps = int(self.nOrd * Emg.fsample / self.cutoff)
-        b = firwin(numtaps + 1, self.cutoff, fs=Emg.fsample, pass_zero='highpass')
+        b = firwin(numtaps + 1, self.cutoff, fs=fsample, pass_zero='highpass')
         filtered_data = filtfilt(b, 1, data)
 
         return filtered_data
+
+    # def resample_trigger(self, vector, original_freq=2222.2222, new_freq=fsample):
+    #     """
+    #     Resamples the trigger channel from original_freq to new_freq.
+    #     This is because Delsys records trigger and EMG at different frequencies
+    #
+    #     Parameters:
+    #     vector (numpy array): The input signal to resample.
+    #     original_freq (int): The original sampling frequency of the vector.
+    #     new_freq (int): The desired new sampling frequency.
+    #
+    #     Returns:
+    #     numpy array: The resampled signal.
+    #     """
+    #     # Calculate the number of samples in the resampled vector
+    #     original_len = len(vector)
+    #     new_len = int(original_len * new_freq / original_freq)
+    #
+    #     # Use scipy's resample function to resample the vector
+    #     resampled_vector = resample(vector, new_len)
+    #
+    #     return resampled_vector
 
     def load_raw(self, emg_path, trigger_name="trigger"):
 
@@ -206,11 +233,13 @@ class Emg(SensoriMotorPrediction):
         for c, col in enumerate(A[3]):
             if trigger_name in col:
                 trigger_column = c + 1
-        try:
-            trigger = df_raw[trigger_column]
-            df_out[trigger_name] = trigger
-        except:
-            raise ValueError("Trigger not found")
+
+        # try:
+        trigger = df_raw[trigger_column]
+        trigger = resample(trigger.values, len(df_out))
+        df_out[trigger_name] = trigger
+        # except:
+        #     raise ValueError("Trigger not found")
 
         # add time column
         df_out['time'] = df_raw.loc[:, 0]
@@ -263,3 +292,8 @@ class Emg(SensoriMotorPrediction):
         emg_finger = self.emg[idx]
 
         return emg_finger
+
+
+# MyEmg = Emg('smp0', '102')
+# MyEmg.segment_participant()
+
