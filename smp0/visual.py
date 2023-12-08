@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from emg import Emg
-from load_data import load_dat
+# from load_data import load_dat
 
 matplotlib.use('MacOSX')
 
@@ -139,4 +139,4 @@ def plot_response_emg_by_probability(experiment, participant_id):
 #                 'middle_ext', 'ring_ext', 'pinkie_ext']
 # emg_index, emg_ring, time = plot_response_emg_by_finger(experiment='smp0', participant_id='100')
 
-# X = plot_response_emg_by_probability(experiment='smp0', participant_id='100')
+# X = plot_response_emg_by_finger(experiment='smp0', participant_id='103')

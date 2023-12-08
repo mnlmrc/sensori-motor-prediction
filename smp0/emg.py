@@ -7,7 +7,8 @@ from scipy.signal import find_peaks, firwin, filtfilt, resample
 
 import matplotlib
 
-from load_data import load_dat, load_participants, load_emg
+# from load_data import load_dat, load_participants, load_emg
+from util import vlookup_value
 
 matplotlib.use('MacOSX')
 
@@ -18,7 +19,7 @@ class Smp:
             'Drive/UWO/SensoriMotorPrediction/')
 
     # General parameters
-    nblocks = 10  # blocks in experiment
+    maxBlocks = 10  # blocks in experiment
     ntrials = 20  # trials per block
 
     # Map trial information
@@ -92,7 +93,7 @@ class Emg(Smp):
         else:
             self.emg = None  # set to None if it doesn't exist
 
-    def detect_trig(self, trig_sig, time_trig, debugging=True):
+    def detect_trig(self, emg_sig, trig_sig, time_trig, debugging=False):
 
         # Normalizing the trigger signal
         # trig_sig = trig_sig / np.max(trig_sig)
@@ -126,6 +127,7 @@ class Emg(Smp):
 
             # plotting block
             plt.figure()
+            plt.plot(emg_sig)
             plt.plot(trig_sig, 'k', linewidth=1.5)
             plt.plot(diff_trig, '--r', linewidth=1)
             plt.scatter(locs, diff_trig[locs], color='red', marker='o', s=30)
@@ -143,17 +145,18 @@ class Emg(Smp):
         fall_times = time_trig[fall_idx]
 
         # Sanity check
-        if (len(rise_idx) != Emg.ntrials) | (len(fall_idx) != Emg.ntrials):
+        if len(rise_idx) != Emg.ntrials:  # | (len(fall_idx) != Emg.ntrials):
             raise ValueError("Wrong number of trials")
 
         return rise_times, rise_idx, fall_times, fall_idx
 
     def segment(self, df_emg):
+        emg_sig = pd.to_numeric(df_emg['ring_flex']).to_numpy()
         trig_sig = pd.to_numeric(df_emg['trigger']).to_numpy()
         time = pd.to_numeric(df_emg['time']).to_numpy()
 
         # detect triggers
-        _, rise_idx, _, _ = self.detect_trig(trig_sig, time)
+        _, rise_idx, _, _ = self.detect_trig(emg_sig, trig_sig, time)
 
         emg_segmented = np.zeros((len(rise_idx), len(Emg.muscle_names),
                                   int(Emg.fsample * (self.prestim + self.poststim))))
@@ -194,10 +197,10 @@ class Emg(Smp):
     #
     #     return resampled_vector
 
-    def load_raw(self, emg_path, trigger_name="trigger"):
+    def load_raw(self, filepath, trigger_name="trigger"):
 
         # read data from .csv file (Delsys output)
-        with open(emg_path, 'rt') as fid:
+        with open(filepath, 'rt') as fid:
             A = []
             for line in fid:
                 # Strip whitespace and newline characters, then split
@@ -220,11 +223,11 @@ class Emg(Smp):
         df_out = pd.DataFrame()  # init final dataframe
 
         for muscle in muscle_columns:
-            df_out[muscle] = df_raw[muscle_columns[muscle]]  # add EMG to dataframe
+            df_out[muscle] = pd.to_numeric(df_raw[muscle_columns[muscle]], errors='coerce').replace('', np.nan).dropna()  # add EMG to dataframe
 
         # High-pass filter and rectify EMG
         for col in df_out.columns:
-            df_out[col] = pd.to_numeric(df_out[col], errors='coerce')  # convert to floats
+            df_out[col] = df_out[col]  # convert to floats
             df_out[col] = self.hp_filter(df_out[col])
             df_out[col] = df_out[col].abs()  # Rectify
 
@@ -251,8 +254,11 @@ class Emg(Smp):
         # set emg to None to segment (again) participant
         self.emg = None
 
+        blocks = vlookup_value(self.participants, 'participant_id', f"subj{self.participant_id}", 'blocksEMG').split(
+            ',')
+
         # loop through blocks
-        for block in self.D.BN.unique():
+        for block in blocks:
             # load raw emg data in delsys format
             print(f"Loading emg file - participant: {self.participant_id}, block: {block}")
             fname = f"{self.experiment}_{self.participant_id}_{block}.csv"
@@ -263,13 +269,11 @@ class Emg(Smp):
             segment = self.segment(df_emg)
             self.emg = segment if self.emg is None else np.concatenate((self.emg, segment), axis=0)
 
-
-
     def save_segmented(self):
         fname = f"{self.experiment}_{self.participant_id}"
         filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "emg", fname)
+        print(f"Saving participant: {self.participant_id}")
         np.save(filepath, self.emg, allow_pickle=False)
-
 
     def sort_by_stimulated_finger(self, finger=None):
 
@@ -277,7 +281,10 @@ class Emg(Smp):
             raise ValueError("Unrecognized finger")
 
         D = self.load_dat(self.path)
-        idx = D[D['stimFinger'] == self.stimFinger[finger]].index
+        blocks = np.array(vlookup_value(self.participants, 'participant_id', f"subj{self.participant_id}", 'blocksEMG').split(
+            ',')).astype(int)
+        idx = D[(D['stimFinger'] == self.stimFinger[finger]) & (D['BN'].isin(blocks))].index
+        idx = idx - (self.ntrials * (self.maxBlocks - len(blocks)))
         emg_finger = self.emg[idx]
 
         return emg_finger
@@ -296,4 +303,3 @@ class Emg(Smp):
 
 # MyEmg = Emg('smp0', '102')
 # MyEmg.segment_participant()
-

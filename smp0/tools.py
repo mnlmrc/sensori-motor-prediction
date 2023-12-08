@@ -38,9 +38,10 @@ def trim_block_file(experiment, participant_id, block, trigger_name="trigger"):
 
     df_raw[:limit].to_csv(filepath)
 
-
+# def plot_raw(experiment, participant_id):
+#     emg = np.load(filepath)
 
 
 path = Smp.path
 
-trim_block_file(experiment='smp0', participant_id='102', block=1)
+# trim_block_file(experiment='smp0', participant_id='102', block=1)
