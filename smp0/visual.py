@@ -22,27 +22,27 @@ def plot_response_emg_by_finger(experiment, participant_id):
     time = myEmg.timeS
 
     # plot
-    fig, axs = plt.subplots(len(myEmg.muscle_names), 2,
-                            sharex=True, sharey=True, constrained_layout=True, figsize=(6.4, 7))
+    fig, axs = plt.subplots(len(myEmg.muscle_names),
+                            sharex=True, sharey=True, constrained_layout=True, figsize=(6.4, 9))
 
     muscle_names = myEmg.muscle_names
 
     meanIndex = emg_index.mean(axis=0)
     meanRing = emg_ring.mean(axis=0)
     for m, muscle in enumerate(muscle_names):
-        axs[m, 0].plot(time, meanIndex[m], color='r')
-        axs[m, 0].set_title(muscle, fontsize=6)
-        axs[m, 0].axvline(x=0, ls='-', color='k', lw=.8)
-        axs[m, 0].axvline(x=.05, ls=':', color='k', lw=.8)
-        axs[m, 0].axvline(x=.1, ls='--', color='k', lw=.8)
-        axs[m, 1].plot(time, meanRing[m], color='b')
-        axs[m, 1].set_title(muscle, fontsize=6)
-        axs[m, 1].axvline(x=0, ls='-', color='k', lw=.8)
-        axs[m, 1].axvline(x=.05, ls=':', color='k', lw=.8)
-        axs[m, 1].axvline(x=.1, ls='--', color='k', lw=.8)
+        axs[m].plot(time, meanIndex[m], color='r')
+        axs[m].set_title(muscle, fontsize=6)
+        axs[m].axvline(x=0, ls='-', color='k', lw=.8)
+        axs[m].axvline(x=.05, ls=':', color='k', lw=.8)
+        axs[m].axvline(x=.1, ls='--', color='k', lw=.8)
+        axs[m].plot(time, meanRing[m], color='b')
+        axs[m].set_title(muscle, fontsize=6)
+        axs[m].axvline(x=0, ls='-', color='k', lw=.8)
+        axs[m].axvline(x=.05, ls=':', color='k', lw=.8)
+        axs[m].axvline(x=.1, ls='--', color='k', lw=.8)
 
-    axs[0, 0].set_xlim([-.1, .5])
-    axs[0, 0].set_ylim([0, None])
+    axs[0].set_xlim([-.1, .5])
+    axs[0].set_ylim([0, None])
     # fig.tight_layout()
     fig.supylabel('EMG (mV)')
     fig.supxlabel('time (s)')
@@ -54,29 +54,23 @@ def plot_response_emg_by_finger(experiment, participant_id):
 
 def plot_response_emg_by_probability(experiment, participant_id):
 
-    # load segmented emg
-    fname = f"{experiment}_{participant_id}.npy"
-    filepath = os.path.join(path, experiment, f"subj{participant_id}", 'emg', fname)
-    emg = np.load(filepath)
-
-    # load .dat file
-    D = load_dat(experiment, participant_id)
+    myEmg = Emg(experiment, participant_id)
 
     # sort by cue and stimulated finger
-    emg_index_25 = emg[D[(D['stimFinger'] == 91999) & (D['chordID'] == 12)].index, :-1]
-    emg_index_50 = emg[D[(D['stimFinger'] == 91999) & (D['chordID'] == 44)].index, :-1]
-    emg_index_75 = emg[D[(D['stimFinger'] == 91999) & (D['chordID'] == 21)].index, :-1]
-    emg_index_100 = emg[D[(D['stimFinger'] == 91999) & (D['chordID'] == 39)].index, :-1]
-    emg_ring_25 = emg[D[(D['stimFinger'] == 99919) & (D['chordID'] == 12)].index, :-1]
-    emg_ring_50 = emg[D[(D['stimFinger'] == 99919) & (D['chordID'] == 44)].index, :-1]
-    emg_ring_75 = emg[D[(D['stimFinger'] == 99919) & (D['chordID'] == 21)].index, :-1]
-    emg_ring_100 = emg[D[(D['stimFinger'] == 99919) & (D['chordID'] == 93)].index, :-1]
+    emg_index_25 = myEmg.sort_by_stimulated_probability(finger='index', cue="index 25% - ring 75%")
+    emg_index_50 = myEmg.sort_by_stimulated_probability(finger='index', cue="index 50% - ring 50%")
+    emg_index_75 = myEmg.sort_by_stimulated_probability(finger='index', cue="index 75% - ring 25%")
+    emg_index_100 = myEmg.sort_by_stimulated_probability(finger='index', cue="index 100% - ring 0%")
+    emg_ring_25 = myEmg.sort_by_stimulated_probability(finger="ring", cue="index 75% - ring 25%")
+    emg_ring_50 = myEmg.sort_by_stimulated_probability(finger="ring", cue="index 50% - ring 50%")
+    emg_ring_75 = myEmg.sort_by_stimulated_probability(finger="ring", cue="index 25% - ring 75%")
+    emg_ring_100 = myEmg.sort_by_stimulated_probability( finger="ring", cue="index 0% - ring 100%")
 
     # time axis
-    time = emg[0, -1]
+    time = myEmg.timeS
 
     # plot
-    fig, axs = plt.subplots(len(muscle_names), 2,
+    fig, axs = plt.subplots(len(myEmg.muscle_names), 2,
                             sharex=True, sharey=True, constrained_layout=True, figsize=(6.4, 7))
 
     # create colors
@@ -101,7 +95,7 @@ def plot_response_emg_by_probability(experiment, participant_id):
     meanRing50 = emg_ring_50.mean(axis=0)
     meanRing75 = emg_ring_75.mean(axis=0)
     meanRing100 = emg_ring_100.mean(axis=0)
-    for m, muscle in enumerate(muscle_names):
+    for m, muscle in enumerate(myEmg.muscle_names):
         axs[m, 0].plot(time, meanIndex25[m], color=red[0])
         axs[m, 0].plot(time, meanIndex50[m], color=red[1])
         axs[m, 0].plot(time, meanIndex75[m], color=red[2])

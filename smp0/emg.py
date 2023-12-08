@@ -65,16 +65,16 @@ class Smp:
 class Emg(Smp):
     # EMG general parameters
     fsample = 2148.1481  # sampling rate EMG
-    muscle_names = ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext',
-                    'index_ext', 'middle_ext', 'ring_ext', 'pinkie_ext']  # approx recorded muscles
+        # ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext',
+        #             'index_ext', 'middle_ext', 'ring_ext', 'pinkie_ext']  # approx recorded muscles
 
     def __init__(self, experiment=None, participant_id=None, amp_threshold=2, prestim=1, poststim=2, cutoff=30,
-                 nOrd=4):
+                 n_ord=4):
         super().__init__(experiment, participant_id)  # Initialize the parent class
 
         # Parameters for hp filter
         self.cutoff = cutoff  # cutoff frequency
-        self.nOrd = nOrd
+        self.n_ord = n_ord
 
         # EMG segmentation parameters
         self.amp_threshold = amp_threshold  # threshold for trigger detection
@@ -93,6 +93,11 @@ class Emg(Smp):
         else:
             self.emg = None  # set to None if it doesn't exist
 
+        self.muscle_names = vlookup_value(self.participants,
+                                          'participant_id',
+                                          f"subj{self.participant_id}",
+                                          'muscles').split(',')
+
     def detect_trig(self, emg_sig, trig_sig, time_trig, debugging=False):
 
         # Normalizing the trigger signal
@@ -101,7 +106,7 @@ class Emg(Smp):
         trig_sig[trig_sig > self.amp_threshold] = 1
 
         # Inverting the trigger signal to find falling edges
-        inv_trig = -trig_sig
+        # inv_trig = -trig_sig
 
         # Detecting the edges
         diff_trig = np.diff(trig_sig)
@@ -158,10 +163,10 @@ class Emg(Smp):
         # detect triggers
         _, rise_idx, _, _ = self.detect_trig(emg_sig, trig_sig, time)
 
-        emg_segmented = np.zeros((len(rise_idx), len(Emg.muscle_names),
+        emg_segmented = np.zeros((len(rise_idx), len(self.muscle_names),
                                   int(Emg.fsample * (self.prestim + self.poststim))))
         for tr, idx in enumerate(rise_idx):
-            for m, muscle in enumerate(Emg.muscle_names):
+            for m, muscle in enumerate(self.muscle_names):
                 emg_segmented[tr, m] = df_emg[muscle][idx - int(self.prestim * Emg.fsample):
                                                       idx + int(self.poststim * Emg.fsample)].to_numpy()
 
@@ -169,7 +174,7 @@ class Emg(Smp):
 
     def hp_filter(self, data, fsample=fsample):
 
-        numtaps = int(self.nOrd * Emg.fsample / self.cutoff)
+        numtaps = int(self.n_ord * Emg.fsample / self.cutoff)
         b = firwin(numtaps + 1, self.cutoff, fs=fsample, pass_zero='highpass')
         filtered_data = filtfilt(b, 1, data)
 
@@ -209,7 +214,7 @@ class Emg(Smp):
 
         # identify columns with data from each muscle
         muscle_columns = {}
-        for muscle in Emg.muscle_names:
+        for muscle in self.muscle_names:
             for c, col in enumerate(A[3]):
                 if muscle in col:
                     muscle_columns[muscle] = c + 1  # EMG is on the right of Timeseries data (that's why + 1)
@@ -295,11 +300,15 @@ class Emg(Smp):
             raise ValueError("Unrecognized finger")
 
         D = self.D
-        idx = D[(D["stimFinger"] == self.stimFinger[finger]) and (D["chordID"] == self.probCue[cue])].index
+        blocks = np.array(
+            vlookup_value(self.participants, 'participant_id', f"subj{self.participant_id}", 'blocksEMG').split(
+                ',')).astype(int)
+        idx = D[(D["stimFinger"] == self.stimFinger[finger]) & (D["chordID"] == self.probCue[cue])].index
+        idx = idx - (self.ntrials * (self.maxBlocks - len(blocks)))
         emg_finger = self.emg[idx]
 
         return emg_finger
 
 
-# MyEmg = Emg('smp0', '102')
+# MyEmg = Emg('smp0', '103')
 # MyEmg.segment_participant()
