@@ -1,4 +1,5 @@
 import os
+import json
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,9 +7,10 @@ import pandas as pd
 from scipy.signal import find_peaks, firwin, filtfilt, resample
 
 import matplotlib
+from sklearn.decomposition import NMF
 
 # from load_data import load_dat, load_participants, load_emg
-from util import vlookup_value
+from smp0.util import vlookup_value
 
 matplotlib.use('MacOSX')
 
@@ -65,8 +67,9 @@ class Smp:
 class Emg(Smp):
     # EMG general parameters
     fsample = 2148.1481  # sampling rate EMG
-        # ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext',
-        #             'index_ext', 'middle_ext', 'ring_ext', 'pinkie_ext']  # approx recorded muscles
+
+    # ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext',
+    #             'index_ext', 'middle_ext', 'ring_ext', 'pinkie_ext']  # approx recorded muscles
 
     def __init__(self, experiment=None, participant_id=None, amp_threshold=2, prestim=1, poststim=2, cutoff=30,
                  n_ord=4):
@@ -93,6 +96,19 @@ class Emg(Smp):
         else:
             self.emg = None  # set to None if it doesn't exist
 
+        # check if synergies exists for participant
+        fname = f"{self.experiment}_{self.participant_id}_syn.json"
+        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "emg", fname)
+        if os.path.exists(filepath):
+            with open(filepath, 'r') as f:
+                self.syn = json.load(f)
+            self.W = np.load(filepath[:-5] + 'W.npy')
+            self.H = np.load(filepath[:-5] + 'H.npy')
+        else:
+            self.syn = None  # set to None if it doesn't exist
+            self.W = None
+            self.H = None
+
         self.muscle_names = vlookup_value(self.participants,
                                           'participant_id',
                                           f"subj{self.participant_id}",
@@ -100,8 +116,13 @@ class Emg(Smp):
 
     def detect_trig(self, emg_sig, trig_sig, time_trig, debugging=False):
 
-        # Normalizing the trigger signal
+        ########## old trigger detection (subj 100-101)
         # trig_sig = trig_sig / np.max(trig_sig)
+        # diff_trig = np.diff(trig_sig)
+        # diff_trig[diff_trig < self.amp_threshold] = 0
+        # locs, _ = find_peaks(diff_trig)
+        ##############################################
+
         trig_sig[trig_sig < self.amp_threshold] = 0
         trig_sig[trig_sig > self.amp_threshold] = 1
 
@@ -112,21 +133,11 @@ class Emg(Smp):
         diff_trig = np.diff(trig_sig)
 
         locs = np.where(diff_trig == 1)[0]
-        locs_inv = np.where(diff_trig == -1)[0]
-        # diff_inv_trig = np.diff(inv_trig)
-
-        # # Thresholding the deviations
-        # diff_trig[diff_trig < self.amp_threshold] = 0
-        # diff_inv_trig[diff_inv_trig < self.amp_threshold] = 0
-        #
-        # # Finding the locations of the peaks
-        # locs, _ = find_peaks(diff_trig)
-        # locs_inv, _ = find_peaks(diff_inv_trig)
 
         # Debugging plots
         if debugging:
             # Printing the number of triggers detected and number of trials
-            print("\nNum Trigs Detected = {} , inv {}".format(len(locs), len(locs_inv)))
+            print("\nNum Trigs Detected = {}".format(len(locs)))
             print("Num Trials in Run = {}".format(Emg.ntrials))
             print("====NumTrial should be equal to NumTrigs====\n\n\n")
 
@@ -136,7 +147,7 @@ class Emg(Smp):
             plt.plot(trig_sig, 'k', linewidth=1.5)
             plt.plot(diff_trig, '--r', linewidth=1)
             plt.scatter(locs, diff_trig[locs], color='red', marker='o', s=30)
-            plt.scatter(locs_inv, diff_trig[locs_inv], color='blue', marker='o', s=30)
+            # plt.scatter(locs_inv, diff_trig[locs_inv], color='blue', marker='o', s=30)
             plt.xlabel("Time (index)")
             plt.ylabel("Trigger Signal (black), Diff Trigger (red dashed), Detected triggers (red/blue points)")
             plt.ylim([-1.5, 1.5])
@@ -146,14 +157,14 @@ class Emg(Smp):
         rise_idx = locs
         rise_times = time_trig[rise_idx]
 
-        fall_idx = locs_inv
-        fall_times = time_trig[fall_idx]
+        # fall_idx = locs_inv
+        # fall_times = time_trig[fall_idx]
 
         # Sanity check
         if len(rise_idx) != Emg.ntrials:  # | (len(fall_idx) != Emg.ntrials):
-            raise ValueError("Wrong number of trials")
+            raise ValueError(f"Wrong number of trials: {len(rise_idx)}")
 
-        return rise_times, rise_idx, fall_times, fall_idx
+        return rise_times, rise_idx
 
     def segment(self, df_emg):
         emg_sig = pd.to_numeric(df_emg['ring_flex']).to_numpy()
@@ -161,7 +172,7 @@ class Emg(Smp):
         time = pd.to_numeric(df_emg['time']).to_numpy()
 
         # detect triggers
-        _, rise_idx, _, _ = self.detect_trig(emg_sig, trig_sig, time)
+        _, rise_idx = self.detect_trig(emg_sig, trig_sig, time)
 
         emg_segmented = np.zeros((len(rise_idx), len(self.muscle_names),
                                   int(Emg.fsample * (self.prestim + self.poststim))))
@@ -228,7 +239,8 @@ class Emg(Smp):
         df_out = pd.DataFrame()  # init final dataframe
 
         for muscle in muscle_columns:
-            df_out[muscle] = pd.to_numeric(df_raw[muscle_columns[muscle]], errors='coerce').replace('', np.nan).dropna()  # add EMG to dataframe
+            df_out[muscle] = pd.to_numeric(df_raw[muscle_columns[muscle]], errors='coerce').replace('',
+                                                                                                    np.nan).dropna()  # add EMG to dataframe
 
         # High-pass filter and rectify EMG
         for col in df_out.columns:
@@ -274,27 +286,37 @@ class Emg(Smp):
             segment = self.segment(df_emg)
             self.emg = segment if self.emg is None else np.concatenate((self.emg, segment), axis=0)
 
-    def save_segmented(self):
+    def save_emg(self):
         fname = f"{self.experiment}_{self.participant_id}"
         filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "emg", fname)
         print(f"Saving participant: {self.participant_id}")
         np.save(filepath, self.emg, allow_pickle=False)
 
-    def sort_by_stimulated_finger(self, finger=None):
+    def save_syn(self):
+        fname = f"{self.experiment}_{self.participant_id}_syn.json"
+        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "emg", fname)
+        print(f"Saving participant: {self.participant_id}")
+        np.save(filepath[:-5] + 'H', self.H, allow_pickle=False)
+        np.save(filepath[:-5] + 'W', self.W, allow_pickle=False)
+        with open(filepath, 'w') as handle:
+            json.dump(self.syn, handle)
+
+    def sort_by_stimulated_finger(self, data, finger=None):
 
         if not finger in self.stimFinger.keys():
             raise ValueError("Unrecognized finger")
 
         D = self.load_dat(self.path)
-        blocks = np.array(vlookup_value(self.participants, 'participant_id', f"subj{self.participant_id}", 'blocksEMG').split(
-            ',')).astype(int)
+        blocks = np.array(
+            vlookup_value(self.participants, 'participant_id', f"subj{self.participant_id}", 'blocksEMG').split(
+                ',')).astype(int)
         idx = D[(D['stimFinger'] == self.stimFinger[finger]) & (D['BN'].isin(blocks))].index
         idx = idx - (self.ntrials * (self.maxBlocks - len(blocks)))
-        emg_finger = self.emg[idx]
+        emg_finger = data[idx]
 
         return emg_finger
 
-    def sort_by_stimulated_probability(self, finger=None, cue=None):
+    def sort_by_stimulated_probability(self, data, finger=None, cue=None):
 
         if (finger not in self.stimFinger.keys()) or (cue not in self.probCue.keys()):
             raise ValueError("Unrecognized finger")
@@ -305,10 +327,64 @@ class Emg(Smp):
                 ',')).astype(int)
         idx = D[(D["stimFinger"] == self.stimFinger[finger]) & (D["chordID"] == self.probCue[cue])].index
         idx = idx - (self.ntrials * (self.maxBlocks - len(blocks)))
-        emg_finger = self.emg[idx]
+        emg_finger = data[idx]
 
         return emg_finger
 
+    def nnmf_over_time(self, random_state=0, max_iter=500):
 
-# MyEmg = Emg('smp0', '103')
-# MyEmg.segment_participant()
+        # re init syn
+        self.W = None
+        self.H = None
+        self.syn = None
+
+        X = self.emg.reshape(self.emg.shape[1], self.emg.shape[0] * self.emg.shape[-1])
+
+        prev_r_squared = 1
+        r_squared_diff = 1
+        r_squared = 0
+        n = 0
+        W = None
+        H = None
+        r_squared_values = []  # List to store r_squared values
+        while r_squared < 0.8:
+            n = n + 1
+            print(f"NNMF: using {n} components, last R^2={r_squared}")
+            model = NMF(n_components=n, init='random', random_state=random_state, max_iter=max_iter)
+            W = model.fit_transform(X)  # synergies
+            H = model.components_  # weights
+            X_hat = np.dot(W, H)  # reconstructed data
+            SST = np.sum((X - np.mean(X)) ** 2)
+            SSR = np.sum((X - X_hat) ** 2)
+            r_squared = 1 - SSR / SST
+
+            r_squared_values.append(r_squared)  # Store the r_squared value
+
+            r_squared_diff = abs(prev_r_squared - r_squared)
+            prev_r_squared = r_squared
+
+            if n == len(self.muscle_names):
+                break
+
+        H = H.reshape(n, self.emg.shape[0], self.emg.shape[-1]).swapaxes(0, 1)
+
+        self.W = W
+        self.H = H
+        self.syn = {
+            'r_squared': r_squared.tolist(),
+            'n_components': n,
+            'random_state': random_state,
+            'max_iter': max_iter
+        }
+
+        # # Plot the R-squared values
+        # plt.plot(r_squared_values)
+        # plt.xlabel('Iteration')
+        # plt.ylabel('R-squared')
+        # plt.title('R-squared values over iterations')
+        # plt.show()
+
+
+# myEmg = Emg('smp0', '102')
+# # MyEmg.segment_participant()
+# W, H, n, r_squared = myEmg.nnmf_over_time()

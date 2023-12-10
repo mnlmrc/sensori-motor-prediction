@@ -2,8 +2,14 @@ import argparse
 
 import matplotlib
 
-from emg import Emg
-from visual import plot_response_emg_by_finger, plot_response_emg_by_probability
+from smp0.emg import Emg
+from smp0.visual import plot_response_emg_by_finger, plot_response_emg_by_probability
+
+# import sys
+# from pathlib import Path
+#
+# # Add the parent directory of smp0 to sys.path
+# sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 matplotlib.use('MacOSX')
 
@@ -30,13 +36,18 @@ def main(experiment=None, participant_id=None, step=None):
         case 'segment:emg':
 
             MyEmg.segment_participant()
-            MyEmg.save_segmented()
+            MyEmg.save_emg()
 
-        case 'response:emg':
+        case 'synergies:emg':
+
+            MyEmg.nnmf_over_time()
+            MyEmg.save_syn()
+
+        case 'plot:response:emg':
 
             _, _, _ = plot_response_emg_by_finger(experiment=experiment,
                                                   participant_id=participant_id)
-        case 'probability:emg':
+        case 'plot:probability:emg':
 
             plot_response_emg_by_probability(experiment=experiment,
                                              participant_id=participant_id)
