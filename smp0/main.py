@@ -2,8 +2,8 @@ import argparse
 
 import matplotlib
 
-from smp0.participant import Emg
-from smp0.visual import plot_response_emg_by_finger, plot_response_emg_by_probability, plot_euclidean_distance_over_time
+from smp0.participant import Emg, Force
+from smp0.visual import plot_response_emg_by_finger, plot_response_force_by_probability, plot_euclidean_distance_over_time
 
 # import sys
 # from pathlib import Path
@@ -29,6 +29,7 @@ def main(experiment=None, participant_id=None, step=None):
         step = args.step
 
     MyEmg = Emg(experiment, participant_id)
+    MyForce = Force(experiment, participant_id)
 
     # navigate through analysis steps
     match step:
@@ -37,6 +38,11 @@ def main(experiment=None, participant_id=None, step=None):
 
             MyEmg.segment_participant()
             MyEmg.save_emg()
+
+        case 'segment:force':
+
+            MyForce.segment_participant()
+            MyForce.save_force()
 
         case 'plot:edist:emg':
 
@@ -47,9 +53,14 @@ def main(experiment=None, participant_id=None, step=None):
 
             plot_response_emg_by_finger(experiment=experiment,
                                                   participant_id=participant_id)
-        case 'plot:probability:emg':
+        # case 'plot:probability:emg':
+        #
+        #     plot_response_emg_by_probability(experiment=experiment,
+        #                                      participant_id=participant_id)
 
-            plot_response_emg_by_probability(experiment=experiment,
+        case 'plot:probability:force':
+
+            plot_response_force_by_probability(experiment=experiment,
                                              participant_id=participant_id)
 
         case _:

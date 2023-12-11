@@ -449,7 +449,6 @@ class Emg(Smp):
 
 
 class Force(Smp):
-
     fsample = 500
     num_chan = 5
 
@@ -458,7 +457,7 @@ class Force(Smp):
 
         self.prestim = prestim
         self.poststim = poststim
-        timeS = np.linspace(-prestim, poststim,
+        self.timeS = np.linspace(-prestim, poststim,
                             int(Force.fsample * (prestim + poststim)))
         self.blocks = [int(i) for i in vlookup_value(self.participants,
                                                      'participant_id',
@@ -467,7 +466,7 @@ class Force(Smp):
 
         # check if segmented force exists for participant
         fname = f"{self.experiment}_{self.participant_id}.npy"
-        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "force", fname)
+        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "mov", fname)
         if os.path.exists(filepath):
             self.force = np.load(filepath)  # load segmented emg if it exists
         else:
@@ -531,20 +530,22 @@ class Force(Smp):
 
     def align_force_to_stim(self, rawF, state):
 
-        self.force = np.zeros((self.ntrials * len(self.blocks), Force.num_chan, Force.fsample * (self.prestim + self.poststim)))
+        self.force = np.zeros(
+            (self.ntrials * len(self.blocks), Force.num_chan, Force.fsample * (self.prestim + self.poststim)))
         NoResp = []
         for ntrial in range(self.ntrials * len(self.blocks)):
-            # <<<<<<< Updated upstream
             try:
                 stim_idx = np.where(state[ntrial] > 2)[0][0]
-                self.force[ntrial] = rawF[ntrial][stim_idx - Force.fsample * self.prestim:
-                                                      stim_idx + Force.fsample * self.poststim]
+                self.force[ntrial] = (rawF[ntrial][stim_idx - Force.fsample * self.prestim:
+                                                   stim_idx + Force.fsample * self.poststim]).T
             except:
                 NoResp.append(ntrial + 1)
 
     def segment_participant(self):
 
-        self.align_force_to_stim(self.merge_blocks_mov()[0], self.merge_blocks_mov()[1])
+        rawF, state = self.merge_blocks_mov()
+
+        self.align_force_to_stim(rawF, state)
 
     def save_force(self):
 
@@ -553,5 +554,14 @@ class Force(Smp):
         print(f"Saving participant: {self.participant_id}")
         np.save(filepath, self.force, allow_pickle=False)
 
+    def sort_by_stimulated_probability(self, finger=None, cue=None):
 
+        if (finger not in self.stimFinger.keys()) or (cue not in self.probCue.keys()):
+            raise ValueError("Unrecognized finger or cue")
 
+        D = self.D
+        idx = D[(D["stimFinger"] == self.stimFinger[finger]) & (D["chordID"] == self.probCue[cue])].index
+        idx = idx - (self.ntrials * (self.maxBlocks - len(self.blocks)))
+        force_finger = self.force[idx]
+
+        return force_finger
