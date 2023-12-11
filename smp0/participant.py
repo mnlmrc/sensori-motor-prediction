@@ -1,5 +1,6 @@
 import os
 import json
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ from scipy.signal import find_peaks, firwin, filtfilt, resample
 import matplotlib
 from sklearn.decomposition import NMF
 
+from smp0.load_data import load_mov
 # from load_data import load_dat, load_participants, load_emg
 from smp0.util import vlookup_value
 from smp0.util import centered_moving_average, hotelling_t2_test_1_sample, filter_pval_series
@@ -32,11 +34,11 @@ class Smp:
     }
 
     probCue = {
-        "index 0% - ring 100%": 93,
-        "index 25% - ring 75%": 12,
-        "index 50% - ring 50%": 44,
-        "index 75% - ring 25%": 21,
-        "index 100% - ring 0%": 39
+        "0%": 93,  # index 0% - ring 100%
+        "25%": 12,  # index 25% - ring 75%
+        "50%": 44,  # index 50% - ring 50%
+        "75%": 21,  # index 75% - ring 25%
+        "100%": 39  # ndex 100% - ring 0%
     }
 
     def __init__(self, experiment=None, participant_id=None):
@@ -419,7 +421,8 @@ class Emg(Smp):
 
         # Use list comprehension to create emg_sorted
         emg_array1 = np.array(emg_sorted)
-        emg_array2 = np.array(emg_sorted)[..., np.where((self.timeS > self.rt) & (self.timeS < self.rt + .05))[0]].mean(axis=-1)  # Convert list to numpy array
+        emg_array2 = np.array(emg_sorted)[..., np.where((self.timeS > self.rt) & (self.timeS < self.rt + .05))[0]].mean(
+            axis=-1)  # Convert list to numpy array
         num_conditions = emg_array1.shape[0]
         num_timepoints = emg_array1.shape[2]
 
@@ -439,6 +442,116 @@ class Emg(Smp):
 
         return dist, dist_win, labels
 
+
 # myEmg = Emg('smp0', '102')
 # # MyEmg.segment_participant()
 # W, H, n, r_squared = myEmg.nnmf_over_time()
+
+
+class Force(Smp):
+
+    fsample = 500
+    num_chan = 5
+
+    def __init__(self, experiment=None, participant_id=None, prestim=1, poststim=2):
+        super().__init__(experiment, participant_id)  # Initialize the parent class
+
+        self.prestim = prestim
+        self.poststim = poststim
+        timeS = np.linspace(-prestim, poststim,
+                            int(Force.fsample * (prestim + poststim)))
+        self.blocks = [int(i) for i in vlookup_value(self.participants,
+                                                     'participant_id',
+                                                     f"subj{self.participant_id}",
+                                                     'blocksForce').split(',')]
+
+        # check if segmented force exists for participant
+        fname = f"{self.experiment}_{self.participant_id}.npy"
+        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "force", fname)
+        if os.path.exists(filepath):
+            self.force = np.load(filepath)  # load segmented emg if it exists
+        else:
+            self.force = None  # set to None if it doesn't exist
+
+    def load_mov(self, block=None):
+
+        fname = f"{self.experiment}_{self.participant_id}_{"{:02d}".format(block)}.mov"
+        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", 'mov', fname)
+
+        try:
+            with open(filepath, 'rt') as fid:
+                trial = 0
+                A = []
+                for line in fid:
+                    if line.startswith('Trial'):
+                        trial_number = int(line.split(' ')[1])
+                        trial += 1
+                        if trial_number != trial:
+                            warnings.warn('Trials out of sequence')
+                            trial = trial_number
+                        A.append([])
+                    else:
+                        # Convert line to a numpy array of floats and append to the last trial's list
+                        data = np.fromstring(line, sep=' ')
+                        if A:
+                            A[-1].append(data)
+                        else:
+                            # This handles the case where a data line appears before any 'Trial' line
+                            warnings.warn('Data without trial heading detected')
+                            A.append([data])
+
+                # Convert all sublists to numpy arrays
+                rawForce = [np.array(trial_data)[:, 4:9] for trial_data in A]
+                # vizForce = [np.array(trial_data)[:, 9:] for trial_data in A]
+                state = [np.array(trial_data)[:, 1] for trial_data in A]
+
+        except IOError as e:
+            raise IOError(f"Could not open {fname}") from e
+
+        return rawForce, state
+
+    def merge_blocks_mov(self):
+        rawF = []
+        vizF = []
+        state = []
+
+        for block in self.blocks:
+
+            print(f"loading participant: {self.participant_id} - block: {block}")
+
+            rawForce, time = self.load_mov(block=block)
+            num_of_trials = len(time)
+
+            for ntrial in range(num_of_trials):
+                rawF.append(rawForce[ntrial])
+                # vizF.append(vizForce[ntrial])
+                state.append(time[ntrial])
+
+        return rawF, state
+
+    def align_force_to_stim(self, rawF, state):
+
+        self.force = np.zeros((self.ntrials * len(self.blocks), Force.num_chan, Force.fsample * (self.prestim + self.poststim)))
+        NoResp = []
+        for ntrial in range(self.ntrials * len(self.blocks)):
+            # <<<<<<< Updated upstream
+            try:
+                stim_idx = np.where(state[ntrial] > 2)[0][0]
+                self.force[ntrial] = rawF[ntrial][stim_idx - Force.fsample * self.prestim:
+                                                      stim_idx + Force.fsample * self.poststim]
+            except:
+                NoResp.append(ntrial + 1)
+
+    def segment_participant(self):
+
+        self.align_force_to_stim(self.merge_blocks_mov()[0], self.merge_blocks_mov()[1])
+
+    def save_force(self):
+
+        fname = f"{self.experiment}_{self.participant_id}"
+        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "mov", fname)
+        print(f"Saving participant: {self.participant_id}")
+        np.save(filepath, self.force, allow_pickle=False)
+
+
+
