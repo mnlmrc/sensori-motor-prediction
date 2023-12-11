@@ -384,6 +384,43 @@ class Emg(Smp):
         # plt.title('R-squared values over iterations')
         # plt.show()
 
+    def euclidean_distance_probability(self):
+
+        # Define the parameters for sorting in a list of tuples
+        sort_params = [
+            ('index', "index 25% - ring 75%"),
+            ('index', "index 50% - ring 50%"),
+            ('index', "index 75% - ring 25%"),
+            ('index', "index 100% - ring 0%"),
+            ('ring', "index 75% - ring 25%"),
+            ('ring', "index 50% - ring 50%"),
+            ('ring', "index 25% - ring 75%"),
+            ('ring', "index 0% - ring 100%")
+        ]
+
+        emg_sorted = [self.sort_by_stimulated_probability(self.emg, finger=finger, cue=cue).mean(axis=0) for finger, cue
+                      in sort_params]
+
+        # Use list comprehension to create emg_sorted
+        emg_array = np.array(emg_sorted)  # Convert list to numpy array
+        num_conditions = emg_array.shape[0]
+        num_timepoints = emg_array.shape[2]
+
+        # Initialize an empty array for distances
+        dist = np.zeros((num_conditions, num_conditions, num_timepoints))
+        dist_win = np.zeros((num_conditions, num_conditions))
+
+        # Iterate over each timepoint
+        for t in range(num_timepoints):
+            # Compute the difference in the electrode dimension for each pair of conditions at timepoint t
+            for i in range(num_conditions):
+                for j in range(num_conditions):
+                    dist[i, j, t] = np.linalg.norm(emg_array[i, :, t] - emg_array[j, :, t])
+                    dist_win[i, j] = np.linalg.norm(
+                        emg_array[i, :, np.where((self.timeS > .8) & (self.timeS < 1.2))[0]] -
+                        emg_array[j, :, np.where((self.timeS > .8) & (self.timeS < 1.2))[0]])
+
+        return dist, dist_win, sort_params
 
 # myEmg = Emg('smp0', '102')
 # # MyEmg.segment_participant()

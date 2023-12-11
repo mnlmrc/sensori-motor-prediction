@@ -4,7 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from smp0.emg import Emg
+from smp0.participant import Emg
 # from load_data import load_dat
 
 matplotlib.use('MacOSX')
@@ -74,9 +74,9 @@ def plot_synergies(experiment, participant_id):
         axs[c].bar(muscle_names, syn)
 
 
-def plot_response_synergy_by_finger(experiment, participant_id):
-
-    MyEmg = Emg('smp0', '100')
+# def plot_response_synergy_by_finger(experiment, participant_id):
+#
+#     MyEmg = Emg('smp0', '100')
 
     # sort by stimulated finger
     syn_index = MyEmg.sort_by_stimulated_finger(MyEmg.H, "index")
@@ -185,9 +185,38 @@ def plot_response_emg_by_probability(experiment, participant_id):
     plt.show()
 
 
-# path = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction/'  # replace with data path
-# muscle_names = ['thumb_flex', 'index_flex', 'middle_flex', 'ring_flex', 'pinkie_flex', 'thumb_ext', 'index_ext',
-#                 'middle_ext', 'ring_ext', 'pinkie_ext']
-# emg_index, emg_ring, time = plot_response_emg_by_finger(experiment='smp0', participant_id='100')
+def plot_euclidean_distance_over_time(experiment, participant_id):
 
-# X = plot_response_emg_by_finger(experiment='smp0', participant_id='103')
+    MyEmg = Emg(experiment, participant_id)
+    dist, labels = MyEmg.euclidean_distance_probability()
+
+    # time axis
+    time = MyEmg.timeS
+
+    num_conditions = dist.shape[0]
+
+    # plot
+    fig, axs = plt.subplots(len(labels), len(labels),
+                            sharex=True, sharey=True,
+                            constrained_layout=True, figsize=(8, 8))
+
+    for i in range(num_conditions):
+        for j in range(num_conditions):
+            axs[i, j].plot(time, dist[i, j], color='k')
+
+            if i == 0:
+                axs[i, j].set_title(labels[j], fontsize=10)
+            if j == num_conditions - 1:
+                axs[i, j].set_ylabel(labels[i], fontsize=10)
+                axs[i, j].yaxis.set_label_position("right")
+
+    axs[0, 0].set_xlim([-.1, .5])
+
+    plt.show()
+
+
+
+
+
+
+

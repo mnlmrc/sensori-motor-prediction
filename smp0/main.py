@@ -2,8 +2,8 @@ import argparse
 
 import matplotlib
 
-from smp0.emg import Emg
-from smp0.visual import plot_response_emg_by_finger, plot_response_emg_by_probability
+from smp0.participant import Emg
+from smp0.visual import plot_response_emg_by_finger, plot_response_emg_by_probability, plot_euclidean_distance_over_time
 
 # import sys
 # from pathlib import Path
@@ -38,14 +38,14 @@ def main(experiment=None, participant_id=None, step=None):
             MyEmg.segment_participant()
             MyEmg.save_emg()
 
-        case 'synergies:emg':
+        case 'plot:edist:emg':
 
-            MyEmg.nnmf_over_time()
-            MyEmg.save_syn()
+            plot_euclidean_distance_over_time(experiment=experiment,
+                                                  participant_id=participant_id)
 
         case 'plot:response:emg':
 
-            _, _, _ = plot_response_emg_by_finger(experiment=experiment,
+            plot_response_emg_by_finger(experiment=experiment,
                                                   participant_id=participant_id)
         case 'plot:probability:emg':
 
