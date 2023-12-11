@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from smp0.participant import Emg
+from smp0.util import centered_moving_average, hotelling_t2_test_1_sample, filter_pval_series
+
 # from load_data import load_dat
 
 matplotlib.use('MacOSX')
@@ -14,12 +16,22 @@ def plot_response_emg_by_finger(experiment, participant_id):
 
     MyEmg = Emg(experiment, participant_id)
 
-    # sort by stimulated finger
-    emg_index = MyEmg.sort_by_stimulated_finger(MyEmg.emg, "index")
-    emg_ring = MyEmg.sort_by_stimulated_finger(MyEmg.emg, "ring")
-
     # time axis
     time = MyEmg.timeS
+    baseline = MyEmg.emg[..., np.where((time > -.1) & (time < 0))[0]].mean(axis=(0, -1))
+    emg = MyEmg.emg
+    fsample = MyEmg.fsample
+    prestim = MyEmg.prestim
+
+    T2, pval = np.zeros(len(time)), np.zeros(len(time))
+    for t in range(len(time)):
+        T2[t], pval[t] = hotelling_t2_test_1_sample(emg[..., t], baseline)
+
+    _, start_timings = filter_pval_series(pval, int(.03 * fsample), threshold=0.05, fsample=fsample, prestim=prestim)
+
+    # sort by stimulated finger
+    emg_index = MyEmg.sort_by_stimulated_finger(emg, "index")
+    emg_ring = MyEmg.sort_by_stimulated_finger(emg, "ring")
 
     # plot
     fig, axs = plt.subplots(len(MyEmg.muscle_names),
@@ -32,15 +44,13 @@ def plot_response_emg_by_finger(experiment, participant_id):
 
     for m, muscle in enumerate(muscle_names):
         axs[m].plot(time, meanIndex[m], color='r')
-        axs[m].set_title(muscle, fontsize=6)
-        axs[m].axvline(x=0, ls='-', color='k', lw=.8)
-        axs[m].axvline(x=.05, ls=':', color='k', lw=.8)
-        axs[m].axvline(x=.1, ls='--', color='k', lw=.8)
         axs[m].plot(time, meanRing[m], color='b')
         axs[m].set_title(muscle, fontsize=6)
         axs[m].axvline(x=0, ls='-', color='k', lw=.8)
         axs[m].axvline(x=.05, ls=':', color='k', lw=.8)
         axs[m].axvline(x=.1, ls='--', color='k', lw=.8)
+        # axs[m].twinx().plot(time, pval_bool, color='k', lw=.8)
+        axs[m].twinx().stem(start_timings, [1] * len(start_timings), linefmt='k-', markerfmt='ko', basefmt=" ", label='Start Points')
 
     axs[0].set_xlim([-.1, .5])
     axs[0].set_ylim([0, None])
@@ -121,6 +131,8 @@ def plot_response_emg_by_probability(experiment, participant_id):
 
     MyEmg = Emg(experiment, participant_id)
 
+    # MyEmg.emg = centered_moving_average(MyEmg.emg, 11)
+
     # sort by cue and stimulated finger
     emg_index_25 = MyEmg.sort_by_stimulated_probability(MyEmg.emg, finger='index', cue="index 25% - ring 75%")
     emg_index_50 = MyEmg.sort_by_stimulated_probability(MyEmg.emg, finger='index', cue="index 50% - ring 50%")
@@ -188,29 +200,42 @@ def plot_response_emg_by_probability(experiment, participant_id):
 def plot_euclidean_distance_over_time(experiment, participant_id):
 
     MyEmg = Emg(experiment, participant_id)
-    dist, labels = MyEmg.euclidean_distance_probability()
+    dist, dist_win, labels = MyEmg.euclidean_distance_probability()
 
     # time axis
-    time = MyEmg.timeS
+    # time = MyEmg.timeS
+    #
+    # num_conditions = dist.shape[0]
 
-    num_conditions = dist.shape[0]
+    # # plot
+    # fig1, axs1 = plt.subplots(len(labels), len(labels),
+    #                         sharex=True, sharey=True,
+    #                         constrained_layout=True, figsize=(8, 8))
+    #
+    # for i in range(num_conditions):
+    #     for j in range(num_conditions):
+    #         axs1[i, j].plot(time, dist[i, j], color='k')
+    #
+    #         if i == 0:
+    #             axs1[i, j].set_title(labels[j], fontsize=10)
+    #         if j == num_conditions - 1:
+    #             axs1[i, j].set_ylabel(labels[i], fontsize=10)
+    #             axs1[i, j].yaxis.set_label_position("right")
+    #
+    # axs1[0, 0].set_xlim([-.1, .5])
+    #
+    # plt.show()
 
     # plot
-    fig, axs = plt.subplots(len(labels), len(labels),
-                            sharex=True, sharey=True,
-                            constrained_layout=True, figsize=(8, 8))
+    fig2, axs2 = plt.subplots(constrained_layout=True, figsize=(8, 8))
 
-    for i in range(num_conditions):
-        for j in range(num_conditions):
-            axs[i, j].plot(time, dist[i, j], color='k')
+    h = axs2.matshow(dist_win)
+    axs2.set_yticks(np.linspace(0, len(labels) - 1, len(labels)))
+    axs2.set_xticks(np.linspace(0, len(labels) - 1, len(labels)))
+    axs2.set_xticklabels(labels, rotation=90)
+    axs2.set_yticklabels(labels)
 
-            if i == 0:
-                axs[i, j].set_title(labels[j], fontsize=10)
-            if j == num_conditions - 1:
-                axs[i, j].set_ylabel(labels[i], fontsize=10)
-                axs[i, j].yaxis.set_label_position("right")
-
-    axs[0, 0].set_xlim([-.1, .5])
+    fig2.colorbar(h)
 
     plt.show()
 

@@ -11,6 +11,7 @@ from sklearn.decomposition import NMF
 
 # from load_data import load_dat, load_participants, load_emg
 from smp0.util import vlookup_value
+from smp0.util import centered_moving_average, hotelling_t2_test_1_sample, filter_pval_series
 
 matplotlib.use('MacOSX')
 
@@ -87,6 +88,7 @@ class Emg(Smp):
         # Time axis for segmented data
         self.timeS = np.linspace(self.prestim * -1, self.poststim,
                                  int((self.prestim + self.poststim) * Emg.fsample))
+        self.rt = None
 
         # check if segmented emg exists for participant
         fname = f"{self.experiment}_{self.participant_id}.npy"
@@ -97,17 +99,17 @@ class Emg(Smp):
             self.emg = None  # set to None if it doesn't exist
 
         # check if synergies exists for participant
-        fname = f"{self.experiment}_{self.participant_id}_syn.json"
-        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "emg", fname)
-        if os.path.exists(filepath):
-            with open(filepath, 'r') as f:
-                self.syn = json.load(f)
-            self.W = np.load(filepath[:-5] + 'W.npy')
-            self.H = np.load(filepath[:-5] + 'H.npy')
-        else:
-            self.syn = None  # set to None if it doesn't exist
-            self.W = None
-            self.H = None
+        # fname = f"{self.experiment}_{self.participant_id}_syn.json"
+        # filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "emg", fname)
+        # if os.path.exists(filepath):
+        #     with open(filepath, 'r') as f:
+        #         self.syn = json.load(f)
+        #     self.W = np.load(filepath[:-5] + 'W.npy')
+        #     self.H = np.load(filepath[:-5] + 'H.npy')
+        # else:
+        #     self.syn = None  # set to None if it doesn't exist
+        #     self.W = None
+        #     self.H = None
 
         self.muscle_names = vlookup_value(self.participants,
                                           'participant_id',
@@ -292,14 +294,14 @@ class Emg(Smp):
         print(f"Saving participant: {self.participant_id}")
         np.save(filepath, self.emg, allow_pickle=False)
 
-    def save_syn(self):
-        fname = f"{self.experiment}_{self.participant_id}_syn.json"
-        filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "emg", fname)
-        print(f"Saving participant: {self.participant_id}")
-        np.save(filepath[:-5] + 'H', self.H, allow_pickle=False)
-        np.save(filepath[:-5] + 'W', self.W, allow_pickle=False)
-        with open(filepath, 'w') as handle:
-            json.dump(self.syn, handle)
+    # def save_syn(self):
+    #     fname = f"{self.experiment}_{self.participant_id}_syn.json"
+    #     filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "emg", fname)
+    #     print(f"Saving participant: {self.participant_id}")
+    #     np.save(filepath[:-5] + 'H', self.H, allow_pickle=False)
+    #     np.save(filepath[:-5] + 'W', self.W, allow_pickle=False)
+    #     with open(filepath, 'w') as handle:
+    #         json.dump(self.syn, handle)
 
     def sort_by_stimulated_finger(self, data, finger=None):
 
@@ -331,58 +333,71 @@ class Emg(Smp):
 
         return emg_finger
 
-    def nnmf_over_time(self, random_state=0, max_iter=500):
+    # def nnmf_over_time(self, random_state=0, max_iter=500):
+    #
+    #     # re init syn
+    #     self.W = None
+    #     self.H = None
+    #     self.syn = None
+    #
+    #     X = self.emg.reshape(self.emg.shape[1], self.emg.shape[0] * self.emg.shape[-1])
+    #
+    #     prev_r_squared = 1
+    #     r_squared_diff = 1
+    #     r_squared = 0
+    #     n = 0
+    #     W = None
+    #     H = None
+    #     r_squared_values = []  # List to store r_squared values
+    #     while r_squared < 0.8:
+    #         n = n + 1
+    #         print(f"NNMF: using {n} components, last R^2={r_squared}")
+    #         model = NMF(n_components=n, init='random', random_state=random_state, max_iter=max_iter)
+    #         W = model.fit_transform(X)  # synergies
+    #         H = model.components_  # weights
+    #         X_hat = np.dot(W, H)  # reconstructed data
+    #         SST = np.sum((X - np.mean(X)) ** 2)
+    #         SSR = np.sum((X - X_hat) ** 2)
+    #         r_squared = 1 - SSR / SST
+    #
+    #         r_squared_values.append(r_squared)  # Store the r_squared value
+    #
+    #         r_squared_diff = abs(prev_r_squared - r_squared)
+    #         prev_r_squared = r_squared
+    #
+    #         if n == len(self.muscle_names):
+    #             break
+    #
+    #     H = H.reshape(n, self.emg.shape[0], self.emg.shape[-1]).swapaxes(0, 1)
+    #
+    #     self.W = W
+    #     self.H = H
+    #     self.syn = {
+    #         'r_squared': r_squared.tolist(),
+    #         'n_components': n,
+    #         'random_state': random_state,
+    #         'max_iter': max_iter
+    #     }
+    #
+    #     # # Plot the R-squared values
+    #     # plt.plot(r_squared_values)
+    #     # plt.xlabel('Iteration')
+    #     # plt.ylabel('R-squared')
+    #     # plt.title('R-squared values over iterations')
+    #     # plt.show()
 
-        # re init syn
-        self.W = None
-        self.H = None
-        self.syn = None
+    def compute_hotelling2_reaction_time(self):
 
-        X = self.emg.reshape(self.emg.shape[1], self.emg.shape[0] * self.emg.shape[-1])
+        baseline = self.emg[..., np.where((self.timeS > -.1) & (self.timeS < 0))[0]].mean(axis=(0, -1))
 
-        prev_r_squared = 1
-        r_squared_diff = 1
-        r_squared = 0
-        n = 0
-        W = None
-        H = None
-        r_squared_values = []  # List to store r_squared values
-        while r_squared < 0.8:
-            n = n + 1
-            print(f"NNMF: using {n} components, last R^2={r_squared}")
-            model = NMF(n_components=n, init='random', random_state=random_state, max_iter=max_iter)
-            W = model.fit_transform(X)  # synergies
-            H = model.components_  # weights
-            X_hat = np.dot(W, H)  # reconstructed data
-            SST = np.sum((X - np.mean(X)) ** 2)
-            SSR = np.sum((X - X_hat) ** 2)
-            r_squared = 1 - SSR / SST
+        T2, pval = np.zeros(len(self.timeS)), np.zeros(len(self.timeS))
+        for t in range(len(self.timeS)):
+            T2[t], pval[t] = hotelling_t2_test_1_sample(self.emg[..., t], baseline)
 
-            r_squared_values.append(r_squared)  # Store the r_squared value
+        _, start_timings = filter_pval_series(pval, int(.03 * self.fsample), threshold=0.05, fsample=self.fsample,
+                                              prestim=self.prestim)
 
-            r_squared_diff = abs(prev_r_squared - r_squared)
-            prev_r_squared = r_squared
-
-            if n == len(self.muscle_names):
-                break
-
-        H = H.reshape(n, self.emg.shape[0], self.emg.shape[-1]).swapaxes(0, 1)
-
-        self.W = W
-        self.H = H
-        self.syn = {
-            'r_squared': r_squared.tolist(),
-            'n_components': n,
-            'random_state': random_state,
-            'max_iter': max_iter
-        }
-
-        # # Plot the R-squared values
-        # plt.plot(r_squared_values)
-        # plt.xlabel('Iteration')
-        # plt.ylabel('R-squared')
-        # plt.title('R-squared values over iterations')
-        # plt.show()
+        self.rt = start_timings[0]
 
     def euclidean_distance_probability(self):
 
@@ -398,13 +413,15 @@ class Emg(Smp):
             ('ring', "index 0% - ring 100%")
         ]
 
+        self.compute_hotelling2_reaction_time()
         emg_sorted = [self.sort_by_stimulated_probability(self.emg, finger=finger, cue=cue).mean(axis=0) for finger, cue
                       in sort_params]
 
         # Use list comprehension to create emg_sorted
-        emg_array = np.array(emg_sorted)  # Convert list to numpy array
-        num_conditions = emg_array.shape[0]
-        num_timepoints = emg_array.shape[2]
+        emg_array1 = np.array(emg_sorted)
+        emg_array2 = np.array(emg_sorted)[..., np.where((self.timeS > self.rt) & (self.timeS < self.rt + .05))[0]].mean(axis=-1)  # Convert list to numpy array
+        num_conditions = emg_array1.shape[0]
+        num_timepoints = emg_array1.shape[2]
 
         # Initialize an empty array for distances
         dist = np.zeros((num_conditions, num_conditions, num_timepoints))
@@ -415,12 +432,12 @@ class Emg(Smp):
             # Compute the difference in the electrode dimension for each pair of conditions at timepoint t
             for i in range(num_conditions):
                 for j in range(num_conditions):
-                    dist[i, j, t] = np.linalg.norm(emg_array[i, :, t] - emg_array[j, :, t])
-                    dist_win[i, j] = np.linalg.norm(
-                        emg_array[i, :, np.where((self.timeS > .8) & (self.timeS < 1.2))[0]] -
-                        emg_array[j, :, np.where((self.timeS > .8) & (self.timeS < 1.2))[0]])
+                    # dist[i, j, t] = np.linalg.norm(emg_array1[i, :, t] - emg_array1[j, :, t])
+                    dist_win[i, j] = np.linalg.norm(emg_array2[i, :] - emg_array2[j, :])
 
-        return dist, dist_win, sort_params
+        labels = [f"{sort_params[i][0]}, {sort_params[i][1]}" for i in range(len(sort_params))]
+
+        return dist, dist_win, labels
 
 # myEmg = Emg('smp0', '102')
 # # MyEmg.segment_participant()
