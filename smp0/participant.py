@@ -458,11 +458,14 @@ class Force(Smp):
         self.prestim = prestim
         self.poststim = poststim
         self.timeS = np.linspace(-prestim, poststim,
-                            int(Force.fsample * (prestim + poststim)))
+                                 int(Force.fsample * (prestim + poststim)))
         self.blocks = [int(i) for i in vlookup_value(self.participants,
                                                      'participant_id',
                                                      f"subj{self.participant_id}",
                                                      'blocksForce').split(',')]
+
+        self.G_crossval = None
+        self.D_squared = None
 
         # check if segmented force exists for participant
         fname = f"{self.experiment}_{self.participant_id}.npy"
@@ -565,3 +568,49 @@ class Force(Smp):
         force_finger = self.force[idx]
 
         return force_finger
+
+    def G_matrix_at_time_t(self, t, finger=None):
+
+        U_raw = self.force[..., t]
+        ordered_indices = self.D[self.D["stimFinger"] == self.stimFinger[finger]].sort_values('chordID').index
+        U_reordered = U_raw[ordered_indices, :]
+        U_partitioned = np.array_split(U_reordered, len(U_reordered) // 5)
+
+        count = 0
+        sum_of_products = 0
+        for i, partition_1 in enumerate(U_partitioned):
+            for j, partition_2 in enumerate(U_partitioned):
+                if i != j:
+                    product = np.dot(partition_1.T, partition_2)  # Transposing the first partition
+                    sum_of_products += product
+                    count += 1
+
+        G_crossval = sum_of_products / count
+
+        return G_crossval
+
+    def G_matrix_over_time(self):
+
+        self.G_crossval = np.zeros((len(self.stimFinger), len(self.probCue), len(self.probCue), self.force.shape[-1]))
+        fingers = list(self.stimFinger.keys())
+        for t in range(self.force.shape[-1]):
+            self.G_crossval[0, ..., t], self.G_crossval[1, ..., t] = (self.G_matrix_at_time_t(t, finger=fingers[0]),
+                                                                      self.G_matrix_at_time_t(t, finger=fingers[1]))
+
+    def D_squared_at_time_t(self, t, finger=None):
+
+        G_crossval = self.G_matrix_at_time_t(t, finger=finger)
+        D_squared = np.zeros(G_crossval.shape)
+        for i in range(D_squared.shape[0]):
+            for j in range(D_squared.shape[0]):
+                D_squared[i, j] = G_crossval[i, i] + G_crossval[j, j] - 2 * G_crossval[i, j]
+
+        return D_squared
+
+    def D_squared_over_time(self):
+
+        self.D_squared = np.zeros((len(self.stimFinger), len(self.probCue), len(self.probCue), self.force.shape[-1]))
+        fingers = list(self.stimFinger.keys())
+        for t in range(self.force.shape[-1]):
+            self.D_squared[0, ..., t], self.D_squared[1, ..., t] = (self.D_squared_at_time_t(t, finger=fingers[0]),
+                                                                    self.D_squared_at_time_t(t, finger=fingers[1]))

@@ -152,10 +152,10 @@ def plot_response_force_by_probability(experiment, participant_id):
     # create colors
     base = 255
     red = [
-        ((base - 30) / 255, (base - 30) / 255, (base - 30) / 255),
-        ((base - 60) / 255, (base - 60) / 255, (base - 60) / 255),
-        ((base - 120) / 255, (base - 120) / 255, (base - 120) / 255),
-        ((base - 180) / 255, (base - 180) / 255, (base - 180) / 255)]
+        (1, (base - 30) / 255, (base - 30) / 255),
+        (1, (base - 60) / 255, (base - 60) / 255),
+        (1, (base - 120) / 255, (base - 120) / 255),
+        (1, (base - 180) / 255, (base - 180) / 255)]
 
     for f in range(5):
 
