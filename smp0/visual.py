@@ -129,6 +129,16 @@ def plot_synergies(experiment, participant_id):
 
 def plot_response_force_by_probability(experiment, participant_id):
     MyForce = Force(experiment, participant_id)
+    MyForce.D_squared_over_time()
+
+    channel_names = ["thumb", "index", "middle", "ring", "pinkie"]
+
+    D_squared_mean = np.zeros((2, MyForce.D_squared.shape[-1]))
+    for d in range(MyForce.D_squared.shape[-1]):
+        row_indices, col_indices = np.triu_indices_from(MyForce.D_squared[0, ..., d], k=1)
+        D_squared_mean[0, d] = MyForce.D_squared[0, row_indices, col_indices, d].mean()
+        row_indices, col_indices = np.triu_indices_from(MyForce.D_squared[1, ..., d], k=1)
+        D_squared_mean[1, d] = MyForce.D_squared[1, row_indices, col_indices, d].mean()
 
     # MyEmg.emg = centered_moving_average(MyEmg.emg, 11)
 
@@ -151,28 +161,33 @@ def plot_response_force_by_probability(experiment, participant_id):
 
     # create colors
     base = 255
-    red = [
-        (1, (base - 30) / 255, (base - 30) / 255),
-        (1, (base - 60) / 255, (base - 60) / 255),
-        (1, (base - 120) / 255, (base - 120) / 255),
-        (1, (base - 180) / 255, (base - 180) / 255)]
+    blue = [
+        ((base - 30) / 255, (base - 30) / 255, 1),  # Mid-tone blue
+        ((base - 60) / 255, (base - 60) / 255, 1),
+        ((base - 120) / 255, (base - 120) / 255, 1),
+        ((base - 180) / 255, (base - 180) / 255, 1)
+    ]
+    
+    lw = ((1, 2, 1, 1, 1), (1, 1, 1, 2, 1))
 
     for f in range(5):
 
-        axs[f, 0].plot(time, force_25[0].mean(axis=0)[f], color=red[0])
-        axs[f, 0].plot(time, force_50[0].mean(axis=0)[f], color=red[1])
-        axs[f, 0].plot(time, force_75[0].mean(axis=0)[f], color=red[2])
-        axs[f, 0].plot(time, force_100.mean(axis=0)[f], color=red[3])
-        # axs[f, s].set_title(muscle, fontsize=6)
+        axs[f, 0].plot(time, force_25[0].mean(axis=0)[f], color=blue[0], lw=lw[0][f])
+        axs[f, 0].plot(time, force_50[0].mean(axis=0)[f], color=blue[1], lw=lw[0][f])
+        axs[f, 0].plot(time, force_75[0].mean(axis=0)[f], color=blue[2], lw=lw[0][f])
+        axs[f, 0].plot(time, force_100.mean(axis=0)[f], color=blue[3], lw=lw[0][f])
+        axs[f, 0].twinx().plot(time, D_squared_mean[0], color='r', lw=1)
+        axs[f, 0].set_title(channel_names[f], fontsize=6)
         axs[f, 0].axvline(x=0, ls='-', color='k', lw=.8)
         axs[f, 0].axvline(x=.05, ls=':', color='k', lw=.8)
         axs[f, 0].axvline(x=.1, ls='--', color='k', lw=.8)
 
-        axs[f, 1].plot(time, force_0.mean(axis=0)[f], color=red[0])
-        axs[f, 1].plot(time, force_25[1].mean(axis=0)[f], color=red[1])
-        axs[f, 1].plot(time, force_50[1].mean(axis=0)[f], color=red[2])
-        axs[f, 1].plot(time, force_75[1].mean(axis=0)[f], color=red[3])
-        # axs[f, 1].set_title(muscle, fontsize=6)
+        axs[f, 1].plot(time, force_0.mean(axis=0)[f], color=blue[0], lw=lw[1][f])
+        axs[f, 1].plot(time, force_25[1].mean(axis=0)[f], color=blue[1], lw=lw[1][f])
+        axs[f, 1].plot(time, force_50[1].mean(axis=0)[f], color=blue[2], lw=lw[1][f])
+        axs[f, 1].plot(time, force_75[1].mean(axis=0)[f], color=blue[3], lw=lw[1][f])
+        axs[f, 1].twinx().plot(time, D_squared_mean[1], color='r', lw=1)
+        axs[f, 1].set_title(channel_names[f], fontsize=6)
         axs[f, 1].axvline(x=0, ls='-', color='k', lw=.8)
         axs[f, 1].axvline(x=.05, ls=':', color='k', lw=.8)
         axs[f, 1].axvline(x=.1, ls='--', color='k', lw=.8)
@@ -180,11 +195,11 @@ def plot_response_force_by_probability(experiment, participant_id):
         axs[f, 1].axvline(x=.1, ls='--', color='k', lw=.8)
 
     axs[0, 0].set_xlim([-.1, .5])
-    axs[0, 0].set_ylim([0, None])
+    # axs[0, 0].set_ylim([0, None])
     axs[0, 0].legend(['25%', '50%', '75%', '100%'], ncol=4, fontsize=6)
     axs[0, 1].legend(['25%', '50%', '75%', '100%'], ncol=4, fontsize=6)
     # fig.tight_layout()
-    fig.supylabel('EMG (mV)')
+    fig.supylabel('Force (N)')
     fig.supxlabel('time (s)')
     fig.suptitle(f"subj{participant_id}")
     plt.show()

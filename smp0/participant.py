@@ -512,9 +512,54 @@ class Force(Smp):
 
         return rawForce, state
 
+    # def load_clamped(self, block=1):
+    #
+    #     fname = f"{self.experiment}_clamped_{"{:02d}".format(block)}.mov"
+    #     filepath = os.path.join(self.path, self.experiment, 'clamped', fname)
+    #
+    #     try:
+    #         with open(filepath, 'rt') as fid:
+    #             trial = 0
+    #             A = []
+    #             for line in fid:
+    #                 if line.startswith('Trial'):
+    #                     trial_number = int(line.split(' ')[1])
+    #                     trial += 1
+    #                     if trial_number != trial:
+    #                         warnings.warn('Trials out of sequence')
+    #                         trial = trial_number
+    #                     A.append([])
+    #                 else:
+    #                     # Convert line to a numpy array of floats and append to the last trial's list
+    #                     data = np.fromstring(line, sep=' ')
+    #                     if A:
+    #                         A[-1].append(data)
+    #                     else:
+    #                         # This handles the case where a data line appears before any 'Trial' line
+    #                         warnings.warn('Data without trial heading detected')
+    #                         A.append([data])
+    #
+    #             # Convert all sublists to numpy arrays
+    #             rawForce = [np.array(trial_data)[:, 4:9] for trial_data in A]
+    #             # vizForce = [np.array(trial_data)[:, 9:] for trial_data in A]
+    #             state = [np.array(trial_data)[:, 1] for trial_data in A]
+    #
+    #     except IOError as e:
+    #         raise IOError(f"Could not open {fname}") from e
+    #
+    #     fname = f"{self.experiment}_clamped.dat"
+    #     filepath = os.path.join(self.path, self.experiment, 'clamped', fname)
+    #
+    #     try:
+    #         fid = open(filepath, 'rt')
+    #         D_clamped = pd.read_csv(fid, delimiter='\t', engine='python')
+    #     except IOError as e:
+    #         raise IOError(f"Could not open {filepath}") from e
+    #
+    #     return rawForce, state, D_clamped
+
     def merge_blocks_mov(self):
         rawF = []
-        vizF = []
         state = []
 
         for block in self.blocks:
@@ -533,25 +578,32 @@ class Force(Smp):
 
     def align_force_to_stim(self, rawF, state):
 
-        self.force = np.zeros(
+        force = np.zeros(
             (self.ntrials * len(self.blocks), Force.num_chan, Force.fsample * (self.prestim + self.poststim)))
         NoResp = []
         for ntrial in range(self.ntrials * len(self.blocks)):
             try:
                 stim_idx = np.where(state[ntrial] > 2)[0][0]
-                self.force[ntrial] = (rawF[ntrial][stim_idx - Force.fsample * self.prestim:
+                force[ntrial] = (rawF[ntrial][stim_idx - Force.fsample * self.prestim:
                                                    stim_idx + Force.fsample * self.poststim]).T
             except:
                 NoResp.append(ntrial + 1)
 
+        return force
+
     def segment_participant(self):
-
         rawF, state = self.merge_blocks_mov()
+        self.force = self.align_force_to_stim(rawF, state)
 
-        self.align_force_to_stim(rawF, state)
+    def average_clamped(self):
+        rawF, state, D_clamped = self.load_clamped()
+        clamped = self.align_force_to_stim(rawF, state)
+        self.clamped[0], self.clamped[1] = clamped[D_clamped[D_clamped == stimFinger["index"]].index]
+
+
+
 
     def save_force(self):
-
         fname = f"{self.experiment}_{self.participant_id}"
         filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", "mov", fname)
         print(f"Saving participant: {self.participant_id}")
@@ -581,9 +633,14 @@ class Force(Smp):
         for i, partition_1 in enumerate(U_partitioned):
             for j, partition_2 in enumerate(U_partitioned):
                 if i != j:
-                    product = np.dot(partition_1.T, partition_2)  # Transposing the first partition
+                    partition_1, partition_2 = (partition_1 - partition_1.mean(axis=0),
+                                                partition_2 - partition_2.mean(axis=0))
+                    product = np.dot(partition_1, partition_2.T)  # Transposing the second partition
                     sum_of_products += product
                     count += 1
+
+                    # if np.any(product < 0):
+                    #     raise ValueError("Negative elements in G matrix")
 
         G_crossval = sum_of_products / count
 
@@ -599,11 +656,31 @@ class Force(Smp):
 
     def D_squared_at_time_t(self, t, finger=None):
 
-        G_crossval = self.G_matrix_at_time_t(t, finger=finger)
-        D_squared = np.zeros(G_crossval.shape)
-        for i in range(D_squared.shape[0]):
-            for j in range(D_squared.shape[0]):
-                D_squared[i, j] = G_crossval[i, i] + G_crossval[j, j] - 2 * G_crossval[i, j]
+        U_raw = self.force[..., t]
+        ordered_indices = self.D[self.D["stimFinger"] == self.stimFinger[finger]].sort_values('chordID').index
+        U_reordered = U_raw[ordered_indices, :]
+        U_partitioned = np.array_split(U_reordered, len(U_reordered) // 5)
+
+        # Iterate over each pair of conditions (i, k)
+        for i in range(len(self.probCue)):
+            for k in range(len(self.probCue)):
+                if i != k:  # We don't compute the distance of a condition to itself
+                    distance_sum = 0
+                    for m in range(M):
+                        # Compute the difference between the patterns of condition i and k for partition m
+                        diff = partitions[m][i, :] - partitions[m][k, :]
+                        # Compute the difference between the patterns of condition i and k for the average pattern
+                        diff_avg = avg_patterns[i, :] - avg_patterns[k, :]
+                        # Sum the squared differences
+                        distance_sum += np.dot(diff - diff_avg, (diff - diff_avg).T)
+                    # Average the sum by dividing by M and then divide by P
+                    distances[i, k] = distance_sum / (M * P)
+
+        # G_crossval = self.G_matrix_at_time_t(t, finger=finger)
+        # D_squared = np.zeros(G_crossval.shape)
+        # for i in range(D_squared.shape[0]):
+        #     for j in range(D_squared.shape[0]):
+        #         D_squared[i, j] = G_crossval[i, i] + G_crossval[j, j] - 2 * G_crossval[i, j]
 
         return D_squared
 
@@ -614,3 +691,5 @@ class Force(Smp):
         for t in range(self.force.shape[-1]):
             self.D_squared[0, ..., t], self.D_squared[1, ..., t] = (self.D_squared_at_time_t(t, finger=fingers[0]),
                                                                     self.D_squared_at_time_t(t, finger=fingers[1]))
+
+
