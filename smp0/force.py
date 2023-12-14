@@ -1,5 +1,6 @@
 import os
 import warnings
+import globals as gl
 
 import numpy as np
 
@@ -8,13 +9,10 @@ def load_mov(experiment=None, participant_id=None, block=None):
     """
     load .mov file of one block
 
-    :param experiment:
-    :param participant_id:
-    :param block:
     :return:
     """
-    fname = f"{experiment}_{participant_id}_{'{ :02d}'.format(block)}.mov"
-    filepath = os.path.join(self.path, self.experiment, f"subj{self.participant_id}", 'mov', fname)
+    fname = f"{experiment}_{participant_id}_{"{:02d}".format(block)}.mov"
+    filepath = os.path.join(gl.make_dirs(experiment, participant_id, "mov"), fname)
 
     try:
         with open(filepath, 'rt') as fid:
@@ -44,12 +42,12 @@ def load_mov(experiment=None, participant_id=None, block=None):
             state = [np.array(trial_data)[:, 1] for trial_data in A]
 
     except IOError as e:
-        raise IOError(f"Could not open {fname}") from e
+        raise IOError(f"Could not open {filepath}") from e
 
     return rawForce, state
 
 
-def merge_blocks_mov(experiment, participant_id, blocks):
+def merge_blocks_mov(experiment=None, participant_id=None, blocks=None):
     """
 
     :param experiment:
@@ -58,8 +56,7 @@ def merge_blocks_mov(experiment, participant_id, blocks):
     :return:
     """
 
-    rawForce = []
-    state = []
+    rawForce, states = [], []
     for block in blocks:
 
         print(f"loading participant: {participant_id} - block: {block}")
@@ -70,27 +67,49 @@ def merge_blocks_mov(experiment, participant_id, blocks):
         for ntrial in range(num_of_trials):
             rawForce.append(rawF[ntrial])
             # vizF.append(vizForce[ntrial])
-            state.append(st[ntrial])
+            states.append(st[ntrial])
 
-    return rawForce, state
+    return rawForce, states
 
 
-def detect_state_change(state):
-    for ntrial in range(self.ntrials * len(self.blocks)):
+def detect_state_change(states):
+    """
+
+    :param states:
+    :return:
+    """
+    idx = np.zeros(len(states))
+    for st in states:
         try:
-
-
-def force_segment(rawF, state, ):
-
-    force = np.zeros(
-        (self.ntrials * len(self.blocks), num_chan, fsample * (self.prestim + self.poststim)))
-    NoResp = []
-    for ntrial in range(self.ntrials * len(self.blocks)):
-        try:
-            stim_idx = np.where(state[ntrial] > 2)[0][0]
-            force[ntrial] = (rawF[ntrial][stim_idx - Force.fsample * self.prestim:
-                                               stim_idx + Force.fsample * self.poststim]).T
+            idx[st] = np.where(st > 2)[0][0]
         except:
-            NoResp.append(ntrial + 1)
+            idx[st] = -1
 
-    return force, NoResp
+    return idx
+
+
+def force_segment(rawForce, idx, prestim=None, poststim=None, fsample=None):
+    """
+
+    :param rawForce:
+    :param idx:
+    :param prestim:
+    :param poststim:
+    :param fsample:
+    :return:
+    """
+
+    ntrials = len(rawForce)
+    nfingers = rawForce[0].shape[-1]
+    timepoints = (fsample * (prestim + poststim)).astype(int)
+
+    force_segmented = np.zeros((ntrials, nfingers, timepoints))
+    # NoResp = []
+    for r, rawF in enumerate(rawForce):
+        if idx[r] > 0:
+            force_segmented[r] = (rawF[idx - fsample * prestim:
+                                       idx + fsample * poststim]).T
+        else:
+            pass
+
+    return force_segmented

@@ -2,20 +2,26 @@ import os
 
 import numpy as np
 import pandas as pd
+import smp0.globals as gl
 from matplotlib import pyplot as plt
-from scipy.signal import resample, firwin, filtfilt
+from scipy.signal import resample
 
 from smp0.utils import hp_filter
 
 
-def load_delsys(filepath, muscle_names=None, trigger_name=None):
+def load_delsys(experiment=None, participant_id=None, block=None, muscle_names=None, trigger_name=None):
     """returns a pandas DataFrame with the raw EMG data recorded using the Delsys system
 
-    :param filepath: path to the .csv data exported from Delsys Trigno software
-    :param muscle_names: 
+    :param participant_id:
+    :param experiment:
+    :param block:
+    :param muscle_names:
     :param trigger_name:
     :return:
     """
+    fname = f"{experiment}_{participant_id}_{block}.csv"
+    filepath = os.path.join(gl.make_dirs(experiment, participant_id, "emg"), fname)
+
     # read data from .csv file (Delsys output)
     with open(filepath, 'rt') as fid:
         A = []
@@ -63,17 +69,19 @@ def load_delsys(filepath, muscle_names=None, trigger_name=None):
     return df_out
 
 
-def emg_hp_filter(data, muscle_names=None):
+def emg_hp_filter(data, n_ord=None, cutoff=None, fsample=None, muscle_names=None):
     """
 
     :param data:
+    :param n_ord:
+    :param cutoff:
+    :param fsample:
     :param muscle_names:
     :return:
     """
-    data_filtered = {}
+    data_filtered = pd.DataFrame()
     for col in muscle_names:
-        data[col] = data[col]  # convert to floats
-        data_filtered[col] = hp_filter(data[col])
+        data_filtered[col] = hp_filter(data[col], n_ord=n_ord, cutoff=cutoff, fsample=fsample)
 
     return data_filtered
 
@@ -85,20 +93,19 @@ def emg_rectify(data, muscle_names=None):
     :param muscle_names:
     :return:
     """
-    data_rectified = {}
+    data_rectified = pd.DataFrame()
     for col in muscle_names:
-        data[col] = hp_filter(data[col])
         data_rectified[col] = data[col].abs()  # Rectify
 
     return data_rectified
 
 
-def detect_trig(trig_sig, time_trig, ntrials=None, debugging=False):
+def detect_trig(trig_sig, time_trig, amp_threshold=None, ntrials=None, debugging=False):
     """
-    Detects rising edge triggers for segmentation
 
     :param trig_sig:
     :param time_trig:
+    :param amp_threshold:
     :param ntrials:
     :param debugging:
     :return:
@@ -111,8 +118,11 @@ def detect_trig(trig_sig, time_trig, ntrials=None, debugging=False):
     # locs, _ = find_peaks(diff_trig)
     ##############################################
 
-    trig_sig[trig_sig < self.amp_threshold] = 0
-    trig_sig[trig_sig > self.amp_threshold] = 1
+    trig_sig = pd.to_numeric(trig_sig).to_numpy()
+    time_trig = pd.to_numeric(time_trig).to_numpy()
+
+    trig_sig[trig_sig < amp_threshold] = 0
+    trig_sig[trig_sig > amp_threshold] = 1
 
     # Detecting the edges
     diff_trig = np.diff(trig_sig)
@@ -157,16 +167,15 @@ def emg_segment(data, timestamp, prestim=None, poststim=None, fsample=None):
     :param fsample:
     :return:
     """
-    emg_segmented = np.zeros((len(timestamp), len(self.muscle_names),
-                              int(fsample * (self.prestim + self.poststim))))
+    muscle_names = data.columns[:-1]
+    n_muscles = len(muscle_names)
+    ntrials = len(timestamp)
+    timepoints = int(fsample * (prestim + poststim))
+
+    emg_segmented = np.zeros((ntrials, n_muscles, timepoints))
     for tr, idx in enumerate(timestamp):
-        for m, muscle in enumerate(self.muscle_names):
+        for m, muscle in enumerate(muscle_names):
             emg_segmented[tr, m] = data[muscle][idx - int(prestim * fsample):
                                                 idx + int(poststim * fsample)].to_numpy()
 
     return emg_segmented
-
-
-
-
-

@@ -1,11 +1,9 @@
-import os
-
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from smp0.participant import Emg, Force
-from smp0.util import centered_moving_average, hotelling_t2_test_1_sample, filter_pval_series
+from smp0.depreciated.participant import Emg, Force
+from smp0.depreciated.util import hotelling_t2_test_1_sample, filter_pval_series
 
 # from load_data import load_dat
 
