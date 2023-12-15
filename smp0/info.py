@@ -35,3 +35,10 @@ def load_dat(experiment, participant_id):
         raise IOError(f"Could not open {filepath}") from e
 
     return D
+
+
+task = {
+    "stim_finger": ["ring", "index"],
+    "cues": ["0%", "25%", "50%", "75%", "100%"],
+
+}

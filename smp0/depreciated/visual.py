@@ -129,6 +129,22 @@ def plot_force_response_by_probability(data):
 
     fingers = ["thumb", "index", "middle", "ring", "pinkie"]
 
+    D_squared_mean = np.zeros((2, MyForce.D_squared.shape[-1]))
+    D_squared_trad_mean = np.zeros((2, MyForce.D_squared.shape[-1]))
+    for d in range(MyForce.D_squared.shape[-1]):
+
+        row_indices, col_indices = np.triu_indices_from(MyForce.D_squared[0, ..., d], k=1)
+        D_squared_mean[0, d] = MyForce.D_squared[0, row_indices, col_indices, d].mean()
+        row_indices, col_indices = np.triu_indices_from(MyForce.D_squared[1, ..., d], k=1)
+        D_squared_mean[1, d] = MyForce.D_squared[1, row_indices, col_indices, d].mean()
+
+        # row_indices, col_indices = np.triu_indices_from(MyForce.D_squared_trad[0, ..., d], k=1)
+        # D_squared_trad_mean[0, d] = MyForce.D_squared_trad[0, row_indices, col_indices, d].mean()
+        # row_indices, col_indices = np.triu_indices_from(MyForce.D_squared_trad[1, ..., d], k=1)
+        # D_squared_trad_mean[1, d] = MyForce.D_squared_trad[1, row_indices, col_indices, d].mean()
+
+    # MyEmg.emg = centered_moving_average(MyEmg.emg, 11)
+
     # sort by cue and stimulated finger
     force_0 = MyForce.sort_by_stimulated_probability(finger='ring', cue="0%")
     force_25 = (MyForce.sort_by_stimulated_probability(finger='index', cue="25%"),

@@ -2,15 +2,13 @@ import numpy as np
 
 from smp0.emg import load_delsys, emg_hp_filter, emg_rectify, emg_segment, detect_trig
 from smp0.info import load_participants
-from smp0.utils import vlookup_value
+from smp0.utils import vlookup_value, save_npy
 import sys
 
 
 def read_info():
     """
 
-    :param experiment:
-    :param participant_id:
     :return:
     """
     info = load_participants(experiment)
@@ -66,3 +64,7 @@ if __name__ == "__main__":
                                         fsample=fsample)
 
         npy_emg = npy_emg_segmented if npy_emg is None else np.concatenate((npy_emg, npy_emg_segmented), axis=0)
+
+    print(f"Saving participant {participant_id}...")
+    save_npy(npy_emg, experiment, participant_id, datatype='emg')
+    print('EMG saved!!!')

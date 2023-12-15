@@ -1,6 +1,6 @@
 import os
 import warnings
-import globals as gl
+import smp0.globals as gl
 
 import numpy as np
 
@@ -11,7 +11,7 @@ def load_mov(experiment=None, participant_id=None, block=None):
 
     :return:
     """
-    fname = f"{experiment}_{participant_id}_{"{:02d}".format(block)}.mov"
+    fname = f"{experiment}_{participant_id}_{"{:02d}".format(int(block))}.mov"
     filepath = os.path.join(gl.make_dirs(experiment, participant_id, "mov"), fname)
 
     try:
@@ -78,10 +78,10 @@ def detect_state_change(states):
     :param states:
     :return:
     """
-    idx = np.zeros(len(states))
-    for st in states:
+    idx = np.zeros(len(states)).astype(int)
+    for st, state in enumerate(states):
         try:
-            idx[st] = np.where(st > 2)[0][0]
+            idx[st] = np.where(state > 2)[0][0]
         except:
             idx[st] = -1
 
@@ -101,14 +101,14 @@ def force_segment(rawForce, idx, prestim=None, poststim=None, fsample=None):
 
     ntrials = len(rawForce)
     nfingers = rawForce[0].shape[-1]
-    timepoints = (fsample * (prestim + poststim)).astype(int)
+    timepoints = int(fsample * (prestim + poststim))
 
     force_segmented = np.zeros((ntrials, nfingers, timepoints))
     # NoResp = []
     for r, rawF in enumerate(rawForce):
         if idx[r] > 0:
-            force_segmented[r] = (rawF[idx - fsample * prestim:
-                                       idx + fsample * poststim]).T
+            force_segmented[r] = (rawF[idx[r] - int(fsample * prestim):
+                                       idx[r] + int(fsample * poststim)]).T
         else:
             pass
 

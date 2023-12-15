@@ -3,6 +3,9 @@ import smp0.globals as gl
 import numpy as np
 from scipy.signal import firwin, filtfilt
 
+from smp0 import info
+from smp0.info import load_dat
+
 
 def hp_filter(data, n_ord=None, cutoff=None, fsample=None):
     """
@@ -54,7 +57,7 @@ def save_npy(data, experiment=None, participant_id=None, datatype=None):
     print("Data saved!")
 
 
-def load_npy(experiment=None, datatype=None, participant_id=None):
+def load_npy(experiment=None, participant_id=None, datatype=None):
     """
 
     :param experiment:
@@ -138,4 +141,24 @@ def filter_pval_series(pvals, n, threshold=0.05, fsample=None, prestim=None):
 
     return valid_starts, start_indices
 
+
+def sort_by_probability(data, stimFinger=None, cue=None):
+
+    if stimFinger not in info.task.stim_finger:
+        raise ValueError("Unrecognized finger")
+
+    if stimFinger not in info.task.cues:
+        raise ValueError("Unrecognized cue")
+
+    d = load_dat(experiment, participant_id)
+    partic
+
+    blocks = np.array(
+        vlookup_value(participants, 'participant_id', f"subj{self.participant_id}", 'blocksEMG').split(
+            ',')).astype(int)
+    idx = D[(D["stimFinger"] == self.stimFinger[finger]) & (D["chordID"] == self.probCue[cue])].index
+    idx = idx - (self.ntrials * (self.maxBlocks - len(blocks)))
+    emg_finger = data[idx]
+
+    return emg_finger
 
