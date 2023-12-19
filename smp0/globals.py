@@ -11,10 +11,16 @@ def make_dirs(experiment=None, participant_id=None, datatype=None):
     :return:
     """
 
-    if datatype is not None:
+    if datatype is not None and participant_id.isdigit():
         _dir = os.path.join(base_dir, experiment, f"subj{participant_id}", datatype)
-    else:
+    elif datatype is not None and not participant_id.isdigit():
+        _dir = os.path.join(base_dir, experiment, f"{participant_id}", datatype)
+    elif datatype is None and participant_id.isdigit():
         _dir = os.path.join(base_dir, experiment, f"subj{participant_id}")
+    elif datatype is None and not participant_id.isdigit():
+        _dir = os.path.join(base_dir, experiment, f"{participant_id}")
+    else:
+        _dir = None
 
     return _dir
 

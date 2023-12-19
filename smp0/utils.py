@@ -1,10 +1,10 @@
-import os
-import smp0.globals as gl
 import numpy as np
+from PcmPy import indicator
 from scipy.signal import firwin, filtfilt
+from scipy.stats import f
 
-from smp0 import info
-from smp0.info import load_dat
+# from smp0.info import task, timeS
+from smp0.load_and_save import load_npy, load_participants, load_dat
 
 
 def hp_filter(data, n_ord=None, cutoff=None, fsample=None):
@@ -39,38 +39,6 @@ def vlookup_value(df, search_column, search_value, target_column):
     else:
         return None
 
-
-def save_npy(data, experiment=None, participant_id=None, datatype=None):
-    """
-
-    :param data:
-    :param experiment:
-    :param participant_id:
-    :param datatype:
-    :return:
-    """
-
-    fname = f"{experiment}_{participant_id}"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, datatype), fname)
-    print("Saving data...")
-    np.save(filepath, data, allow_pickle=False)
-    print("Data saved!")
-
-
-def load_npy(experiment=None, participant_id=None, datatype=None):
-    """
-
-    :param experiment:
-    :param datatype:
-    :param participant_id:
-    :return:
-    """
-
-    fname = f"{experiment}_{participant_id}.npy"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, datatype), fname)
-    data = np.load(filepath)
-
-    return data
 
 def centered_moving_average(data, window_size, axis=-1):
     if window_size % 2 == 0:
@@ -142,23 +110,103 @@ def filter_pval_series(pvals, n, threshold=0.05, fsample=None, prestim=None):
     return valid_starts, start_indices
 
 
-def sort_by_probability(data, stimFinger=None, cue=None):
+# def Z_probability(d, stimFinger=None):
+#     """
+#
+#     :param d:
+#     :param blocks:
+#     :param stimFinger:
+#     :return:
+#     """
+#     # if stimFinger not in info.task["stimFinger"]:
+#     #     raise ValueError("Unrecognized finger")
+#
+#     idxf = list(task["stimFinger"].keys()).index(stimFinger)
+#
+#     Zp = indicator(d.chordID).astype(bool)
+#     Zf = indicator(d.stimFinger)[:, idxf].astype(bool)
+#
+#     Zp = Zp * Zf.reshape(-1, 1)
+#
+#     return Zp
 
-    if stimFinger not in info.task.stim_finger:
-        raise ValueError("Unrecognized finger")
 
-    if stimFinger not in info.task.cues:
-        raise ValueError("Unrecognized cue")
+# def sort_by_probability(data, Z):
+#     c_ord = [4, 0, 3, 1, 2]
+#
+#     sorted_mean = np.zeros((Z.shape[1], data.shape[1], data.shape[2]))  # dimord: condition_channel_time
+#     condition = []
+#     sorted = []
+#     for i, c in enumerate(c_ord):
+#         sorted.append(data[Z[:, c]])
+#         sorted_mean[i] = data[Z[:, c]].mean(axis=0)
+#         condition.append(list(task["cues"].keys())[c])  # wrong order!!!
+#
+#     return sorted, sorted_mean, condition
 
-    d = load_dat(experiment, participant_id)
-    partic
 
-    blocks = np.array(
-        vlookup_value(participants, 'participant_id', f"subj{self.participant_id}", 'blocksEMG').split(
-            ',')).astype(int)
-    idx = D[(D["stimFinger"] == self.stimFinger[finger]) & (D["chordID"] == self.probCue[cue])].index
-    idx = idx - (self.ntrials * (self.maxBlocks - len(blocks)))
-    emg_finger = data[idx]
+# def pool_participants(experiment, participants, datatype=None):
+#     info_p = load_participants(experiment)
+#
+#     n_participants = len(participants)
+#     n_stimF = len(task["stimFinger"])
+#     n_cues = len(task["cues"])
+#     n_timep = len(timeS[datatype])
+#
+#     n_ch = None
+#     if datatype == 'emg':
+#         n_ch = 11
+#     elif datatype == 'mov':
+#         n_ch = 5
+#
+#     data_p = np.zeros((n_participants,
+#                        n_stimF,
+#                        n_cues,
+#                        n_ch,
+#                        n_timep))
+#     for c, participant_id in enumerate(participants):
+#
+#         print(participant_id)
+#
+#         d = load_dat(experiment,
+#                      participant_id)
+#         blocks = vlookup_value(info_p,
+#                                'participant_id',
+#                                f"subj{participant_id}",
+#                                f"blocks_{datatype}").split(",")
+#         blocks = [int(block) for block in blocks]
+#         d = d[d.BN.isin(blocks)]
+#
+#         data = load_npy(experiment=experiment,
+#                         participant_id=participant_id,
+#                         datatype=datatype)
+#
+#         Zi = Z_probability(d, stimFinger="index")
+#         Zr = Z_probability(d, stimFinger="ring")
+#         _, sorted_mean_i, condition = sort_by_probability(data, Zi)
+#         _, sorted_mean_r, _ = sort_by_probability(data, Zr)
+#         sorted_mean = np.stack([sorted_mean_i, sorted_mean_r], axis=0)
+#         if datatype == 'emg':
+#             muscle_names = vlookup_value(info_p,
+#                                          'participant_id',
+#                                          f"subj{participant_id}",
+#                                          'muscle_names').split(",")
+#             for i, muscle in enumerate(muscle_names):
+#                 m = task["Muscles"].index(muscle)
+#                 data_p[c, :, :, m, :] = sorted_mean[..., i, :]
+#         elif datatype == 'mov':
+#             data_p[c] = np.stack([sorted_mean_i, sorted_mean_r], axis=0)
+#
+#     return data_p
 
-    return emg_finger
+
+def detect_response_latency(data, threshold=None, fsample=None):
+    return np.where(data > threshold)[0][0] * fsample
+
+
+
+
+
+
+
 

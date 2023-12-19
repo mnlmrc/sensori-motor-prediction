@@ -1,28 +1,19 @@
-import numpy as np
-
-from smp0.emg import load_delsys, emg_hp_filter, emg_rectify, emg_segment, detect_trig
-from smp0.info import load_participants
-from smp0.utils import vlookup_value, save_npy
 import sys
 
+import numpy as np
 
-def read_info():
-    """
-
-    :return:
-    """
-    info = load_participants(experiment)
-    muscle_names = vlookup_value(info, 'participant_id', f"subj{participant_id}", 'muscle_names').split(",")
-    blocks = vlookup_value(info, 'participant_id', f"subj{participant_id}", 'blocksEMG').split(",")
-
-    return muscle_names, blocks
-
+from smp0.emg import emg_hp_filter, emg_rectify, emg_segment, detect_trig
+from smp0.load_and_save import load_delsys, load_participants,save_npy
+from smp0.utils import vlookup_value
 
 if __name__ == "__main__":
     experiment = sys.argv[1]
     participant_id = sys.argv[2]
 
-    muscle_names, blocks = read_info()
+    info = load_participants(experiment)
+    muscle_names = vlookup_value(info, 'participant_id', f"subj{participant_id}", 'muscle_names').split(",")
+    blocks = vlookup_value(info, 'participant_id', f"subj{participant_id}", 'blocks_emg').split(",")
+
     trigger_name = "trigger"
     ntrials = 20 * len(blocks)
 

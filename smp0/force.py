@@ -1,50 +1,8 @@
 import os
 import warnings
+
 import smp0.globals as gl
-
 import numpy as np
-
-
-def load_mov(experiment=None, participant_id=None, block=None):
-    """
-    load .mov file of one block
-
-    :return:
-    """
-    fname = f"{experiment}_{participant_id}_{"{:02d}".format(int(block))}.mov"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, "mov"), fname)
-
-    try:
-        with open(filepath, 'rt') as fid:
-            trial = 0
-            A = []
-            for line in fid:
-                if line.startswith('Trial'):
-                    trial_number = int(line.split(' ')[1])
-                    trial += 1
-                    if trial_number != trial:
-                        warnings.warn('Trials out of sequence')
-                        trial = trial_number
-                    A.append([])
-                else:
-                    # Convert line to a numpy array of floats and append to the last trial's list
-                    data = np.fromstring(line, sep=' ')
-                    if A:
-                        A[-1].append(data)
-                    else:
-                        # This handles the case where a data line appears before any 'Trial' line
-                        warnings.warn('Data without trial heading detected')
-                        A.append([data])
-
-            # Convert all sublists to numpy arrays
-            rawForce = [np.array(trial_data)[:, 4:9] for trial_data in A]
-            # vizForce = [np.array(trial_data)[:, 9:] for trial_data in A]
-            state = [np.array(trial_data)[:, 1] for trial_data in A]
-
-    except IOError as e:
-        raise IOError(f"Could not open {filepath}") from e
-
-    return rawForce, state
 
 
 def merge_blocks_mov(experiment=None, participant_id=None, blocks=None):
