@@ -3,28 +3,29 @@ import sys
 import numpy as np
 
 from smp0.emg import emg_hp_filter, emg_rectify, emg_segment, detect_trig
-from smp0.load_and_save import load_delsys, load_participants,save_npy
-from smp0.utils import vlookup_value
+from smp0.experiment import Exp
+from smp0.load_and_save import load_delsys, save_npy
 
 if __name__ == "__main__":
     experiment = sys.argv[1]
     participant_id = sys.argv[2]
 
-    info = load_participants(experiment)
-    muscle_names = vlookup_value(info, 'participant_id', f"subj{participant_id}", 'muscle_names').split(",")
-    blocks = vlookup_value(info, 'participant_id', f"subj{participant_id}", 'blocks_emg').split(",")
+    MyExp = Exp(experiment)
+
+    muscle_names = MyExp.get_info()[f"subj{participant_id}"]['muscle_names']
+    blocks = MyExp.get_info()[f"subj{participant_id}"]['blocks_emg']
 
     trigger_name = "trigger"
     ntrials = 20 * len(blocks)
 
-    n_ord = 4
-    cutoff = 30
+    n_ord = MyExp.filter_nord
+    cutoff = MyExp.filter_cutoff
 
-    amp_threshold = 2
-    prestim = 1
-    poststim = 2
+    amp_threshold = MyExp.ampThreshold
+    prestim = MyExp.prestim
+    poststim = MyExp.poststim
 
-    fsample = 2148.1481  # sampling rate EMG
+    fsample = MyExp.fsample_emg  # sampling rate EMG
 
     npy_emg = None
 

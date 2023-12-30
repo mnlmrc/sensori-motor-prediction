@@ -1,10 +1,12 @@
+import warnings
+from itertools import product
+
 import numpy as np
 from PcmPy import indicator
 from scipy.signal import firwin, filtfilt
-from scipy.stats import f
 
-# from smp0.info import task, timeS
-from smp0.load_and_save import load_npy, load_participants, load_dat
+import smp0.experiment as exp
+from smp0.load_and_save import load_npy
 
 
 def hp_filter(data, n_ord=None, cutoff=None, fsample=None):
@@ -23,190 +25,212 @@ def hp_filter(data, n_ord=None, cutoff=None, fsample=None):
     return filtered_data
 
 
-def vlookup_value(df, search_column, search_value, target_column):
-    """
-    Returns the value from 'target_column' where 'search_column' equals 'search_value'.
-
-    :param df: Pandas DataFrame to search in.
-    :param search_column: Column name in which to search for 'search_value'.
-    :param search_value: Value to search for in the 'search_column'.
-    :param target_column: Column from which to return the value.
-    :return: Value from 'target_column' or None if 'search_value' is not found.
-    """
-    matching_rows = df[df[search_column] == search_value]
-    if not matching_rows.empty:
-        return matching_rows.iloc[0][target_column]
-    else:
-        return None
-
-
-def centered_moving_average(data, window_size, axis=-1):
-    if window_size % 2 == 0:
-        raise ValueError("Window size should be odd.")
-
-    # Create a sliding window view of the data
-    windowed_data = np.lib.stride_tricks.sliding_window_view(data, window_shape=window_size, axis=axis)
-
-    # Compute the mean along the window
-    smoothed_data = np.mean(windowed_data, axis=axis)
-
-    # Since the sliding window view reduces the shape of the array
-    # on both sides, pad the result to match the original data length
-    pad_length = (window_size - 1) // 2
-    smoothed_data = np.pad(smoothed_data, (pad_length, pad_length), mode='edge')
-
-    return smoothed_data
-
-
-def hotelling_t2_test_1_sample(data, baseline):
-    """
-    Perform a one-sample Hotelling's T² test for data in a NumPy array.
-
-    :param data: A NumPy array where each column is a variable and each row is an observation.
-    :param baseline: A baseline mean vector (NumPy array) to compare against.
-    :return: Hotelling's T² statistic and p-value.
-    """
-    n, p = data.shape
-    mean_vector = np.mean(data, axis=0)
-    covariance_matrix = np.cov(data, rowvar=False)
-    difference = mean_vector - baseline
-
-    # Calculate Hotelling's T² statistic
-    t2_stat = n * np.dot(np.dot(difference.T, np.linalg.inv(covariance_matrix)), difference)
-
-    # Transform to F-distribution
-    f_stat = (n - p) / (p * (n - 1)) * t2_stat
-    p_value = f.sf(f_stat, p, n - p)  # sf is the survival function (1 - cdf)
-
-    return t2_stat, p_value
-
-
-def filter_pval_series(pvals, n, threshold=0.05, fsample=None, prestim=None):
-    """
-    Filter segments where p-value is less than a threshold for at least n consecutive samples.
-
-    :param pvals: Array of p-values.
-    :param n: Minimum number of consecutive samples below threshold.
-    :param threshold: Threshold for p-values (default is 0.05).
-    :return: Boolean array where True indicates the start of a segment that meets the criteria.
-    """
-    if n <= 0:
-        raise ValueError("n must be a positive integer")
-
-    # Convert pvals to a boolean array (True if pval < threshold)
-    below_threshold = np.array(pvals) < threshold
-
-    # Initialize an array to store the start of valid segments
-    valid_starts = np.zeros_like(below_threshold, dtype=bool)
-
-    # Iterate over the p-values and check for consecutive runs
-    for i in range(len(pvals) - n + 1):
-        if all(below_threshold[i:i + n]):
-            valid_starts[i] = True
-
-    diff = np.diff(np.concatenate(([0], valid_starts.astype(int), [0])))
-    start_indices = (np.where(diff == 1)[0] / fsample) - prestim
-
-    return valid_starts, start_indices
-
-
-# def Z_probability(d, stimFinger=None):
+# def centered_moving_average(data, window_size, axis=-1):
+#     if window_size % 2 == 0:
+#         raise ValueError("Window size should be odd.")
+#
+#     # Create a sliding window view of the data
+#     windowed_data = np.lib.stride_tricks.sliding_window_view(data, window_shape=window_size, axis=axis)
+#
+#     # Compute the mean along the window
+#     smoothed_data = np.mean(windowed_data, axis=axis)
+#
+#     # Since the sliding window view reduces the shape of the array
+#     # on both sides, pad the result to match the original data length
+#     pad_length = (window_size - 1) // 2
+#     smoothed_data = np.pad(smoothed_data, (pad_length, pad_length), mode='edge')
+#
+#     return smoothed_data
+#
+#
+# def hotelling_t2_test_1_sample(data, baseline):
 #     """
+#     Perform a one-sample Hotelling's T² test for data in a NumPy array.
 #
-#     :param d:
-#     :param blocks:
-#     :param stimFinger:
-#     :return:
+#     :param data: A NumPy array where each column is a variable and each row is an observation.
+#     :param baseline: A baseline mean vector (NumPy array) to compare against.
+#     :return: Hotelling's T² statistic and p-value.
 #     """
-#     # if stimFinger not in info.task["stimFinger"]:
-#     #     raise ValueError("Unrecognized finger")
+#     n, p = data.shape
+#     mean_vector = np.mean(data, axis=0)
+#     covariance_matrix = np.cov(data, rowvar=False)
+#     difference = mean_vector - baseline
 #
-#     idxf = list(task["stimFinger"].keys()).index(stimFinger)
+#     # Calculate Hotelling's T² statistic
+#     t2_stat = n * np.dot(np.dot(difference.T, np.linalg.inv(covariance_matrix)), difference)
 #
-#     Zp = indicator(d.chordID).astype(bool)
-#     Zf = indicator(d.stimFinger)[:, idxf].astype(bool)
+#     # Transform to F-distribution
+#     f_stat = (n - p) / (p * (n - 1)) * t2_stat
+#     p_value = f.sf(f_stat, p, n - p)  # sf is the survival function (1 - cdf)
 #
-#     Zp = Zp * Zf.reshape(-1, 1)
+#     return t2_stat, p_value
 #
-#     return Zp
+#
+# def filter_pval_series(pvals, n, threshold=0.05, fsample=None, prestim=None):
+#     """
+#     Filter segments where p-value is less than a threshold for at least n consecutive samples.
+#
+#     :param pvals: Array of p-values.
+#     :param n: Minimum number of consecutive samples below threshold.
+#     :param threshold: Threshold for p-values (default is 0.05).
+#     :return: Boolean array where True indicates the start of a segment that meets the criteria.
+#     """
+#     if n <= 0:
+#         raise ValueError("n must be a positive integer")
+#
+#     # Convert pvals to a boolean array (True if pval < threshold)
+#     below_threshold = np.array(pvals) < threshold
+#
+#     # Initialize an array to store the start of valid segments
+#     valid_starts = np.zeros_like(below_threshold, dtype=bool)
+#
+#     # Iterate over the p-values and check for consecutive runs
+#     for i in range(len(pvals) - n + 1):
+#         if all(below_threshold[i:i + n]):
+#             valid_starts[i] = True
+#
+#     diff = np.diff(np.concatenate(([0], valid_starts.astype(int), [0])))
+#     start_indices = (np.where(diff == 1)[0] / fsample) - prestim
+#
+#     return valid_starts, start_indices
+
+
+def Z_condition(conditions):
+    """
+
+    :param conditions:
+    :return:
+    """
+
+    if not all(len(condition) == len(conditions[0]) for condition in conditions):
+        raise ValueError("Inconsistent number of trials")
+
+    ntrial = len(conditions[0])
+    Z = np.ones(ntrial, dtype=bool)
+    for condition in conditions:
+        Zi = indicator(condition).astype(bool)
+        for _ in range(Z.ndim - 1):
+            Zi = Zi[..., np.newaxis, :]
+        Z = Z[..., np.newaxis] * Zi
+
+    return Z
 
 
 # def sort_by_probability(data, Z):
 #     c_ord = [4, 0, 3, 1, 2]
 #
-#     sorted_mean = np.zeros((Z.shape[1], data.shape[1], data.shape[2]))  # dimord: condition_channel_time
-#     condition = []
-#     sorted = []
+#     sorted_mean = np.zeros((2, Z.shape[2], data.shape[-2], data.shape[-1]))  # dimord: condition_channel_time
+#     # condition = []
+#     sorted = [], []
 #     for i, c in enumerate(c_ord):
-#         sorted.append(data[Z[:, c]])
-#         sorted_mean[i] = data[Z[:, c]].mean(axis=0)
-#         condition.append(list(task["cues"].keys())[c])  # wrong order!!!
+#         sorted[0].append(data[Z[0, :, c]])
+#         sorted[1].append(data[Z[1, :, c]])
+#         sorted_mean[0, i] = data[Z[0, :, c]].mean(axis=0)
+#         sorted_mean[1, i] = data[Z[1, :, c]].mean(axis=0)
+#         # condition.append(list(task["cues"].keys())[c])  # wrong order!!!
 #
-#     return sorted, sorted_mean, condition
+#     return sorted, sorted_mean
 
 
-# def pool_participants(experiment, participants, datatype=None):
-#     info_p = load_participants(experiment)
+# def pool_participants(experiment, conditions_keys=None, channels_key=None, datatype=None):
 #
-#     n_participants = len(participants)
-#     n_stimF = len(task["stimFinger"])
-#     n_cues = len(task["cues"])
-#     n_timep = len(timeS[datatype])
+#     MyExp = exp.Experiment(experiment)
+#     participants = exp.participants
+#     sorted_mean = {}
+#     for participant_id in participants:
 #
-#     n_ch = None
-#     if datatype == 'emg':
-#         n_ch = 11
-#     elif datatype == 'mov':
-#         n_ch = 5
+#         # load .npy data of type datatype
+#         data = load_npy(experiment, participant_id, datatype)
 #
-#     data_p = np.zeros((n_participants,
-#                        n_stimF,
-#                        n_cues,
-#                        n_ch,
-#                        n_timep))
-#     for c, participant_id in enumerate(participants):
+#         # get channel names from participants.tsv
+#         channels = MyExp.p_dict[datatype][participant_id][channels_key]
 #
-#         print(participant_id)
+#         conditions = []
+#         for ck in conditions_keys:
+#             conditions.append(MyExp.p_dict[datatype][participant_id][ck])
 #
-#         d = load_dat(experiment,
-#                      participant_id)
-#         blocks = vlookup_value(info_p,
-#                                'participant_id',
-#                                f"subj{participant_id}",
-#                                f"blocks_{datatype}").split(",")
-#         blocks = [int(block) for block in blocks]
-#         d = d[d.BN.isin(blocks)]
+#         Z = Z_condition(conditions)  # the first dimension of Z is always trials
+#         for c1 in range(Z.shape[1]):
+#             for c2 in range(Z.shape[2]):
+#                 for c, ch in enumerate(channels):
 #
-#         data = load_npy(experiment=experiment,
-#                         participant_id=participant_id,
-#                         datatype=datatype)
+#                     key1 = list(exp.stimFinger.keys())[c1]
+#                     key2 = list(exp.cues.keys())[c2]
 #
-#         Zi = Z_probability(d, stimFinger="index")
-#         Zr = Z_probability(d, stimFinger="ring")
-#         _, sorted_mean_i, condition = sort_by_probability(data, Zi)
-#         _, sorted_mean_r, _ = sort_by_probability(data, Zr)
-#         sorted_mean = np.stack([sorted_mean_i, sorted_mean_r], axis=0)
-#         if datatype == 'emg':
-#             muscle_names = vlookup_value(info_p,
-#                                          'participant_id',
-#                                          f"subj{participant_id}",
-#                                          'muscle_names').split(",")
-#             for i, muscle in enumerate(muscle_names):
-#                 m = task["Muscles"].index(muscle)
-#                 data_p[c, :, :, m, :] = sorted_mean[..., i, :]
-#         elif datatype == 'mov':
-#             data_p[c] = np.stack([sorted_mean_i, sorted_mean_r], axis=0)
+#                     sorted_mean.setdefault(key1, {}).setdefault(key2, {}).setdefault(ch, [])
 #
-#     return data_p
+#                     # Check if the slice is empty before calculating the mean
+#                     slice_data = data[Z[:, c1, c2], c]
+#                     if not slice_data.size == 0:
+#                         mean_value = slice_data.mean(axis=0)
+#                         sorted_mean[key1][key2][ch].append(mean_value)
+#
+#     return sorted_mean
+
+def pool_participants(experiment, conditions_keys=None, channels_name=None, datatype=None):
+    MyExp = exp.Experiment(experiment)
+    participants = exp.participants
+    sorted_mean = {}
+    for participant_id in participants:
+        # Load .npy data of type datatype
+        data = load_npy(experiment, participant_id, datatype)
+
+        # Get channel names from participants.tsv
+        channels = MyExp.p_dict[datatype][participant_id][channels_name]
+
+        # creat list of condition vectors
+        conditions = [MyExp.p_dict[datatype][participant_id][ck] for ck in conditions_keys]
+        Z = Z_condition(conditions)
+
+        # Generate all combinations of indices for the dimensions of Z (excluding the first one)
+        indices = [range(dim_size) for dim_size in Z.shape[1:]]  # the first dimension of Z is always trials
+
+        # for index_tuple in product(*indices):
+        keys = [list(exp.conditions[ck].keys())
+                for ck in conditions_keys]
+
+        # Build the nested dictionary structure
+        # current_dict = sorted_mean
+        for combination, index_tuple in zip(product(*keys), product(*indices)):
+            # current_dict = current_dict.setdefault(k, {})
+
+            # Navigate or create the nested dictionary structure
+            current_dict = sorted_mean
+            for key in combination[:-1]:  # Exclude the last key for now
+                if key not in current_dict:
+                    current_dict[key] = {}
+                current_dict = current_dict[key]
+
+            # The last key in the combination will be used for the channels
+            last_key = combination[-1]
+            if last_key not in current_dict:
+                current_dict[last_key] = {ch: [] for ch in channels}
+
+            for ch in channels:
+                if ch not in current_dict[last_key]:
+                    current_dict[last_key][ch] = []
+
+            for c, ch in enumerate(channels):
+                # Construct the full index including the channel
+                z_index = Z[(slice(None),) + index_tuple].astype(bool)
+
+                # Check if the slice is empty before calculating the mean
+                slice_data = data[z_index, c]
+                if slice_data.size != 0:
+                    mean_value = slice_data.mean(axis=0)
+                    current_dict[last_key][ch].append(mean_value)
+
+    return sorted_mean
 
 
-def detect_response_latency(data, threshold=None, fsample=None):
-    return np.where(data > threshold)[0][0] * fsample
+# Example usage
+# experiment = "smp0"
+# conditions_keys = ["stimFinger", "cues"]  # Update as needed
+# channels_key = "muscle_names"
+# datatype = "emg"
+# data = pool_participants(experiment, conditions_keys, channels_key, datatype)
 
+# def detect_response_latency(data, threshold=None, fsample=None):
+#     return np.where(data > threshold)[0][0] / fsample
 
-
-
-
-
-
-
+# MyExp = Exp()

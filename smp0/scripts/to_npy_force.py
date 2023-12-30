@@ -1,24 +1,22 @@
 import sys
 
+from smp0.experiment import Exp
 from smp0.force import merge_blocks_mov, detect_state_change, force_segment
-from smp0.load_and_save import load_participants, save_npy
-from smp0.utils import vlookup_value
+from smp0.load_and_save import save_npy
 
 if __name__ == "__main__":
     experiment = sys.argv[1]
     participant_id = sys.argv[2]
 
-    prestim = 1
-    poststim = 2
-    fsample = 500
+    MyExp = Exp(experiment)
+
+    prestim = MyExp.prestim
+    poststim = MyExp.poststim
+    fsample = MyExp.fsample_mov
 
     blocks = None
     if len(sys.argv) == 3:
-        info = load_participants(experiment)
-        blocks = vlookup_value(info,
-                               'participant_id',
-                               f"subj{participant_id}",
-                               'blocksForce').split(",")
+        blocks = MyExp.get_info()[f"subj{participant_id}"]['blocks_mov']
     elif len(sys.argv) == 4:
         blocks = sys.argv[3].split(",")
 

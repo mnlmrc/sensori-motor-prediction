@@ -4,6 +4,8 @@ import warnings
 import smp0.globals as gl
 import numpy as np
 
+from smp0.load_and_save import load_mov
+
 
 def merge_blocks_mov(experiment=None, participant_id=None, blocks=None):
     """
