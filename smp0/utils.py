@@ -2,6 +2,7 @@ import warnings
 from itertools import product
 
 import numpy as np
+import pandas as pd
 from PcmPy import indicator
 from scipy.signal import firwin, filtfilt
 
@@ -101,17 +102,18 @@ def Z_condition(conditions):
     :param conditions:
     :return:
     """
-
-    if not all(len(condition) == len(conditions[0]) for condition in conditions):
-        raise ValueError("Inconsistent number of trials")
-
-    ntrial = len(conditions[0])
-    Z = np.ones(ntrial, dtype=bool)
-    for condition in conditions:
-        Zi = indicator(condition).astype(bool)
-        for _ in range(Z.ndim - 1):
-            Zi = Zi[..., np.newaxis, :]
-        Z = Z[..., np.newaxis] * Zi
+    if isinstance(conditions, list):
+        if not all(len(condition) == len(conditions[0]) for condition in conditions):
+            raise ValueError("Inconsistent number of trials")
+        ntrial = len(conditions[0])
+        Z = np.ones(ntrial, dtype=bool)
+        for condition in conditions:
+            Zi = indicator(condition).astype(bool)
+            for _ in range(Z.ndim - 1):
+                Zi = Zi[..., np.newaxis, :]
+            Z = Z[..., np.newaxis] * Zi
+    else:
+        Z = indicator(np.array(conditions)).astype(bool)
 
     return Z
 
@@ -223,14 +225,37 @@ def pool_participants(experiment, conditions_keys=None, channels_name=None, data
     return sorted_mean
 
 
-# Example usage
-# experiment = "smp0"
-# conditions_keys = ["stimFinger", "cues"]  # Update as needed
-# channels_key = "muscle_names"
-# datatype = "emg"
-# data = pool_participants(experiment, conditions_keys, channels_key, datatype)
+def average_time_windows(data, wins):
+    latency_clamped = np.array((detect_response_latency(clamped[0, 1],
+                                                        threshold=.025, fsample=exp.fsample_mov),
+                                detect_response_latency(clamped[1, 3],
+                                                        threshold=.025, fsample=exp.fsample_mov))) - exp.prestim
+    tAx = exp.timeS[datatype] - latency_clamped[0], exp.timeS[datatype] - latency_clamped[0]
+    tAx_clamped = exp.timeS['mov'] - latency_clamped[0], exp.timeS['mov'] - latency_clamped[0]
 
-# def detect_response_latency(data, threshold=None, fsample=None):
-#     return np.where(data > threshold)[0][0] / fsample
+    fsample = exp.fsample[datatype]
+    idx = [(win[0] * fsample, win[1] * fsample) for win in wins]
+    df = pd.DataFrame()
+    for f, stimFinger in enumerate(data.keys()):
+        for p, cue in enumerate(data[stimFinger].keys()):
+            for c, ch in enumerate(data[stimFinger][cue].keys()):
+                if np.array(data[stimFinger][cue][ch]).size != 0:
+                    y = np.array(data[stimFinger][cue][ch]).mean(axis=0)
+                    ywin = [y[i[0]:i[1]].mean() for i in idx]
+
+
+
+# fai dataframe con una riga per soggetto e canale e le colonne per le varie finestre?
+
+def detect_response_latency(data, threshold=None, fsample=None):
+    return np.where(data > threshold)[0][0] / fsample
+
+
+# Example usage
+experiment = "smp0"
+conditions_keys = ["stimFinger", "cues"]  # Update as needed
+channels_key = "muscle_names"
+datatype = "emg"
+data = pool_participants(experiment, conditions_keys, channels_key, datatype)
 
 # MyExp = Exp()

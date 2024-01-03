@@ -64,8 +64,8 @@ conditions = {
 
 participants = ['100', '101', '102', '103', '104', '105', '106', '107', '108', '110']
 
-fsample_emg = 2148.1481
-fsample_mov = 500
+fsample = {'emg': 2148.1481,
+           'mov': 500}
 prestim = 1  # time before stimulation (s)
 poststim = 2  # time after stimulation (s)
 ampThreshold = 2
@@ -75,8 +75,8 @@ filter_cutoff = 30  # cutoff frequency
 timeS = {
     "emg": np.linspace(-prestim,
                        poststim,
-                       int((prestim + poststim) * fsample_emg)),
+                       int((prestim + poststim) * fsample['emg'])),
     "mov": np.linspace(-prestim,
                        poststim,
-                       int((prestim + poststim) * fsample_mov))
+                       int((prestim + poststim) * fsample['mov']))
         }
