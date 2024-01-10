@@ -4,28 +4,26 @@ import numpy as np
 
 from smp0.emg import emg_hp_filter, emg_rectify, emg_segment, detect_trig
 from smp0.experiment import Exp
-from smp0.load_and_save import load_delsys, save_npy
+from smp0.fetch import load_delsys, save_npy
 
 if __name__ == "__main__":
     experiment = sys.argv[1]
     participant_id = sys.argv[2]
 
-    MyExp = Exp(experiment)
-
-    muscle_names = MyExp.get_info()[f"subj{participant_id}"]['muscle_names']
-    blocks = MyExp.get_info()[f"subj{participant_id}"]['blocks_emg']
+    muscle_names = Exp.participant_channels['emg'][participant_id]
+    blocks = Exp.participant_blocks['emg'][participant_id]
 
     trigger_name = "trigger"
     ntrials = 20 * len(blocks)
 
-    n_ord = MyExp.filter_nord
-    cutoff = MyExp.filter_cutoff
+    n_ord = 4
+    cutoff = 30
 
-    amp_threshold = MyExp.ampThreshold
-    prestim = MyExp.prestim
-    poststim = MyExp.poststim
+    amp_threshold = 2
+    prestim = Exp.prestim
+    poststim = Exp.poststim
 
-    fsample = MyExp.fsample_emg  # sampling rate EMG
+    fsample = Exp.fsample['emg']  # sampling rate EMG
 
     npy_emg = None
 

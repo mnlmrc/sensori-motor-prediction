@@ -16,7 +16,7 @@ def load_participants(experiment):
     """
     filepath = os.path.join(gl.base_dir, experiment, "participants.tsv")
     fid = open(filepath, 'rt')
-    participants = pd.read_csv(fid, delimiter='\t', engine='python')
+    participants = pd.read_csv(fid, delimiter='\t', engine='python', index_col='participant_id')
 
     return participants
 

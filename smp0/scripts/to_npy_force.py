@@ -2,21 +2,19 @@ import sys
 
 from smp0.experiment import Exp
 from smp0.force import merge_blocks_mov, detect_state_change, force_segment
-from smp0.load_and_save import save_npy
+from smp0.fetch import save_npy
 
 if __name__ == "__main__":
     experiment = sys.argv[1]
     participant_id = sys.argv[2]
 
-    MyExp = Exp(experiment)
-
-    prestim = MyExp.prestim
-    poststim = MyExp.poststim
-    fsample = MyExp.fsample_mov
+    prestim = Exp.prestim
+    poststim = Exp.poststim
+    fsample = Exp.fsample_mov
 
     blocks = None
     if len(sys.argv) == 3:
-        blocks = MyExp.get_info()[f"subj{participant_id}"]['blocks_mov']
+        blocks = Exp.participant_blocks['mov'][participant_id]
     elif len(sys.argv) == 4:
         blocks = sys.argv[3].split(",")
 

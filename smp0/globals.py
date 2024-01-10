@@ -12,17 +12,17 @@ def make_dirs(experiment=None, participant_id=None, datatype=None):
     """
 
     if datatype is not None and participant_id.isdigit():
-        _dir = os.path.join(base_dir, experiment, f"subj{participant_id}", datatype)
+        directory = os.path.join(base_dir, experiment, f"subj{participant_id}", datatype)
     elif datatype is not None and not participant_id.isdigit():
-        _dir = os.path.join(base_dir, experiment, f"{participant_id}", datatype)
+        directory = os.path.join(base_dir, experiment, f"{participant_id}", datatype)
     elif datatype is None and participant_id.isdigit():
-        _dir = os.path.join(base_dir, experiment, f"subj{participant_id}")
+        directory = os.path.join(base_dir, experiment, f"subj{participant_id}")
     elif datatype is None and not participant_id.isdigit():
-        _dir = os.path.join(base_dir, experiment, f"{participant_id}")
+        directory = os.path.join(base_dir, experiment, f"{participant_id}")
     else:
-        _dir = None
+        directory = None
 
-    return _dir
+    return directory
 
 
 base_dir = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction'

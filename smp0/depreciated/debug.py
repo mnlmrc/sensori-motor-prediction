@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from smp0.depreciated.load_data import path
+from smp0.depreciated.depreciated import path
 
 import matplotlib.pyplot as plt
 import matplotlib

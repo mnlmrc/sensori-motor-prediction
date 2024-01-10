@@ -2,8 +2,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from smp0.depreciated.participant import Emg, Force
-from smp0.depreciated.util import hotelling_t2_test_1_sample, filter_pval_series
+from smp0.depreciated.depreciated import Emg
+from smp0.depreciated.depreciated import hotelling_t2_test_1_sample, filter_pval_series
 
 # from load_data import load_dat
 

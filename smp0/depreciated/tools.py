@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.signal import resample
 
-from smp0.depreciated.participant import Smp
+from smp0.depreciated.depreciated import Smp
 
 
 def trim_block_file(experiment, participant_id, block, trigger_name="trigger"):
