@@ -1,3 +1,4 @@
+import os
 import sys
 
 import numpy as np
@@ -5,11 +6,10 @@ import pandas as pd
 from PcmPy import indicator
 
 from smp0.experiment import Info, Param
-from smp0.fetch import load_dat, load_npy
-
-from smp0.utils import detect_response_latency, bin_traces
-from smp0.visual import plot_stim_aligned, plot_binned
-from smp0.workflow import create_participants_list3D, create_channels_dictionary, process_clamped
+from smp0.fetch import load_npy
+from smp0.globals import base_dir
+from smp0.utils import bin_traces
+from smp0.workflow import process_clamped
 
 if __name__ == "__main__":
     experiment = sys.argv[1]
@@ -33,10 +33,17 @@ if __name__ == "__main__":
         condition_headers=['stimFinger']
     )
 
-    info_cols = ['ParticipantID', 'stimFinger', 'TN', "Condition"]
-    max_channels = ["thumb_flex", "index_flex", "middle_flex", "ring_flex",
-                "pinkie_flex", "thumb_ext", "index_ext",
-                "middle_ext", "ring_ext", "pinkie_ext", "fdi"]
+    info_cols = ['participant_id', 'stimFinger', 'TN', "Condition"]
+
+    if datatype == 'mov':
+        max_channels = ['thumb', 'index', 'middle', 'ring', 'pinkie']
+    elif datatype == 'emg':
+        max_channels = ["thumb_flex", "index_flex", "middle_flex", "ring_flex",
+                    "pinkie_flex", "thumb_ext", "index_ext",
+                    "middle_ext", "ring_ext", "pinkie_ext", "fdi"]
+    else:
+        max_channels = None
+
 
     wins = ((-1, 0),
             (0, .05),
@@ -73,5 +80,4 @@ if __name__ == "__main__":
                     df_length = len(df)
                     df.loc[df_length] = row
 
-    else:
-        pass
+    df.to_csv(os.path.join(base_dir, experiment, f"smp0_binned_{datatype}.csv"))

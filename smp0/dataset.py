@@ -14,10 +14,6 @@ class Dataset3D:
         self.channel_descriptors = channel_descriptors
 
 
-wins = [(-.1, 0),
-        (0, .05),
-        (.05, .1),
-        (.1, .2)]
 
 
 

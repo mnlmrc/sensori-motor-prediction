@@ -1,13 +1,8 @@
 import sys
 
-import numpy as np
-from PcmPy import indicator
-
-from dataset import Dataset3D
 from smp0.experiment import Info
-from smp0.fetch import load_dat, load_npy
+from smp0.fetch import load_npy
 
-from smp0.utils import detect_response_latency
 from smp0.visual import plot_stim_aligned
 from smp0.workflow import create_participants_list3D, create_channels_dictionary, process_clamped
 

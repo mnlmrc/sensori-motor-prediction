@@ -20,38 +20,6 @@ class Info:
             self.dem_info = demographics
             self.demographics = self._process_participant_demographics()
 
-    # def _load_data_dataype(self):
-    #     """
-    #     Loads and processes data for each datatype.
-    #
-    #     Returns:
-    #     dict: A nested dictionary containing processed data for each datatype.
-    #     """
-    #     c_vector_dict = {}
-    #     channels_dict = {}
-    #     n_trials = {}
-    #     cond_vec, channels, n_trials = self._process_datatype(datatype)
-    #     return cond_vec, channels, n_trials
-
-    # def _process_datatype(self, datatype):
-    #     """
-    #     Processes data for a specific datatype.
-    #
-    #     Parameters:
-    #     datatype (str): The datatype to process.
-    #
-    #     Returns:
-    #     dict: A dictionary containing processed data for the specified datatype.
-    #     """
-    #     c_vector_dict = {}
-    #     n_trials = {}
-    #     channels_dict = {}
-    #     info = load_participants(self.experiment)
-    #     for participant_id in self.participants:
-    #         c_vector_dict[participant_id], n_trials[participant_id] = self._process_datatype_condition_vectors(info, participant_id, datatype)
-    #         channels_dict[participant_id] = info.at[f"subj{participant_id}", f"channels_{datatype}"].split(",")
-    #     return c_vector_dict, channels_dict, n_trials
-
     def _process_participant_demographics(self):
         """
         Processes data for a specific participant and datatype.
@@ -105,29 +73,6 @@ class Info:
 
         return cond_vec, channels, n_trials
 
-    # def _process_column(self, column_data):
-    #     """
-    #     Processes a single column of data.
-    #
-    #     Parameters:
-    #     column_data (str or other): The data in a column for a participant.
-    #
-    #     Returns:
-    #     list or original data: A list if the data contains comma-separated values, otherwise the original data.
-    #     """
-    #     if isinstance(column_data, str) and "," in column_data:
-    #         return column_data.split(",")
-    #     else:
-    #         return column_data
-
-    # def load_demographics(self):
-    #
-    #     demographic_dict = {}
-    #     for participant_id in self.participants:
-    #         demographic_dict[participant_id] = self._process_participant_demographics(self._info, participant_id)
-    #
-    #     return demographic_dict
-
 
 class Param:
 
@@ -153,17 +98,6 @@ class Param:
                            int((self.prestim + self.poststim) * self.fsample))
 
 
-# Example usage
-# Info = Info(
-#     experiment='smp0',
-#     participants=['100', '101', '102', '103', '104', '105', '106', '107', '108', '110'],
-#     datatype='emg',
-#     condition_headers=['stimFinger', 'cues']
-# )
+# class Clamped:
 #
-# ExpParam = Param(
-#     datatype='emg',
-#     prestim=1,
-#     poststim=2
-#
-# )
+#     def __init__(self):

@@ -1,7 +1,7 @@
 import numpy as np
 from PcmPy import indicator
 
-from dataset import Dataset3D
+from smp0.dataset import Dataset3D
 from smp0.experiment import Param
 from smp0.fetch import load_npy, load_dat
 from smp0.utils import average_condition, detect_response_latency
