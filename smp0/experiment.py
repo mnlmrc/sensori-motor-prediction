@@ -3,6 +3,24 @@ from smp0.fetch import load_participants, load_dat
 from smp0.utils import remap_chordID
 
 
+def remap_code_to_condition(cond_vec, d, cond_headers):
+
+    cond_map = list()
+    unis = np.unique(cond_vec).astype(int)
+    for u in unis:
+        mapping = f"{u}"
+        indices = np.where(cond_vec == u)[0]
+        for cond in cond_headers:
+            ori = np.unique(d[cond][indices])[0]
+            if ori.size > 1:
+                raise ValueError('Inconsistent condition label')
+            mapping = mapping + f",{ori}"
+
+        cond_map.append(mapping)
+
+    return cond_map
+
+
 class Info:
 
     def __init__(self, experiment, participants, datatype=None, condition_headers=None, demographics=None):
@@ -14,7 +32,7 @@ class Info:
         if datatype is not None:
             self.datatype = datatype
             self.condition_headers = condition_headers
-            self.cond_vec, self.channels, self.n_trials = self._process_participant_info()
+            self.cond_vec, self.channels, self.n_trials, self.cond_map = self._process_participant_info()
 
         if demographics is not None:
             self.dem_info = demographics
@@ -47,6 +65,7 @@ class Info:
         n_trials = np.zeros(len(self.participants))
         cond_vec = list()
         channels = list()
+        cond_map = list()
 
         # loop through participants
         for p, participant_id in enumerate(self.participants):
@@ -71,7 +90,10 @@ class Info:
             # store recorded channels
             channels.append(self._info.at[f"subj{participant_id}", f"channels_{self.datatype}"].split(","))
 
-        return cond_vec, channels, n_trials
+        cond_map = remap_code_to_condition(cond_vec[0], remap_chordID(load_dat(self.experiment, self.participants[0])),
+                                           self.condition_headers)
+
+        return cond_vec, channels, n_trials, cond_map
 
 
 class Param:
