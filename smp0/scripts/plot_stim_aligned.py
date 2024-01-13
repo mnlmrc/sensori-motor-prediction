@@ -7,8 +7,8 @@ from matplotlib import pyplot as plt
 from smp0.experiment import Info, Clamped, Param
 from smp0.fetch import load_npy
 from smp0.utils import bin_traces
-from smp0.visual import Plotter3D
-from smp0.workflow import list_participants, av_across_participants
+from smp0.visual import Plotter3D, dict_vlines, dict_bars, dict_text, dict_lims
+from smp0.workflow import list_participants
 
 if __name__ == "__main__":
     experiment = sys.argv[1]
@@ -74,16 +74,23 @@ if __name__ == "__main__":
         timeAx = Params.timeAx()
         timeAx_c = (timeAx - Clamp.latency[0], timeAx - Clamp.latency[1])
 
+        dict_lims['xlim'] = (-.1, .5)
+        dict_text['ylabel'] = ylabel[datatype]
+        dict_vlines['pos'] = [win[1] for win in wins[datatype]]
+        dict_vlines['lw'] = [1] * len(wins[datatype])
+        dict_vlines['color'] = ['k'] * len(wins[datatype])
+        dict_vlines['ls'] = ['-', '--', '-.', ':']
+
         Plot = Plotter3D(
             xAx=timeAx_c,
             data=Y,
             channels=channels[datatype],
             conditions=['index', 'ring'],
             labels=['0%', '25%', '50%', '75%', '100%'],
-            xlabel='time (s)',
-            ylabel=ylabel[datatype],
             figsize=(6.4, 8),
-            xlim=(-.1, .5)
+            lims=dict_lims,
+            vlines=dict_vlines,
+            text=dict_text
 
         )
 
@@ -93,6 +100,7 @@ if __name__ == "__main__":
         Plot.legend(colors)
         Plot.xylabels()
         Plot.set_xylim()
+        Plot.add_vertical_lines()
         Plot.fig.set_constrained_layout(True)
 
         if datatype == 'mov':
@@ -123,8 +131,11 @@ if __name__ == "__main__":
         # create list of participants
         Y = list_participants(Data, Info_p)
 
-        # xAx = [f"{win[0]}s to {win[1]}s" for win in wins]
         xAx = np.linspace(0, 3, 4)
+
+        dict_lims['xlim'] = (-1, 4)
+        dict_text['ylabel'] = ylabel[datatype]
+        dict_text['xticklabels'] = [f"{win[0]}s to {win[1]}s" for win in wins]
 
         Plot = Plotter3D(
             xAx=(xAx, xAx),
@@ -132,12 +143,11 @@ if __name__ == "__main__":
             channels=channels[datatype],
             conditions=['index', 'ring'],
             labels=['0%', '25%', '50%', '75%', '100%'],
-            ylabel=ylabel[datatype],
+            lims=dict_lims,
+            text=dict_text,
+            bar=dict_bars,
             figsize=(6.4, 8),
-            xlim=(-1, 4),
-            xticklabels=[f"{win[0]}s to {win[1]}s" for win in wins],
             plotstyle='bar'
-
         )
 
         colors = Plot.make_colors()

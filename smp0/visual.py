@@ -11,145 +11,73 @@ from smp0.workflow import av_within_participant
 
 matplotlib.use('MacOSX')
 
+dict_text = {
+    'xlabel': 'time (s)',
+    'ylabel': None,
+    'fs_labels': 7,
+    'xticklabels': None,
+    'xticklabels_rotation': 45,
+    'xticklabels_alignment': 'right',
+    'fs_ticklabels': 7,
+    'fs_title': 7,
+    'fs_suptitle': 9
+}
 
-# def make_colors(n_labels, extreme_colors):
-#     cmap = mcolors.LinearSegmentedColormap.from_list(f"{extreme_colors[0]}_to_{extreme_colors[1]}",
-#                                                      [extreme_colors[0], extreme_colors[1]], N=100)
-#     norm = plt.Normalize(0, n_labels)
-#     colors = [cmap(norm(i)) for i in range(n_labels)]
-#
-#     return colors
+dict_vlines = {
+    'pos': list(),
+    'ls': list(),
+    'lw': list(),
+    'color': list()
+}
 
+dict_lims = {
+    'xlim': (None, None),
+    'ylim': (None, None)
+}
 
-# def plot_stim_aligned(M, err, labels=None, channels=None, datatype=None, ex_col=('red', 'blue')):
-#     # clamped, latency_clamped, channels=None, datatype=None):
-#
-#     # n_cond = M.shape[1]
-#
-#     tAx = Param(datatype).timeAx() - latency_clamped[0], Param(datatype).timeAx() - latency_clamped[1]
-#     tAx_clamped = Param('mov').timeAx() - latency_clamped[0], Param('mov').timeAx() - latency_clamped[1]
-#
-#     # plot
-#     fig, axs = plt.subplots(len(channels), 2,
-#                             sharex=True, sharey=True, constrained_layout=True, figsize=(6.4, 8))
-#
-#     # create colors and sort
-#     colors = make_colors(n_labels, ex_col)
-#
-#     for ch, channel in enumerate(channels):
-#         for cue in range(4):
-#             axs[ch, 0].plot(tAx[0], M[channel][cue], color=colors[cue + 1])
-#             axs[ch, 0].fill_between(tAx[0], M[channel][cue] + err[channel][cue],
-#                                     M[channel][cue] - err[channel][cue], color=colors[cue + 1], alpha=.2, lw=0)
-#             axs[ch, 1].plot(tAx[1], M[channel][cue + 4], color=colors[cue])
-#             axs[ch, 1].fill_between(tAx[1], M[channel][cue + 4] + err[channel][cue + 4],
-#                                     M[channel][cue + 4] - err[channel][cue + 4], color=colors[cue], alpha=.2,
-#                                     lw=0)
-#
-#         axs[ch, 0].set_title(channel, fontsize=7)
-#         axs[ch, 1].set_title(channel, fontsize=7)
-#         axs[ch, 0].axvline(0, ls='-', color='k', lw=1)
-#         axs[ch, 0].axvline(.05, ls='-.', color='grey', lw=1)
-#         axs[ch, 0].axvline(.1, ls=':', color='grey', lw=1)
-#         axs[ch, 1].axvline(0, ls='-', color='k', lw=1)
-#         axs[ch, 1].axvline(.05, ls='-.', color='grey', lw=1)
-#         axs[ch, 1].axvline(.1, ls=':', color='grey', lw=1)
-#
-#     axs[0, 0].set_xlim([-.1, .5])
-#     axs[0, 0].set_ylim([0, None])
-#
-#     if datatype == 'mov':
-#         for ch in range(len(channels)):
-#             axs[ch, 0].plot(tAx_clamped[0], clamped[0, ch], lw=1, ls='--', color='k')
-#             axs[ch, 1].plot(tAx_clamped[1], clamped[1, ch], lw=1, ls='--', color='k')
-#
-#         fig.supylabel('Force (N)')
-#
-#     elif datatype == 'emg':
-#         fig.supylabel('EMG (mV)')
-#
-#     # for lab in sorted_labels:
-#     for color, label in zip(colors, labels):
-#         axs[0, 0].plot(np.nan, label=label, color=color)
-#     fig.legend(ncol=3, fontsize=6, loc='upper center')
-#
-#     fig.supxlabel('time (s)')
-#     plt.show()
+dict_bars = {
+    'width': .2,
+    'offset': .2
+}
 
-
-# def plot_binned(M, err, wins, channels=None, datatype=None):
-#     bAx = np.linspace(1, len(M[channels[0]]) / 2, int(len(M[channels[0]]) / 2))
-#
-#     fig, axs = plt.subplots(len(channels), 2,
-#                             sharex=True, sharey=True, constrained_layout=True, figsize=(6.4, 8))
-#
-#     # create colors and sort
-#     cmap = mcolors.LinearSegmentedColormap.from_list('red_to_blue', ['red', 'blue'], N=100)
-#     norm = plt.Normalize(0, 5 - 1)
-#     labels = list(Exp.condition_codes['cues'].keys())
-#     colors = [cmap(norm(i)) for i in range(len(labels))]
-#
-#     offset = .1
-#     for ch, channel in enumerate(channels):
-#         for cue in range(4):
-#             x_values_with_offset = bAx + (cue - 2) * offset
-#             axs[ch, 0].bar(x_values_with_offset, M[channel][cue],
-#                            width=offset, color=colors[cue+1], yerr=err[channel][cue])
-#             axs[ch, 1].bar(x_values_with_offset, M[channel][cue+4],
-#                            width=offset, color=colors[cue], yerr=err[channel][cue])
-#
-#         axs[ch, 0].set_title(channel, fontsize=7)
-#         axs[ch, 1].set_title(channel, fontsize=7)
-#
-#     axs[-1, 0].set_xticks(np.linspace(1, 4, 4))
-#     axs[-1, 0].set_xticklabels([f"{win[0]}-{win[1]}" for win in wins])
-#
-#     if datatype == 'mov':
-#         fig.supylabel('Force (N)')
-#
-#     elif datatype == 'emg':
-#         fig.supylabel('EMG (mV)')
-#
-#     for color, label in zip(colors, labels):
-#         axs[0, 0].bar(np.nan, np.nan, label=label, color=color)
-#     fig.legend(ncol=3, fontsize=6, loc='upper center')
-#
-#     fig.supxlabel('time window (s)')
-#     plt.show()
-
-
-# def plot_binned(df, variables=None, categories=None):
-#
-#     df_agg = pd.pivot_table(df, values=variables, index=categories, aggfunc='mean').reset_index()
-#
-#
-#     return df_agg
-# dict_text: {
-# }
 
 class Plotter3D:
 
     def __init__(self, xAx, data, channels=None, conditions=None, labels=None,
-                 extreme_colors=('red', 'blue'), figsize=(6.4, 4.8), xlabel=None, ylabel=None,
-                 xlim=(None, None), ylim=(None, None), plotstyle='plot', xticklabels=None,
-                 bar_width=.2, bar_offset=.2):
+                 vlines=None, text=None, lims=None, bar=None,
+                 extreme_colors=('red', 'blue'), figsize=(6.4, 4.8),
+                 plotstyle='plot',):
+
+        if bar is None:
+            self.bar = dict_bars
+        else:
+            self.bar = bar
+
+        if lims is None:
+            self.lims = dict_lims
+        else:
+            self.lims = lims
+
+        if text is None:
+            self.text = dict_text
+        else:
+            self.text = text
+
+        if vlines is None:
+            self.vlines = dict_vlines
+        else:
+            self.vlines = vlines
 
         self.xAx = xAx
         self.data = data
         self.channels = channels
         self.conditions = conditions
         self.labels = labels
+
         self.ecol = extreme_colors
         self.figsize = figsize
-        self.xlabel = xlabel
-        self.ylabel = ylabel
-        self.xlim = xlim
-        self.ylim = ylim
+
         self.plotstyle = plotstyle
-        self.xticklabels = xticklabels
-        self.bar_width = bar_width
-        self.bar_offset = bar_offset
-        # self._figsize_per_subplot = (figsize[0] / len(conditions), figsize[1] / len(channels))
 
     # def plot(self):
     #     colors = self._make_colors()
@@ -162,23 +90,33 @@ class Plotter3D:
     #     self.fig.set_constrained_layout(True)
     #     plt.show()
 
-    # def add_vertical_lines(self):
-
+    def add_vertical_lines(self):
+        pos = self.vlines['pos']
+        ls = self.vlines['ls']
+        cl = self.vlines['color']
+        lw = self.vlines['lw']
+        for v, vl in enumerate(pos):
+            for row in range(self.axs.shape[0]):
+                for col in range(self.axs.shape[1]):
+                    self.axs[row, col].axvline(vl, ls=ls[v], color=cl[v], lw=lw[v])
 
     def set_xticklabels(self):
         n_conditions = len(self.conditions)
+        xticklabels = self.text['xticklabels']
+        rot = self.text['xticklabels_rotation']
+        ha = self.text['xticklabels_alignment']
         for c in range(n_conditions):
             self.axs[-1, c].set_xticks(self.xAx[c])
-            self.axs[-1, c].set_xticklabels(self.xticklabels, rotation=45, ha='right')
+            self.axs[-1, c].set_xticklabels(xticklabels, rotation=rot, ha=ha)
             # self.axs[-1, c].xtick_r
 
     def set_xylim(self):
-        self.axs[0, 0].set_xlim(self.xlim)
-        self.axs[0, 0].set_ylim(self.ylim)
+        self.axs[0, 0].set_xlim(self.lims['xlim'])
+        self.axs[0, 0].set_ylim(self.lims['ylim'])
 
     def xylabels(self):
-        self.fig.supxlabel(self.xlabel)
-        self.fig.supylabel(self.ylabel)
+        self.fig.supxlabel(self.text['xlabel'])
+        self.fig.supylabel(self.text['ylabel'])
 
     def legend(self, colors):
         for color, label in zip(colors, self.labels):
@@ -209,9 +147,11 @@ class Plotter3D:
                                                      Mean[channel][c, i] + SE[channel][c, i],
                                                      color=colors[c][i], alpha=.2, lw=0)
                     elif self.plotstyle == 'bar':
-                        self.axs[ch, c].bar(self.xAx[c] + (i - Mean[channel].shape[-2] / 2) * self.bar_offset + self.bar_width / 2,
-                                            Mean[channel][c, i], color=colors[c][i], yerr=SE[channel][c, i],
-                                            width=self.bar_width)
+                        self.axs[ch, c].bar(
+                            self.xAx[c] + (i - Mean[channel].shape[-2] / 2) * self.bar['offset'] +
+                            self.bar['width'] / 2,
+                            Mean[channel][c, i], color=colors[c][i], yerr=SE[channel][c, i],
+                            width=self.bar['width'])
                     else:
                         pass
 
@@ -259,7 +199,3 @@ class Plotter3D:
                                                     channel_data.shape[2]))
 
         return Mean, SD, SE, channels_dict
-
-dict_text: {
-    'xlabel': 'ciao'
-}
