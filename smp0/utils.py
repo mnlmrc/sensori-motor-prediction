@@ -36,18 +36,17 @@ def sort_by_condition(Y, Z):
     return Sorted
 
 
-def average_condition(Y, Z):
-    meas = Y.measurements
-
-    N, n_channels, n_timepoints = meas.shape
-
-    n_cond = Z.shape[1]
-
-    M = np.zeros((n_cond, n_channels, n_timepoints))
-    for cond in range(n_cond):
-        M[cond, ...] = meas[Z[:, cond]].mean(axis=0)
-
-    return M
+# def average_condition(Y, Z):
+#
+#     N, n_channels, n_timepoints = Y.shape
+#
+#     n_cond = Z.shape[1]
+#
+#     M = np.zeros((n_cond, n_channels, n_timepoints))
+#     for cond in range(n_cond):
+#         M[cond, ...] = Y[Z[:, cond]].mean(axis=0)
+#
+#     return M
 
 
 def bin_traces(Y, wins, fsample=None, offset=None):

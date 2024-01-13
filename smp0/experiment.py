@@ -1,6 +1,8 @@
 import numpy as np
-from smp0.fetch import load_participants, load_dat
-from smp0.utils import remap_chordID
+from PcmPy import indicator
+
+from smp0.fetch import load_participants, load_dat, load_npy
+from smp0.utils import remap_chordID, detect_response_latency
 
 
 def remap_code_to_condition(cond_vec, d, cond_headers):
@@ -120,6 +122,31 @@ class Param:
                            int((self.prestim + self.poststim) * self.fsample))
 
 
-# class Clamped:
-#
-#     def __init__(self):
+class Clamped:
+
+    def __init__(self, experiment, stimFinger=(1, 3), prestim=1, poststim=2, threshold=.03, fsample=500):
+
+        self.experiment = experiment
+        self.prestim = prestim
+        self.poststim = poststim
+        self.threshold = threshold
+        self.fsample = fsample
+        self.stimFinger = stimFinger
+
+        self.clamped_f, self.latency = self._process_clamped()
+
+    def _process_clamped(self):
+        clamped = load_npy(self.experiment, 'clamped', 'mov')
+        d = load_dat(self.experiment, 'clamped')
+        Z = indicator(d.stimFinger).astype(bool)
+        n_stimF = Z.shape[1]
+        clamped_f = list()
+        latency = list()
+        for sf in range(n_stimF):
+            c_mean = clamped[Z[:, sf], self.stimFinger[sf]].mean(axis=0)
+            clamped_f.append(c_mean)
+            latency.append(detect_response_latency(c_mean, threshold=self.threshold,
+                                                   fsample=self.fsample) - self.prestim)
+
+        return clamped_f, latency
+

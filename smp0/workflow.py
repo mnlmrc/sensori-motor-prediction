@@ -4,10 +4,10 @@ from PcmPy import indicator
 from smp0.dataset import Dataset3D
 from smp0.experiment import Param
 from smp0.fetch import load_npy, load_dat
-from smp0.utils import average_condition, detect_response_latency
+from smp0.utils import detect_response_latency
 
 
-def create_participants_list3D(Data, Info_p):
+def list_participants(Data, Info_p):
     """
     Creates a list of instances of :class:`smp0.dataset.Dataset3D`.
 
@@ -28,7 +28,19 @@ def create_participants_list3D(Data, Info_p):
     return Y
 
 
-def create_channels_dictionary(Y, channels=None):
+def av_within_participant(Y, Z):
+    N, n_channels, n_timepoints = Y.shape
+
+    n_cond = Z.shape[1]
+
+    M = np.zeros((n_cond, n_channels, n_timepoints))
+    for cond in range(n_cond):
+        M[cond, ...] = Y[Z[:, cond]].mean(axis=0)
+
+    return M
+
+
+def av_across_participants(Y, channels=None):
     """
 
     :param Y:
@@ -40,7 +52,7 @@ def create_channels_dictionary(Y, channels=None):
     N = len(Y)
     for p in range(N):
         Z = indicator(Y[p].obs_descriptors['cond_vec']).astype(bool)
-        M = average_condition(Y[p], Z)
+        M = av_within_participant(Y[p].measurements, Z)
         for ch in channels:
             if ch in Y[p].channel_descriptors['channels']:
                 channels_dict[ch].append(M[:, Y[p].channel_descriptors['channels'].index(ch)])
