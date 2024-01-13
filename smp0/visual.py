@@ -12,13 +12,13 @@ from smp0.workflow import av_within_participant
 matplotlib.use('MacOSX')
 
 
-def make_colors(n_labels, extreme_colors):
-    cmap = mcolors.LinearSegmentedColormap.from_list(f"{extreme_colors[0]}_to_{extreme_colors[1]}",
-                                                     [extreme_colors[0], extreme_colors[1]], N=100)
-    norm = plt.Normalize(0, n_labels)
-    colors = [cmap(norm(i)) for i in range(n_labels)]
-
-    return colors
+# def make_colors(n_labels, extreme_colors):
+#     cmap = mcolors.LinearSegmentedColormap.from_list(f"{extreme_colors[0]}_to_{extreme_colors[1]}",
+#                                                      [extreme_colors[0], extreme_colors[1]], N=100)
+#     norm = plt.Normalize(0, n_labels)
+#     colors = [cmap(norm(i)) for i in range(n_labels)]
+#
+#     return colors
 
 
 # def plot_stim_aligned(M, err, labels=None, channels=None, datatype=None, ex_col=('red', 'blue')):
@@ -124,6 +124,8 @@ def make_colors(n_labels, extreme_colors):
 #
 #
 #     return df_agg
+# dict_text: {
+# }
 
 class Plotter3D:
 
@@ -149,33 +151,36 @@ class Plotter3D:
         self.bar_offset = bar_offset
         # self._figsize_per_subplot = (figsize[0] / len(conditions), figsize[1] / len(channels))
 
-    def plot(self):
-        colors = self._make_colors()
-        self._populate_subplots((colors[1:], colors[:4]))
-        self._set_titles()
-        self._legend(colors)
-        self._xylabels()
-        self._set_xylim()
-        self._set_xticklabels()
-        self.fig.set_constrained_layout(True)
-        plt.show()
+    # def plot(self):
+    #     colors = self._make_colors()
+    #     self._populate_subplots((colors[1:], colors[:4]))
+    #     self._set_titles()
+    #     self._legend(colors)
+    #     self._xylabels()
+    #     self._set_xylim()
+    #     self._set_xticklabels()
+    #     self.fig.set_constrained_layout(True)
+    #     plt.show()
 
-    def _set_xticklabels(self):
+    # def add_vertical_lines(self):
+
+
+    def set_xticklabels(self):
         n_conditions = len(self.conditions)
         for c in range(n_conditions):
             self.axs[-1, c].set_xticks(self.xAx[c])
             self.axs[-1, c].set_xticklabels(self.xticklabels, rotation=45, ha='right')
             # self.axs[-1, c].xtick_r
 
-    def _set_xylim(self):
+    def set_xylim(self):
         self.axs[0, 0].set_xlim(self.xlim)
         self.axs[0, 0].set_ylim(self.ylim)
 
-    def _xylabels(self):
+    def xylabels(self):
         self.fig.supxlabel(self.xlabel)
         self.fig.supylabel(self.ylabel)
 
-    def _legend(self, colors):
+    def legend(self, colors):
         for color, label in zip(colors, self.labels):
             if self.plotstyle == 'plot':
                 self.axs[0, 0].plot(np.nan, label=label, color=color)
@@ -183,13 +188,13 @@ class Plotter3D:
                 self.axs[0, 0].bar(np.nan, np.nan, label=label, color=color)
         self.fig.legend(ncol=3, fontsize=6, loc='upper center')
 
-    def _set_titles(self):
+    def set_titles(self):
         n_conditions = len(self.conditions)
         for ch, channel in enumerate(self.channels):
             for c in range(n_conditions):
                 self.axs[ch, c].set_title(channel)
 
-    def _populate_subplots(self, colors):
+    def subplots(self, colors):
         n_conditions = len(self.conditions)
         # n_channels = len(self.channels)
         self._setup_subplots()
@@ -218,7 +223,7 @@ class Plotter3D:
         if n_channels == 1 or n_conditions == 1:
             self.axs = np.array([self.axs])
 
-    def _make_colors(self):
+    def make_colors(self):
 
         n_labels = len(self.labels)
         cmap = mcolors.LinearSegmentedColormap.from_list(f"{self.ecol[0]}_to_{self.ecol[1]}",
@@ -254,3 +259,7 @@ class Plotter3D:
                                                     channel_data.shape[2]))
 
         return Mean, SD, SE, channels_dict
+
+dict_text: {
+    'xlabel': 'ciao'
+}

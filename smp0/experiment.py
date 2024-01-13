@@ -6,7 +6,6 @@ from smp0.utils import remap_chordID, detect_response_latency
 
 
 def remap_code_to_condition(cond_vec, d, cond_headers):
-
     cond_map = list()
     unis = np.unique(cond_vec).astype(int)
     for u in unis:
@@ -125,7 +124,6 @@ class Param:
 class Clamped:
 
     def __init__(self, experiment, stimFinger=(1, 3), prestim=1, poststim=2, threshold=.03, fsample=500):
-
         self.experiment = experiment
         self.prestim = prestim
         self.poststim = poststim
@@ -150,3 +148,11 @@ class Clamped:
 
         return clamped_f, latency
 
+    def timeAx(self):
+
+        tAx = list()
+        for sf in range(len(self.stimFinger)):
+            tAx.append(np.linspace(-self.prestim, self.poststim,
+                           int((self.prestim + self.poststim) * self.fsample)) - self.latency[sf])
+
+        return tAx

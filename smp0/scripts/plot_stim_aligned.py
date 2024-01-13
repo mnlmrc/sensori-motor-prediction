@@ -35,10 +35,16 @@ if __name__ == "__main__":
         condition_headers=['stimFinger']
     )
 
-    wins = ((-1, 0),
-            (0, .05),
-            (.05, .1),
-            (.1, .5))
+    wins = {
+        'mov': ((-1, 0),
+                (0, .1),
+                (.1, .3),
+                (.3, 1)),
+        'emg': ((-1, 0),
+                (0, .05),
+                (.05, .1),
+                (.1, .5))
+    }
 
     # define channels to plot for each datatype
     channels = {
@@ -88,9 +94,18 @@ if __name__ == "__main__":
         Plot.xylabels()
         Plot.set_xylim()
         Plot.fig.set_constrained_layout(True)
+
+        if datatype == 'mov':
+            for row in range(Plot.axs.shape[0]):
+                for col in range(Plot.axs.shape[1]):
+                    Plot.axs[row, col].plot(Clamp.timeAx()[col], Clamp.clamped_f[col],
+                                            ls='--', color='k', lw=1)
+
         plt.show()
 
     elif plottype == 'bin':
+
+        wins = wins[datatype]
 
         Data = list()
         for p, participant_id in enumerate(Info_p.participants):
@@ -102,7 +117,7 @@ if __name__ == "__main__":
                                 offset=Params.prestim + Clamp.latency[1])
             bins = np.concatenate((bins_i, bins_r), axis=0)
             Info_p.cond_vec[p] = np.concatenate((Info_p.cond_vec[p][Zf[:, 0]], Info_p.cond_vec[p][Zf[:, 1]]),
-                                               axis=0).astype(int)
+                                                axis=0).astype(int)
             Data.append(bins)
 
         # create list of participants
@@ -111,10 +126,26 @@ if __name__ == "__main__":
         # xAx = [f"{win[0]}s to {win[1]}s" for win in wins]
         xAx = np.linspace(0, 3, 4)
 
-        # Plot = Plotter3D(
-        #     xAx=(xAx, xAx),
-        #     data=Y,
-        #     channels=channels[datatype],
-        #     conditions=['index', 'ring'],
-        #     labels=['0%', '25%', '50%', '75%', '100%'],
-        #     yla
+        Plot = Plotter3D(
+            xAx=(xAx, xAx),
+            data=Y,
+            channels=channels[datatype],
+            conditions=['index', 'ring'],
+            labels=['0%', '25%', '50%', '75%', '100%'],
+            ylabel=ylabel[datatype],
+            figsize=(6.4, 8),
+            xlim=(-1, 4),
+            xticklabels=[f"{win[0]}s to {win[1]}s" for win in wins],
+            plotstyle='bar'
+
+        )
+
+        colors = Plot.make_colors()
+        Plot.subplots((colors[1:], colors[:4]))
+        Plot.set_titles()
+        Plot.legend(colors)
+        Plot.xylabels()
+        Plot.set_xylim()
+        Plot.set_xticklabels()
+        Plot.fig.set_constrained_layout(True)
+        plt.show()
