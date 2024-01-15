@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from smp0.experiment import Info, Clamped, Param
 from smp0.fetch import load_npy
 from smp0.utils import bin_traces
-from smp0.visual import Plotter3D, dict_vlines, dict_bars, dict_text, dict_lims
+from smp0.visual import Plotter3D, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants
 
 if __name__ == "__main__":
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         'emg': ((-1, 0),
                 (0, .05),
                 (.05, .1),
-                (.1, .5))
+                (.1, .3))
     }
 
     # define channels to plot for each datatype
@@ -76,10 +76,11 @@ if __name__ == "__main__":
 
         dict_lims['xlim'] = (-.1, .5)
         dict_text['ylabel'] = ylabel[datatype]
+        dict_legend['ncol'] = 6
         dict_vlines['pos'] = [win[1] for win in wins[datatype]]
         dict_vlines['lw'] = [1] * len(wins[datatype])
         dict_vlines['color'] = ['k'] * len(wins[datatype])
-        dict_vlines['ls'] = ['-', '--', '-.', ':']
+        dict_vlines['ls'] = ['-', '-.', ':', '--']
 
         Plot = Plotter3D(
             xAx=timeAx_c,
@@ -89,6 +90,7 @@ if __name__ == "__main__":
             labels=['0%', '25%', '50%', '75%', '100%'],
             figsize=(6.4, 8),
             lims=dict_lims,
+            legend=dict_legend,
             vlines=dict_vlines,
             text=dict_text
 
@@ -97,17 +99,21 @@ if __name__ == "__main__":
         colors = Plot.make_colors()
         Plot.subplots((colors[1:], colors[:4]))
         Plot.set_titles()
-        Plot.legend(colors)
+        Plot.set_legend(colors)
         Plot.xylabels()
+        Plot.set_xyticklabels_size()
         Plot.set_xylim()
         Plot.add_vertical_lines()
-        Plot.fig.set_constrained_layout(True)
+        # Plot.fig.set_constrained_layout(True)
+        Plot.fig.subplots_adjust(hspace=.5, bottom=.06, top=.95, left=.1, right=.9)
 
         if datatype == 'mov':
             for row in range(Plot.axs.shape[0]):
                 for col in range(Plot.axs.shape[1]):
                     Plot.axs[row, col].plot(Clamp.timeAx()[col], Clamp.clamped_f[col],
                                             ls='--', color='k', lw=1)
+            Plot.axs[0, 0].plot(np.nan, ls='--', color='k', lw=1)
+            add_entry_to_legend(Plot.fig, label='clamped')
 
         plt.show()
 
@@ -134,6 +140,7 @@ if __name__ == "__main__":
         xAx = np.linspace(0, 3, 4)
 
         dict_lims['xlim'] = (-1, 4)
+        dict_text['xlabel'] = None
         dict_text['ylabel'] = ylabel[datatype]
         dict_text['xticklabels'] = [f"{win[0]}s to {win[1]}s" for win in wins]
 
@@ -153,9 +160,11 @@ if __name__ == "__main__":
         colors = Plot.make_colors()
         Plot.subplots((colors[1:], colors[:4]))
         Plot.set_titles()
-        Plot.legend(colors)
+        Plot.set_legend(colors)
         Plot.xylabels()
         Plot.set_xylim()
+        Plot.set_xyticklabels_size()
         Plot.set_xticklabels()
-        Plot.fig.set_constrained_layout(True)
+        # Plot.fig.set_constrained_layout(True)
+        Plot.fig.subplots_adjust(hspace=.5, bottom=.08, top=.95, left=.1, right=.9)
         plt.show()

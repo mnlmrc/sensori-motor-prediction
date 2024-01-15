@@ -1,6 +1,7 @@
 import matplotlib
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import numpy as np
 from PcmPy import indicator
 
@@ -14,13 +15,19 @@ matplotlib.use('MacOSX')
 dict_text = {
     'xlabel': 'time (s)',
     'ylabel': None,
-    'fs_labels': 7,
+    'fs_label': 9,
     'xticklabels': None,
     'xticklabels_rotation': 45,
     'xticklabels_alignment': 'right',
     'fs_ticklabels': 7,
     'fs_title': 7,
-    'fs_suptitle': 9
+    'fs_suptitle': 9,
+}
+
+dict_legend = {
+    'fs': 6,
+    'loc': 'upper center',
+    'ncol': 5
 }
 
 dict_vlines = {
@@ -44,10 +51,14 @@ dict_bars = {
 class Plotter3D:
 
     def __init__(self, xAx, data, channels=None, conditions=None, labels=None,
-                 vlines=None, text=None, lims=None, bar=None,
+                 vlines=None, text=None, lims=None, bar=None, legend=None,
                  extreme_colors=('red', 'blue'), figsize=(6.4, 4.8),
-                 plotstyle='plot',):
+                 plotstyle='plot', ):
 
+        if legend is None:
+            self.legend = dict_legend
+        else:
+            self.legend = legend
         if bar is None:
             self.bar = dict_bars
         else:
@@ -79,17 +90,6 @@ class Plotter3D:
 
         self.plotstyle = plotstyle
 
-    # def plot(self):
-    #     colors = self._make_colors()
-    #     self._populate_subplots((colors[1:], colors[:4]))
-    #     self._set_titles()
-    #     self._legend(colors)
-    #     self._xylabels()
-    #     self._set_xylim()
-    #     self._set_xticklabels()
-    #     self.fig.set_constrained_layout(True)
-    #     plt.show()
-
     def add_vertical_lines(self):
         pos = self.vlines['pos']
         ls = self.vlines['ls']
@@ -108,29 +108,36 @@ class Plotter3D:
         for c in range(n_conditions):
             self.axs[-1, c].set_xticks(self.xAx[c])
             self.axs[-1, c].set_xticklabels(xticklabels, rotation=rot, ha=ha)
-            # self.axs[-1, c].xtick_r
+
+    def set_xyticklabels_size(self):
+        n_conditions = len(self.conditions)
+        n_channels = len(self.channels)
+        for col in range(n_conditions):
+            for row in range(n_channels):
+                self.axs[row, col].tick_params(axis='x', labelsize=self.text['fs_ticklabels'])
+                self.axs[row, col].tick_params(axis='y', labelsize=self.text['fs_ticklabels'])
 
     def set_xylim(self):
         self.axs[0, 0].set_xlim(self.lims['xlim'])
         self.axs[0, 0].set_ylim(self.lims['ylim'])
 
     def xylabels(self):
-        self.fig.supxlabel(self.text['xlabel'])
-        self.fig.supylabel(self.text['ylabel'])
+        self.fig.supxlabel(self.text['xlabel'], fontsize=self.text['fs_label'])
+        self.fig.supylabel(self.text['ylabel'], fontsize=self.text['fs_label'])
 
-    def legend(self, colors):
+    def set_legend(self, colors):
         for color, label in zip(colors, self.labels):
             if self.plotstyle == 'plot':
                 self.axs[0, 0].plot(np.nan, label=label, color=color)
             elif self.plotstyle == 'bar':
                 self.axs[0, 0].bar(np.nan, np.nan, label=label, color=color)
-        self.fig.legend(ncol=3, fontsize=6, loc='upper center')
+        self.fig.legend(ncol=self.legend['ncol'], fontsize=self.legend['fs'], loc=self.legend['loc'])
 
     def set_titles(self):
         n_conditions = len(self.conditions)
         for ch, channel in enumerate(self.channels):
             for c in range(n_conditions):
-                self.axs[ch, c].set_title(channel)
+                self.axs[ch, c].set_title(channel, fontsize=self.text['fs_title'], pad=3)
 
     def subplots(self, colors):
         n_conditions = len(self.conditions)
@@ -199,3 +206,31 @@ class Plotter3D:
                                                     channel_data.shape[2]))
 
         return Mean, SD, SE, channels_dict
+
+
+def add_entry_to_legend(fig, label, color='k', ls='--'):
+    # Check if there is an existing legend
+    if fig.legends:
+        leg = fig.legends[0]  # Assuming there's only one legend
+        existing_handles = leg.legendHandles
+        existing_labels = [text.get_text() for text in leg.get_texts()]
+
+        # Extract properties from the existing legend
+        loc = leg._loc
+        ncol = leg._ncols
+        fontsize = leg.get_texts()[0].get_fontsize()
+
+        # Remove the old legend
+        leg.remove()
+    else:
+        existing_handles, existing_labels = [], []
+        loc, ncol, fontsize = 'best', 1, 'medium'  # Default values
+
+    # Add the new entry
+    new_handle = mlines.Line2D([], [], color=color, linestyle=ls)
+    existing_handles.append(new_handle)
+    existing_labels.append(label)
+
+    # Create a new legend with the same properties
+    fig.legend(handles=existing_handles, labels=existing_labels, loc=loc, ncol=ncol, fontsize=fontsize)
+
