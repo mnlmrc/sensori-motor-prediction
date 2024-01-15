@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 
 from smp0.experiment import Info, Clamped, Param
 from smp0.fetch import load_npy
+from smp0.stat import Anova
 from smp0.utils import bin_traces
 from smp0.visual import Plotter3D, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants
@@ -143,6 +144,13 @@ if __name__ == "__main__":
         dict_text['xlabel'] = None
         dict_text['ylabel'] = ylabel[datatype]
         dict_text['xticklabels'] = [f"{win[0]}s to {win[1]}s" for win in wins]
+
+        Anov = Anova(
+            data=Y,
+            channels=channels[datatype],
+            conditions=['index', 'ring'],
+            labels=['0%', '25%', '50%', '75%', '100%']
+        )
 
         Plot = Plotter3D(
             xAx=(xAx, xAx),

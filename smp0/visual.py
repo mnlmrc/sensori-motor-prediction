@@ -10,7 +10,7 @@ from smp0.workflow import av_within_participant
 
 # from smp0.utils import detect_response_latency
 
-matplotlib.use('MacOSX')
+# matplotlib.use('MacOSX')
 
 dict_text = {
     'xlabel': 'time (s)',
@@ -198,6 +198,7 @@ class Plotter3D:
         Mean, SD, SE = {}, {}, {}
         for ch in self.channels:
             channel_data = np.array(channels_dict[ch])
+            channels_dict[ch] = channel_data
             Mean[ch] = np.mean(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
                                                               channel_data.shape[2]))
             SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
