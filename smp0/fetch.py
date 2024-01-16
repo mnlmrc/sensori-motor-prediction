@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.signal import resample
 
-from .globals import make_dirs, base_dir
+import smp0.globals as gl
 
 
 def load_participants(experiment):
@@ -14,7 +14,7 @@ def load_participants(experiment):
     :param experiment:
     :return:
     """
-    filepath = os.path.join(base_dir, experiment, "participants.tsv")
+    filepath = os.path.join(gl.base_dir, experiment, "participants.tsv")
     fid = open(filepath, 'rt')
     participants = pd.read_csv(fid, delimiter='\t', engine='python', index_col='participant_id')
 
@@ -29,7 +29,7 @@ def load_dat(experiment, participant_id):
     :return:
     """
     fname = f"{experiment}_{participant_id}.dat"
-    filepath = os.path.join(make_dirs(experiment, participant_id), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, participant_id), fname)
 
     try:
         fid = open(filepath, 'rt')
@@ -51,7 +51,7 @@ def save_npy(data, experiment=None, participant_id=None, datatype=None):
     """
 
     fname = f"{experiment}_{participant_id}"
-    filepath = os.path.join(make_dirs(experiment, participant_id, datatype), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, participant_id, datatype), fname)
     print(f"Saving data to {filepath}")
     np.save(filepath, data, allow_pickle=False)
     print("Data saved!")
@@ -67,7 +67,7 @@ def load_npy(experiment=None, participant_id=None, datatype=None):
     """
 
     fname = f"{experiment}_{participant_id}.npy"
-    filepath = os.path.join(make_dirs(experiment, participant_id, datatype), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, participant_id, datatype), fname)
     print(f"Loading data from {filepath}")
     data = np.load(filepath)
 
@@ -85,7 +85,7 @@ def load_delsys(experiment=None, participant_id=None, block=None, muscle_names=N
     :return:
     """
     fname = f"{experiment}_{participant_id}_{block}.csv"
-    filepath = os.path.join(make_dirs(experiment, participant_id, "emg"), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, participant_id, "emg"), fname)
 
     # read data from .csv file (Delsys output)
     with open(filepath, 'rt') as fid:
