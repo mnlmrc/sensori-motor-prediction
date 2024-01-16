@@ -5,8 +5,8 @@ import matplotlib.lines as mlines
 import numpy as np
 from PcmPy import indicator
 
-from smp0.experiment import Param
-from smp0.workflow import av_within_participant
+from .experiment import Param
+from .workflow import av_within_participant
 
 # from smp0.utils import detect_response_latency
 

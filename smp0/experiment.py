@@ -1,8 +1,8 @@
 import numpy as np
 from PcmPy import indicator
 
-from smp0.fetch import load_participants, load_dat, load_npy
-from smp0.utils import remap_chordID, detect_response_latency
+from .fetch import load_participants, load_dat, load_npy
+from .utils import remap_chordID, detect_response_latency
 
 
 def remap_code_to_condition(cond_vec, d, cond_headers):
