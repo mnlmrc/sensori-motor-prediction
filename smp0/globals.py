@@ -28,4 +28,6 @@ def make_dirs(experiment=None, participant_id=None, datatype=None):
 base_dir = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction'
 if not Path(base_dir).exists():
     base_dir = '/content/drive/My Drive/UWO/SensoriMotorPrediction/'
+else:
+    print('local exists')
 
