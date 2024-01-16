@@ -1,16 +1,17 @@
 import numpy as np
 from PcmPy.matrix import indicator
-from smp0.workflow import av_within_participant
+from .workflow import av_within_participant
+
 
 class Anova:
-    
+
     def __init__(self, data, channels, conditions, labels):
 
         self.data = data
         self.channels = channels
         self.conditions = conditions
         self.labels = labels
-    
+
     def rm_anova_over_timepoints(self, data, labels):
 
         for c, cond in enumerate(self.conditions):
@@ -31,9 +32,6 @@ class Anova:
                     print(res.summary())
 
     # def _make_df_for_anova(self, data, condition):
-        
-        
-            
 
     def _av_across_participants(self):
 
@@ -53,7 +51,7 @@ class Anova:
         Mean, SD, SE = {}, {}, {}
         for ch in self.channels:
             channel_data = np.array(channels_dict[ch])
-            channels_dict[ch] = channel_data.reshape((n_participants, n_conditions, 
+            channels_dict[ch] = channel_data.reshape((n_participants, n_conditions,
                                                       int(channel_data.shape[1] / n_conditions), channel_data.shape[2]))
             Mean[ch] = np.mean(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
                                                               channel_data.shape[2]))
@@ -63,4 +61,3 @@ class Anova:
                                                     channel_data.shape[2]))
 
         return Mean, SD, SE, channels_dict
-
