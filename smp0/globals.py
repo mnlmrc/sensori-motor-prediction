@@ -25,10 +25,16 @@ def make_dirs(experiment=None, participant_id=None, datatype=None):
     return directory
 
 
-base_dir = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction'
+# base_dir = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction'
+# if not Path(base_dir).exists():
+#     base_dir = '/content/drive/My Drive/UWO/SensoriMotorPrediction/'
+#     print(base_dir)
+# else:
+#     print(base_dir)
+
+base_dir = '/content/drive/My Drive/UWO/SensoriMotorPrediction'
 if not Path(base_dir).exists():
-    base_dir = '/content/drive/My Drive/UWO/SensoriMotorPrediction/'
-    print(base_dir)
-else:
-    print(base_dir)
+    print("Switching to alternative directory")
+    base_dir = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction'
+print("Base directory:", base_dir)
 
