@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.signal import resample
 
-from smp0.globals import make_dirs, base_dir
+from .globals import make_dirs, base_dir
 
 
 def load_participants(experiment):
