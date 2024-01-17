@@ -1,10 +1,10 @@
 import numpy as np
 from PcmPy import indicator
 
-from smp0.dataset import Dataset3D
-from smp0.experiment import Param
-from smp0.fetch import load_npy, load_dat
-from smp0.utils import detect_response_latency
+from .dataset import Dataset3D
+from .experiment import Param
+from .fetch import load_npy, load_dat
+from .utils import detect_response_latency
 
 
 def list_participants(Data, Info_p):

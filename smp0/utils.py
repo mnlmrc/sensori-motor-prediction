@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import firwin, filtfilt
 
-from smp0.fetch import load_dat
+from .fetch import load_dat
 
 
 def hp_filter(data, n_ord=None, cutoff=None, fsample=None):

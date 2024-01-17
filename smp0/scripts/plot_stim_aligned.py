@@ -61,6 +61,8 @@ if __name__ == "__main__":
         'emg': 'emg (mV)'
     }
 
+    labels = ['0%', '25%', '50%', '75%', '100%']
+
     if plottype == 'con':
 
         # create list of 3D data (segmented trials)
@@ -88,7 +90,7 @@ if __name__ == "__main__":
             data=Y,
             channels=channels[datatype],
             conditions=['index', 'ring'],
-            labels=['0%', '25%', '50%', '75%', '100%'],
+            labels=labels,
             figsize=(6.4, 8),
             lims=dict_lims,
             legend=dict_legend,
@@ -149,8 +151,14 @@ if __name__ == "__main__":
             data=Y,
             channels=channels[datatype],
             conditions=['index', 'ring'],
-            labels=['0%', '25%', '50%', '75%', '100%']
+            labels=labels
         )
+
+        _, _, _, ch_dict = Anov.av_across_participants()
+        rm_anova_dict = {ch: None for ch in channels[datatype]}
+        for ch in channels[datatype]:
+            _, _, _, pval = Anov.rm_anova_over_timepoints(ch_dict[ch], (labels[1:], labels[:4]))
+            rm_anova_dict[ch] = pval
 
         Plot = Plotter3D(
             xAx=(xAx, xAx),
