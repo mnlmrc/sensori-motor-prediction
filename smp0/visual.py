@@ -146,7 +146,7 @@ class Plotter3D:
         Mean, SD, SE, channels_dict = self._av_across_participants()
         for ch, channel in enumerate(self.channels):
             for c in range(n_conditions):
-                for i in range(Mean[channel].shape[-2]):
+                for i in range(Mean[channel].shape[1]):
                     if self.plotstyle == 'plot':
                         self.axs[ch, c].plot(self.xAx[c], Mean[channel][c, i], color=colors[c][i])
                         self.axs[ch, c].fill_between(self.xAx[c],
@@ -155,7 +155,7 @@ class Plotter3D:
                                                      color=colors[c][i], alpha=.2, lw=0)
                     elif self.plotstyle == 'bar':
                         self.axs[ch, c].bar(
-                            self.xAx[c] + (i - Mean[channel].shape[-2] / 2) * self.bar['offset'] +
+                            self.xAx[c] + (i - Mean[channel].shape[1] / 2) * self.bar['offset'] +
                             self.bar['width'] / 2,
                             Mean[channel][c, i], color=colors[c][i], yerr=SE[channel][c, i],
                             width=self.bar['width'])
@@ -199,12 +199,18 @@ class Plotter3D:
         for ch in self.channels:
             channel_data = np.array(channels_dict[ch])
             channels_dict[ch] = channel_data
-            Mean[ch] = np.mean(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-                                                              channel_data.shape[2]))
-            SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-                                                           channel_data.shape[2]))
-            SE[ch] = (SD[ch] / np.sqrt(N)).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-                                                    channel_data.shape[2]))
+
+            if channel_data.ndim == 3:
+                Mean[ch] = np.mean(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
+                                                                  channel_data.shape[2]))
+                SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
+                                                               channel_data.shape[2]))
+                SE[ch] = (SD[ch] / np.sqrt(N)).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
+                                                        channel_data.shape[2]))
+            else:
+                Mean[ch] = np.mean(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions)))
+                SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions)))
+                SE[ch] = (SD[ch] / np.sqrt(N)).reshape((n_conditions, int(channel_data.shape[1] / n_conditions)))
 
         return Mean, SD, SE, channels_dict
 

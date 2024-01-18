@@ -1,5 +1,5 @@
 import numpy as np
-from PcmPy import indicator
+from PcmPy import indicator, Dataset
 
 from .dataset import Dataset3D
 from .experiment import Param
@@ -7,7 +7,7 @@ from .fetch import load_npy, load_dat
 from .utils import detect_response_latency
 
 
-def list_participants(Data, Info_p):
+def list_participants3D(Data, Info_p):
     """
     Creates a list of instances of :class:`smp0.dataset.Dataset3D`.
 
@@ -27,13 +27,36 @@ def list_participants(Data, Info_p):
 
     return Y
 
+def list_participants2D(Data, Info_p):
+    """
+    Creates a list of instances of :class:`smp0.dataset.Dataset3D`.
+
+    :param Data: List of 3D numpy arrays shaped (n_trials, n_channels, n_timepoints).
+    :param Info_p: Instance of :class:`smp0.experiment.Info`.
+    :return: List of instances of :class:`smp0.dataset.Dataset3D`.
+    """
+
+    Y = list()
+    for p, participant_id in enumerate(Info_p.participants):
+        data = Data[p]
+        obs_des = {'n_trials': Info_p.n_trials[p],
+                   'cond_vec': Info_p.cond_vec[p]}
+        ch_des = {'n_channels': len(Info_p.channels[p]),
+                  'channels': Info_p.channels[p]}
+        Y.append(Dataset(measurements=data, obs_descriptors=obs_des, channel_descriptors=ch_des))
+
+    return Y
+
 
 def av_within_participant(Y, Z):
-    N, n_channels, n_timepoints = Y.shape
-
     n_cond = Z.shape[1]
+    if Y.ndim == 3:
+        N, n_channels, n_timepoints = Y.shape
+        M = np.zeros((n_cond, n_channels, n_timepoints))
+    else:
+        N, n_channels = Y.shape
+        M = np.zeros((n_cond, n_channels))
 
-    M = np.zeros((n_cond, n_channels, n_timepoints))
     for cond in range(n_cond):
         M[cond, ...] = Y[Z[:, cond]].mean(axis=0)
 

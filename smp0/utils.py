@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.signal import firwin, filtfilt
+from sklearn.decomposition import NMF
+from sklearn.metrics import mean_squared_error
 
 from .fetch import load_dat
 
@@ -34,6 +36,37 @@ def sort_by_condition(Y, Z):
         Sorted.append(meas[Z[:, cond]])
 
     return Sorted
+
+
+def nnmf(X, n_components=2, init='random', random_state=0):
+    model = NMF(n_components=2, init='random', random_state=0)
+    W = model.fit_transform(X)
+    H = model.components_
+
+    SS_res = np.sum((X - np.dot(W, H)) ** 2)
+
+    mean_X = np.mean(X)
+    SS_tot = np.sum((X - mean_X) ** 2)
+
+    R_squared = 1 - (SS_res / SS_tot)
+
+    return W, H, R_squared
+
+
+def assign_synergy(W, H, H_pred):
+
+    idx_synergy = np.zeros(H.shape[0], dtype=int)
+    for h in range(H.shape[0]):
+        max_d_prod = 0
+        for hp in range(H_pred.shape[0]):
+            d_prod = np.dot(H[h], H_pred[hp])
+            if d_prod > max_d_prod:
+                idx_synergy[h] = hp
+                max_d_prod = d_prod
+
+    return W[:, idx_synergy],  H[idx_synergy],
+
+
 
 
 # def average_condition(Y, Z):

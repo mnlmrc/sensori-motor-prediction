@@ -96,6 +96,11 @@ class Info:
 
         return cond_vec, channels, n_trials, cond_map
 
+    def set_manual_channels(self, channels=list()):
+
+        for p in range(len(self.participants)):
+            self.channels[p] = channels
+
 
 class Param:
 
