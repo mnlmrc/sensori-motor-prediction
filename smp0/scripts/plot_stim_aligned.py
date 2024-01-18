@@ -229,10 +229,10 @@ if __name__ == "__main__":
         Plot.set_legend(colors)
         Plot.xylabels()
         Plot.set_xylim()
-        Plot.set_xyticklabels_size()
-        Plot.set_xticklabels()
+        # Plot.set_xyticklabels_size()
+        # Plot.set_xticklabels()
         # Plot.fig.set_constrained_layout(True)
-        Plot.fig.subplots_adjust(hspace=.5, bottom=.08, top=.95, left=.1, right=.9)
+        # Plot.fig.subplots_adjust(hspace=.5, bottom=.08, top=.95, left=.1, right=.9)
         plt.show()
 
 
