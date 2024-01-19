@@ -178,6 +178,7 @@ if __name__ == "__main__":
 
         Data = list()
         Synergies = list()
+        R_squared = np.zeros(len(Info_p.participants))
         for p, participant_id in enumerate(Info_p.participants):
             data = load_npy(Info_p.experiment, participant_id=participant_id, datatype=datatype)
             Zf = indicator(c_vec_f[p]).astype(bool)
@@ -193,12 +194,13 @@ if __name__ == "__main__":
             H_pred[0, Info_p.channels[p].index('index_flex')] = 1
             H_pred[1, Info_p.channels[p].index('ring_flex')] = 1
 
-            W, H, R_squared = nnmf(bins.squeeze())
+            W, H, R_squared[p] = nnmf(bins.squeeze())
             W, H = assign_synergy(W, H, H_pred)
-            print(R_squared)
 
             Synergies.append(H)
             Data.append(W)
+
+        print(f"mean $R^2$: {R_squared.mean()}")
 
         Info_p.set_manual_channels(['index', 'ring'])
         Y = list_participants2D(Data, Info_p)
