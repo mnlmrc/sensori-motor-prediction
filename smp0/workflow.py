@@ -21,9 +21,10 @@ def list_participants3D(Data, Info_p):
         data = Data[p]
         obs_des = {'n_trials': Info_p.n_trials[p],
                    'cond_vec': Info_p.cond_vec[p]}
+        descr = {'participant_id': participant_id}
         ch_des = {'n_channels': len(Info_p.channels[p]),
                   'channels': Info_p.channels[p]}
-        Y.append(Dataset3D(measurements=data, obs_descriptors=obs_des, channel_descriptors=ch_des))
+        Y.append(Dataset3D(measurements=data, descriptors=descr, obs_descriptors=obs_des, channel_descriptors=ch_des))
 
     return Y
 
@@ -48,7 +49,7 @@ def list_participants2D(Data, Info_p):
     return Y
 
 
-def av_within_participant(Y, Z):
+def av_within_participant(Y, Z, cond_name=None):
     n_cond = Z.shape[1]
     if Y.ndim == 3:
         N, n_channels, n_timepoints = Y.shape
@@ -60,7 +61,10 @@ def av_within_participant(Y, Z):
     for cond in range(n_cond):
         M[cond, ...] = Y[Z[:, cond]].mean(axis=0)
 
-    return M
+    if cond_name == None:
+        return M
+    else:
+        return M, cond_name
 
 
 def av_across_participants(Y, channels=None):

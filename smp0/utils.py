@@ -89,6 +89,13 @@ def bin_traces(Y, wins, fsample=None, offset=None):
     return bins
 
 
+def split_column_df(df, new_cols, old_col):
+    # Split the 'Combined' column into two new columns
+    df[new_cols] = df[old_col].str.split(',', expand=True)
+    del df[old_col]
+    return df
+
+
 def remap_chordID(df):
     remapped_dataframes = {}
     mapping_dict = {93: 0, 12: 25, 44: 50, 21: 75, 39: 100}

@@ -39,7 +39,7 @@ dict_vlines = {
 
 dict_lims = {
     'xlim': (None, None),
-    'ylim': (None, None)
+    'ylim': (0, None)
 }
 
 dict_bars = {
