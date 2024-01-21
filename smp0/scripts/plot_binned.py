@@ -52,6 +52,7 @@ if __name__ == "__main__":
     }
 
     labels = ['0%', '25%', '50%', '75%', '100%']
+    stimFinger = ['index', 'ring']
 
     Data = list()
     for p, participant_id in enumerate(Info_p.participants):
@@ -76,38 +77,11 @@ if __name__ == "__main__":
     dict_text['ylabel'] = ylabel[datatype]
     dict_text['xticklabels'] = [f"{win[0]}s to {win[1]}s" for win in wins]
 
-    Anova = Anova3D(
-        data=Y,
-        channels=channels[datatype],
-        conditions=['index', 'ring'],
-        labels=labels
-    )
-
-    df = Anova.make_df(labels=[
-        'index, 25%',
-        'index, 50%',
-        'index, 75%',
-        'index, 100%',
-        'ring, 0%',
-        'ring, 25%',
-        'ring, 50%',
-        'ring, 100%',
-    ])
-    df = split_column_df(df, ['stimFinger', 'cue'], 'condition')
-    results_df = rm_anova(df, ['channel', 'stimFinger',], ['cue', 'timepoint'])
-    print(results_df)
-
-    # _, _, _, ch_dict = Anova.av_across_participants()
-    # rm_anova_dict = {ch: None for ch in channels[datatype]}
-    # for ch in channels[datatype]:
-    #     _, _, _, pval = Anova.rm_anova(ch_dict[ch], (labels[1:], labels[:4]))
-    #     rm_anova_dict[ch] = pval
-
     Plot = Plotter3D(
         xAx=(xAx, xAx),
         data=Y,
         channels=channels[datatype],
-        conditions=['index', 'ring'],
+        conditions=stimFinger,
         labels=['0%', '25%', '50%', '75%', '100%'],
         lims=dict_lims,
         text=dict_text,
@@ -127,16 +101,63 @@ if __name__ == "__main__":
     # Plot.fig.set_constrained_layout(True)
     Plot.fig.subplots_adjust(hspace=.5, bottom=.08, top=.95, left=.1, right=.9)
 
-    # add pvals to bars
-    # ytext = Plot.axs[0, 0].get_ylim()[1]
-    # for row, channel in enumerate(channels[datatype]):
-    #     for col in range(Plot.axs.shape[1]):
-    #         for xtext in xAx:
-    #             pval = rm_anova_dict[channel][col, int(xtext)]
-    #             Plot.axs[row, col].text(xtext, ytext, f"p={pval:.2f}",
-    #                                     ha='center', va='center', fontsize=6)
-    # Plot.axs[0, 0].set_ylim([None, ytext + .05 * ytext])
+    # statistics
+    Anova = Anova3D(
+        data=Y,
+        channels=channels[datatype],
+        conditions=stimFinger,
+        labels=labels
+    )
 
+    df = Anova.make_df(labels=[
+        'index, 25%',
+        'index, 50%',
+        'index, 75%',
+        'index, 100%',
+        'ring, 0%',
+        'ring, 25%',
+        'ring, 50%',
+        'ring, 100%',
+    ])
+    df = split_column_df(df, ['stimFinger', 'cue'], 'condition')
+    rm_anova_cue_tp = rm_anova(df, ['channel', 'stimFinger'], ['cue', 'timepoint'])
+
+    xTick = [str(group).strip("()").replace("'", "") + ", " + factor for group, factor in zip(rm_anova_cue_tp.group, rm_anova_cue_tp.factor)]
+    fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
+                            figsize=(6.4, 8), sharey=True, sharex=True)
+    significant = .05
+    for xt, pval in zip(xTick, rm_anova_cue_tp.pval):
+        ch = xt.split(", ")[0]
+        sf = xt.split(", ")[1]
+        fc = xt.split(", ")[-1]
+        row = channels[datatype].index(ch)
+        col = stimFinger.index(sf)
+        axs[row, col].bar(fc, pval)
+        axs[row, col].axhline(significant, ls='--', color='r')
+        axs[row, col].set_title(ch)
+    axs[0, 0].set_ylim([0, .1])
+    fig.supylabel('p-pvalue')
+    fig.tight_layout()
+
+    rm_anova_cue = rm_anova(df, ['channel', 'stimFinger', 'timepoint'], ['cue'])
+    xTick = [str(group).strip("()").replace("'", "") + ", " + factor for group, factor in
+             zip(rm_anova_cue.group, rm_anova_cue.factor)]
+    fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
+                            figsize=(6.4, 8), sharey=True, sharex=True)
+    significant = .05
+    for xt, pval in zip(xTick, rm_anova_cue.pval):
+        ch = xt.split(", ")[0]
+        sf = xt.split(", ")[1]
+        tp = xt.split(", ")[2]
+        fc = xt.split(", ")[-1]
+        row = channels[datatype].index(ch)
+        col = stimFinger.index(sf)
+        axs[row, col].bar(tp, pval)
+        axs[row, col].axhline(significant, ls='--', color='r')
+        axs[row, col].set_title(ch)
+    axs[0, 0].set_ylim([0, .1])
+    fig.supylabel('p-pvalue')
+    fig.tight_layout()
     plt.show()
 
 

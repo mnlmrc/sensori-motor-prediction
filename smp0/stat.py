@@ -17,7 +17,7 @@ def rm_anova(df, group_factors, anova_factors):
     pd.DataFrame: A DataFrame with the ANOVA results.
     """
     # Create an empty DataFrame to store results
-    anova_results = pd.DataFrame(columns=['group', 'factor','F-value', 'p-value', 'df', 'df_resid'])
+    anova_results = pd.DataFrame(columns=['group', 'factor','F-value', 'pval', 'df', 'df_resid'])
 
     # Iterate over each combination of group factors
     for group_vals, df_group in df.groupby(group_factors):
@@ -34,7 +34,7 @@ def rm_anova(df, group_factors, anova_factors):
                 df2 = res.anova_table.loc[factor, 'Den DF']
 
                 # Append results to the DataFrame
-                row = {'group': group_vals, 'factor': factor, 'F-value': F_value, 'p-value': p_value, 'df': df1, 'df_resid': df2}
+                row = {'group': group_vals, 'factor': factor, 'F-value': F_value, 'pval': p_value, 'df': df1, 'df_resid': df2}
                 anova_results.loc[len(anova_results)] = row
 
     return anova_results
