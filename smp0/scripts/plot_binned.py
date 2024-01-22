@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from smp0.experiment import Info, Clamped, Param
 from smp0.globals import base_dir
 from smp0.fetch import load_npy
-from smp0.stat import Anova3D, rm_anova, pairwise
+from smp0.stat import Stats, rm_anova, pairwise
 from smp0.utils import bin_traces, nnmf, assign_synergy, split_column_df
 from smp0.visual import Plotter3D, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants3D, list_participants2D
@@ -103,50 +103,31 @@ if __name__ == "__main__":
     Plot.fig.subplots_adjust(hspace=.5, bottom=.08, top=.95, left=.1, right=.9)
 
     # statistics
-    Anova = Anova3D(
+    Anova = Stats(
         data=Y,
         channels=channels[datatype],
         conditions=stimFinger,
-        labels=labels
+        labels=[
+            'index, 25%',
+            'index, 50%',
+            'index, 75%',
+            'index, 100%',
+            'ring, 0%',
+            'ring, 25%',
+            'ring, 50%',
+            'ring, 100%',
+        ]
     )
 
-    df = Anova.make_df(labels=[
-        'index, 25%',
-        'index, 50%',
-        'index, 75%',
-        'index, 100%',
-        'ring, 0%',
-        'ring, 25%',
-        'ring, 50%',
-        'ring, 100%',
-    ])
+    df = Anova.make_df()
     df = split_column_df(df, ['stimFinger', 'cue'], 'condition')
-    # rm_anova_cue_tp = rm_anova(df, ['channel', 'stimFinger'], ['cue', 'timepoint'])
-    #
-    # xTick = [str(group).strip("()").replace("'", "") + ", " + factor for group, factor in zip(rm_anova_cue_tp.group, rm_anova_cue_tp.factor)]
-    # fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
-    #                         figsize=(6.4, 8), sharey=True, sharex=True)
-    # significant = .05
-    # for xt, pval in zip(xTick, rm_anova_cue_tp.pval):
-    #     ch = xt.split(", ")[0]
-    #     sf = xt.split(", ")[1]
-    #     fc = xt.split(", ")[-1]
-    #     row = channels[datatype].index(ch)
-    #     col = stimFinger.index(sf)
-    #     axs[row, col].bar(fc, pval, color='green')
-    #     axs[row, col].axhline(significant, ls='--', color='r')
-    #     axs[row, col].set_title(ch)
-    # axs[0, 0].set_ylim([0, .1])
-    # fig.supylabel('p-pvalue')
-    # fig.tight_layout()
-
     df_rm_anova_cue = rm_anova(df, ['channel', 'stimFinger', 'timepoint'], ['cue'])
     df_pw_test = pd.DataFrame()
     for sf in stimFinger:
         for ch in channels[datatype]:
             for tp in range(len(wins)):
                 df_in = df[(df['channel'] == ch) & (df['stimFinger'] == sf) & (df['timepoint'] == tp)]
-                pw = pairwise(df_in, 'cue')
+                pw = pairwise(df_in, [('cue',)])
                 pw['channel'] = ch
                 pw['stimFinger'] = sf
                 pw['timepoint'] = tp

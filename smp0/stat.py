@@ -2,8 +2,55 @@ import numpy as np
 from PcmPy.matrix import indicator
 from .workflow import av_within_participant
 import pandas as pd
+import itertools
 from statsmodels.stats.anova import AnovaRM
 from scipy.stats import ttest_rel
+
+
+def pairwise(df, factors, dep_var='Value', alpha=0.05):
+    """
+    Perform post hoc tests for significant factors and interactions in repeated measures ANOVA.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the data.
+    dependent_var (str): The dependent variable.
+    factors (list of tuples): Each tuple contains the names of the factors for the interaction.
+    alpha (float): Significance level for the tests.
+
+    Returns:
+    pd.DataFrame: A DataFrame with the post hoc test results.
+    """
+    res = pd.DataFrame(columns=['comparison', 'stat', 'p-adj'])
+
+    for factor_group in factors:
+        # Create interaction term if necessary
+        if len(factor_group) > 1:
+            df['interaction'] = df[list(factor_group)].astype(str).agg('-'.join, axis=1)
+            factor_to_test = 'interaction'
+        else:
+            factor_to_test = factor_group[0]
+
+        # Generate all pairwise combinations for the factor levels
+        levels = df[factor_to_test].unique()
+        for level1, level2 in itertools.combinations(levels, 2):
+            group1 = df[df[factor_to_test] == level1][dep_var]
+            group2 = df[df[factor_to_test] == level2][dep_var]
+
+            # Perform the paired t-test
+            stat, p = ttest_rel(group1, group2)
+
+            # Bonferroni correction
+            p_adj = p * (len(levels) * (len(levels) - 1) / 2)  # Adjust for the number of comparisons
+
+            # Append results to the DataFrame
+            comparison = f"{factor_to_test}: {level1} vs {level2}"
+            res.loc[len(res)] = {'comparison': comparison, 'stat': stat, 'p-adj': p_adj}
+
+        # Drop interaction term to clean up for next iteration
+        if 'interaction' in df.columns:
+            df.drop('interaction', axis=1, inplace=True)
+
+    return res
 
 
 def rm_anova(df, group_factors, anova_factors):
@@ -43,47 +90,7 @@ def rm_anova(df, group_factors, anova_factors):
     return anova_results
 
 
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
-import itertools
-
-
-def pairwise(df, factor, alpha=0.05):
-    """
-    Perform post hoc tests for a significant factor in repeated measures ANOVA.
-
-    Parameters:
-    df (pd.DataFrame): The DataFrame containing the data.
-    factor (str): The factor for which to perform post hoc tests.
-    alpha (float): Significance level for the tests.
-
-    Returns:
-    pd.DataFrame: A DataFrame with the post hoc test results.
-    """
-    posthoc_results = pd.DataFrame(columns=['group1', 'group2', 'stat', 'p-adj'])
-
-    # Get unique levels of the factor
-    levels = df[factor].unique()
-
-    # Perform pairwise tests
-    for (level1, level2) in itertools.combinations(levels, 2):
-        group1 = df[df[factor] == level1]['Value']
-        group2 = df[df[factor] == level2]['Value']
-
-        # Perform the paired t-test
-        stat, p = ttest_rel(group1, group2)
-
-        # Bonferroni correction
-        p_adj = p * len(levels) / 2  # Adjust for the number of comparisons
-
-        # Check against alpha
-        # if p_adj < alpha:
-        row = {'group1': level1, 'group2': level2, 'stat': stat, 'p-adj': p_adj}
-        posthoc_results.loc[len(posthoc_results)] = row
-
-    return posthoc_results
-
-
-class Anova3D:
+class Stats:
 
     def __init__(self, data, channels, conditions, labels):
 
@@ -91,15 +98,16 @@ class Anova3D:
         self.channels = channels
         self.conditions = conditions
         self.labels = labels
+        self.df = self.make_df()
 
-    def make_df(self, labels):
+    def make_df(self):
         n_conditions = len(self.conditions)
         n_timepoints = self.data[0].timepoints
         df = pd.DataFrame(columns=['participant_id', 'condition', 'channel', 'timepoint', 'Value'])
         participants = [self.data[p].descriptors['participant_id'] for p in range(len(self.data))]
         for p, p_data in enumerate(self.data):
             Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
-            M, cond_names = av_within_participant(p_data.measurements, Z, cond_name=labels)
+            M, cond_names = av_within_participant(p_data.measurements, Z, cond_name=self.labels)
             for ch, channel in enumerate(p_data.channel_descriptors['channels']):
                 for c, cond in enumerate(cond_names):
                     for tp in range(n_timepoints):
@@ -112,62 +120,95 @@ class Anova3D:
                         }
         return df
 
-    # def rm_anova(self, data, labels):
-    #     n_conditions = len(self.conditions)
-    #     n_timepoints = data.shape[-1]
-    #
-    #     # fval = np.zeros((n_conditions, n_timepoints))
-    #     # num_df = np.zeros((n_conditions, n_timepoints))
-    #     # den_df = np.zeros((n_conditions, n_timepoints))
-    #     # pval = np.zeros((n_conditions, n_timepoints))
-    #
-    #     for c, cond in enumerate(self.conditions):
-    #         for tp in range(n_timepoints):
-    #             n_participants = data.shape[0]
-    #             n_labels = len(labels[c])
-    #             subject_ids = np.repeat(np.arange(n_participants), n_labels)
-    #             data_df = data[:, c, :, tp].flatten()
-    #             labels_df = np.array([labels[c]] * n_participants).flatten()
-    #
-    #             df = pd.DataFrame({'Subject': subject_ids, 'Condition': labels_df, 'Score': data_df})
-    #
-    #             aovrm = AnovaRM(df, 'Score', 'Subject', within=['Condition'])
-    #             res = aovrm.fit()
-    #
-    #             fval[c, tp] = res.anova_table['F Value'].to_numpy()[0]
-    #             num_df[c, tp] = res.anova_table['Num DF'].to_numpy()[0]
-    #             den_df[c, tp] = res.anova_table['Den DF'].to_numpy()[0]
-    #             pval[c, tp] = res.anova_table['Pr > F'].to_numpy()[0]
-    #
-    #     return fval, num_df, den_df, pval
-    # print(res.summary())
+    def rm_anova(self, group_factors, anova_factors):
+        """
+        Perform repeated measures ANOVA for specified group and ANOVA factors.
 
-    # def _make_df_for_anova(self, data, condition):
+        Parameters:
+        df (pd.DataFrame): The DataFrame containing the data.
+        group_factors (list of str): Columns to group by.
+        anova_factors (list of str): Factors to use in the ANOVA.
 
-    # def av_across_participants(self):
-    #
-    #     n_conditions = len(self.conditions)
-    #
-    #     channels_dict = {ch: [] for ch in self.channels}
-    #     N = len(self.data)
-    #     for p_data in self.data:
-    #         Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
-    #         M = av_within_participant(p_data.measurements, Z)
-    #
-    #         for ch in self.channels:
-    #             if ch in p_data.channel_descriptors['channels']:
-    #                 channel_index = p_data.channel_descriptors['channels'].index(ch)
-    #                 channels_dict[ch].append(M[:, channel_index])
-    #
-    #     Mean, SD, SE = {}, {}, {}
-    #     for ch in self.channels:
-    #         channel_data = np.array(channels_dict[ch])
-    #         channels_dict[ch] = channel_data.reshape((channel_data.shape[0], n_conditions, int(channel_data.shape[1] / n_conditions), channel_data.shape[2]))
-    #         Mean[ch] = np.mean(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-    #                                                           channel_data.shape[2]))
-    #         SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-    #                                                        channel_data.shape[2]))
-    #         SE[ch] = (SD[ch] / np.sqrt(N)).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-    #                                                 channel_data.shape[2]))
-    #
-    #     return Mean, SD, SE, channels_dict
+        Returns:
+        pd.DataFrame: A DataFrame with the ANOVA results.
+        """
+        # Create an empty DataFrame to store results
+        anova_results = pd.DataFrame(columns=['group', 'factor', 'F-value', 'pval', 'df', 'df_resid'])
+
+        # Iterate over each combination of group factors
+        for group_vals, df_group in self.df.groupby(group_factors):
+            # Perform Repeated Measures ANOVA
+            aovrm = AnovaRM(df_group, depvar='Value', subject='participant_id', within=anova_factors)
+            res = aovrm.fit()
+
+            # Extract results for each factor and interaction
+            for factor in anova_factors + [':'.join(anova_factors)]:
+                if factor in res.anova_table.index:
+                    F_value = res.anova_table.loc[factor, 'F Value']
+                    p_value = res.anova_table.loc[factor, 'Pr > F']
+                    df1 = res.anova_table.loc[factor, 'Num DF']
+                    df2 = res.anova_table.loc[factor, 'Den DF']
+
+                    # Append results to the DataFrame
+                    row = {'group': group_vals, 'factor': factor, 'F-value': F_value, 'pval': p_value, 'df': df1,
+                           'df_resid': df2}
+                    anova_results.loc[len(anova_results)] = row
+
+        return anova_results
+
+    def pairwise(self, group_factors, test_factors):
+
+        group = list()
+        for g in group_factors:
+            group.append(self.df[g].unique())
+
+        for comb in itertools.product(*group):
+            df_in = self.df
+            for g in group_factors:
+                df_in = df_in[df_in[g] == comb[g]]
+
+    def _pairwise(self, factors, dep_var='Value', alpha=0.05):
+
+        """
+        Perform post hoc tests for significant factors and interactions in repeated measures ANOVA.
+
+        Parameters:
+        df (pd.DataFrame): The DataFrame containing the data.
+        dependent_var (str): The dependent variable.
+        factors (list of tuples): Each tuple contains the names of the factors for the interaction.
+        alpha (float): Significance level for the tests.
+
+        Returns:
+        pd.DataFrame: A DataFrame with the post hoc test results.
+        """
+        res = pd.DataFrame(columns=['comparison', 'stat', 'p-adj'])
+
+        for factor_group in factors:
+            # Create interaction term if necessary
+            if len(factor_group) > 1:
+                self.df['interaction'] = self.df[list(factor_group)].astype(str).agg('-'.join, axis=1)
+                factor_to_test = 'interaction'
+            else:
+                factor_to_test = factor_group[0]
+
+            # Generate all pairwise combinations for the factor levels
+            levels = self.df[factor_to_test].unique()
+            for level1, level2 in itertools.combinations(levels, 2):
+                group1 = self.df[self.df[factor_to_test] == level1][dep_var]
+                group2 = self.df[self.df[factor_to_test] == level2][dep_var]
+
+                # Perform the paired t-test
+                stat, p = ttest_rel(group1, group2)
+
+                # Bonferroni correction
+                p_adj = p * (len(levels) * (len(levels) - 1) / 2)  # Adjust for the number of comparisons
+
+                # Append results to the DataFrame
+                comparison = f"{factor_to_test}: {level1} vs {level2}"
+                res.loc[len(res)] = {'comparison': comparison, 'stat': stat, 'p-adj': p_adj}
+
+            # Drop interaction term to clean up for next iteration
+            if 'interaction' in self.df.columns:
+                self.df.drop('interaction', axis=1, inplace=True)
+
+        return res
