@@ -7,8 +7,9 @@ from PcmPy import indicator
 from matplotlib import pyplot as plt
 
 from smp0.experiment import Info, Clamped, Param
+from smp0.globals import base_dir
 from smp0.fetch import load_npy
-from smp0.stat import Anova3D, rm_anova
+from smp0.stat import Anova3D, rm_anova, pairwise
 from smp0.utils import bin_traces, nnmf, assign_synergy, split_column_df
 from smp0.visual import Plotter3D, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants3D, list_participants2D
@@ -18,12 +19,12 @@ if __name__ == "__main__":
     datatype = sys.argv[2]
 
     participants = ['100', '101', '102', '103', '104',
-                      '105', '106', '107', '108', '109','110']
+                    '105', '106', '107', '108', '109', '110']
 
     Clamp = Clamped(experiment)
     Params = Param(datatype)
     Info_p = Info(experiment, participants, datatype, ['stimFinger', 'cues'])
-    c_vec_f = Info(experiment, participants, datatype,  ['stimFinger']).cond_vec
+    c_vec_f = Info(experiment, participants, datatype, ['stimFinger']).cond_vec
 
     wins = {
         'mov': ((-1, 0),
@@ -70,7 +71,7 @@ if __name__ == "__main__":
     # create list of participants
     Y = list_participants3D(Data, Info_p)
 
-    xAx = np.linspace(0, 3, 4)
+    xAx = np.array(list(range(len(wins))))
 
     dict_lims['xlim'] = (-1, 4)
     dict_text['xlabel'] = None
@@ -120,46 +121,62 @@ if __name__ == "__main__":
         'ring, 100%',
     ])
     df = split_column_df(df, ['stimFinger', 'cue'], 'condition')
-    rm_anova_cue_tp = rm_anova(df, ['channel', 'stimFinger'], ['cue', 'timepoint'])
+    # rm_anova_cue_tp = rm_anova(df, ['channel', 'stimFinger'], ['cue', 'timepoint'])
+    #
+    # xTick = [str(group).strip("()").replace("'", "") + ", " + factor for group, factor in zip(rm_anova_cue_tp.group, rm_anova_cue_tp.factor)]
+    # fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
+    #                         figsize=(6.4, 8), sharey=True, sharex=True)
+    # significant = .05
+    # for xt, pval in zip(xTick, rm_anova_cue_tp.pval):
+    #     ch = xt.split(", ")[0]
+    #     sf = xt.split(", ")[1]
+    #     fc = xt.split(", ")[-1]
+    #     row = channels[datatype].index(ch)
+    #     col = stimFinger.index(sf)
+    #     axs[row, col].bar(fc, pval, color='green')
+    #     axs[row, col].axhline(significant, ls='--', color='r')
+    #     axs[row, col].set_title(ch)
+    # axs[0, 0].set_ylim([0, .1])
+    # fig.supylabel('p-pvalue')
+    # fig.tight_layout()
 
-    xTick = [str(group).strip("()").replace("'", "") + ", " + factor for group, factor in zip(rm_anova_cue_tp.group, rm_anova_cue_tp.factor)]
-    fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
-                            figsize=(6.4, 8), sharey=True, sharex=True)
-    significant = .05
-    for xt, pval in zip(xTick, rm_anova_cue_tp.pval):
-        ch = xt.split(", ")[0]
-        sf = xt.split(", ")[1]
-        fc = xt.split(", ")[-1]
-        row = channels[datatype].index(ch)
-        col = stimFinger.index(sf)
-        axs[row, col].bar(fc, pval)
-        axs[row, col].axhline(significant, ls='--', color='r')
-        axs[row, col].set_title(ch)
-    axs[0, 0].set_ylim([0, .1])
-    fig.supylabel('p-pvalue')
-    fig.tight_layout()
-
-    rm_anova_cue = rm_anova(df, ['channel', 'stimFinger', 'timepoint'], ['cue'])
+    df_rm_anova_cue = rm_anova(df, ['channel', 'stimFinger', 'timepoint'], ['cue'])
+    df_pw_test = pd.DataFrame()
+    for sf in stimFinger:
+        for ch in channels[datatype]:
+            for tp in range(len(wins)):
+                df_in = df[(df['channel'] == ch) & (df['stimFinger'] == sf) & (df['timepoint'] == tp)]
+                pw = pairwise(df_in, 'cue')
+                pw['channel'] = ch
+                pw['stimFinger'] = sf
+                pw['timepoint'] = tp
+                df_pw_test = pd.concat([df_pw_test, pw], ignore_index=True)
+            # pairwise_test.append(pairwise(df_in, 'cue'))
+    df_rm_anova_cue.to_csv(base_dir + '/smp0/rm-anova_cue.stat')
+    df_pw_test.to_csv(base_dir + '/smp0/pw_cue.stat')
     xTick = [str(group).strip("()").replace("'", "") + ", " + factor for group, factor in
-             zip(rm_anova_cue.group, rm_anova_cue.factor)]
-    fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
-                            figsize=(6.4, 8), sharey=True, sharex=True)
+             zip(df_rm_anova_cue.group, df_rm_anova_cue.factor)]
+    # fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
+    #                         figsize=(6.4, 8), sharey=True, sharex=True)
     significant = .05
-    for xt, pval in zip(xTick, rm_anova_cue.pval):
+    for xt, pval in zip(xTick, df_rm_anova_cue.pval):
         ch = xt.split(", ")[0]
         sf = xt.split(", ")[1]
-        tp = xt.split(", ")[2]
+        tp = float(xt.split(", ")[2])
         fc = xt.split(", ")[-1]
         row = channels[datatype].index(ch)
         col = stimFinger.index(sf)
-        axs[row, col].bar(tp, pval)
-        axs[row, col].axhline(significant, ls='--', color='r')
-        axs[row, col].set_title(ch)
-    axs[0, 0].set_ylim([0, .1])
-    fig.supylabel('p-pvalue')
-    fig.tight_layout()
+        if pval < significant:
+            llength = dict_bars['offset'] * 4
+            ly = Plot.axs[row, col].get_ylim()[1]
+            Plot.axs[row, col].hlines(ly, tp - llength / 2, tp + llength / 2, color='k', lw=3)
+
+        # axs[row, col].bar(tp, pval, color='green')
+        # axs[row, col].axhline(significant, ls='--', color='r')
+        # axs[row, col].set_title(ch)
+
+    # axs[0, 0].set_ylim([0, .1])
+    # fig.supylabel('p-pvalue')
+    # fig.tight_layout()
+
     plt.show()
-
-
-
-

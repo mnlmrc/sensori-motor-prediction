@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 
 from smp0.experiment import Info, Clamped, Param
 from smp0.fetch import load_npy
-from smp0.stat import Anova
 from smp0.utils import bin_traces, nnmf, assign_synergy
 from smp0.visual import Plotter3D, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants3D, list_participants2D
@@ -15,13 +14,13 @@ if __name__ == "__main__":
     experiment = sys.argv[1]
     datatype = sys.argv[2]
 
-    participants = ['100', '101', '102', '103', '104',
-                      '105', '106', '107', '108', '109','110']
+    participants = ['100', '101', '102', '103', '104'
+                    , '106', '107', '108', '109', '110']
 
     Clamp = Clamped(experiment)
     Params = Param(datatype)
     Info_p = Info(experiment, participants, datatype, ['stimFinger', 'cues'])
-    c_vec_f = Info(experiment, participants, datatype,  ['stimFinger']).cond_vec
+    c_vec_f = Info(experiment, participants, datatype, ['stimFinger']).cond_vec
 
     win_syn = [(.05, .1)]
 
@@ -30,7 +29,7 @@ if __name__ == "__main__":
         'mov': ["thumb", "index", "middle", "ring", "pinkie"],
         'emg': ["thumb_flex", "index_flex", "middle_flex", "ring_flex",
                 "pinkie_flex", "thumb_ext", "index_ext",
-                "middle_ext", "ring_ext", "pinkie_ext", "fdi"]
+                "middle_ext", "ring_ext", "pinkie_ext"]
     }
 
     # define ylabel per datatype
@@ -46,6 +45,7 @@ if __name__ == "__main__":
     R_squared = np.zeros(len(Info_p.participants))
     for p, participant_id in enumerate(Info_p.participants):
         data = load_npy(Info_p.experiment, participant_id=participant_id, datatype=datatype)
+        data = data[:, np.array([Info_p.channels[p].index(ch) for ch in channels[datatype]]), :]
         Zf = indicator(c_vec_f[p]).astype(bool)
         bins_i = bin_traces(data[Zf[:, 0]], win_syn, fsample=Params.fsample,
                             offset=Params.prestim + Clamp.latency[0])
@@ -55,19 +55,21 @@ if __name__ == "__main__":
         Info_p.cond_vec[p] = np.concatenate((Info_p.cond_vec[p][Zf[:, 0]], Info_p.cond_vec[p][Zf[:, 1]]),
                                             axis=0).astype(int)
 
-        H_pred = np.array([np.zeros(len(Info_p.channels[p])), np.zeros(len(Info_p.channels[p]))])
-        H_pred[0, Info_p.channels[p].index('index_flex')] = 1
-        H_pred[1, Info_p.channels[p].index('ring_flex')] = 1
+        # H_pred = np.array([np.zeros(len(Info_p.channels[p])), np.zeros(len(Info_p.channels[p]))])
+        # H_pred[0, Info_p.channels[p].index('index_flex')] = 1
+        # H_pred[1, Info_p.channels[p].index('ring_flex')] = 1
+        # if p==0:
+        #     H_pred =
 
         W, H, R_squared[p] = nnmf(bins.squeeze())
-        W, H = assign_synergy(W, H, H_pred)
+        # W, H = assign_synergy(W, H, H_pred)
 
         Synergies.append(H)
         Data.append(W)
 
     print(f"mean $R^2$: {R_squared.mean()}")
 
-    Info_p.set_manual_channels(['index', 'ring'])
+    # Info_p.set_manual_channels(['index', 'ring'])
     Y = list_participants2D(Data, Info_p)
 
     xAx = 0
@@ -101,5 +103,3 @@ if __name__ == "__main__":
     # Plot.fig.set_constrained_layout(True)
     # Plot.fig.subplots_adjust(hspace=.5, bottom=.08, top=.95, left=.1, right=.9)
     plt.show()
-
-

@@ -3,6 +3,8 @@ from PcmPy.matrix import indicator
 from .workflow import av_within_participant
 import pandas as pd
 from statsmodels.stats.anova import AnovaRM
+from scipy.stats import ttest_rel
+
 
 def rm_anova(df, group_factors, anova_factors):
     """
@@ -17,7 +19,7 @@ def rm_anova(df, group_factors, anova_factors):
     pd.DataFrame: A DataFrame with the ANOVA results.
     """
     # Create an empty DataFrame to store results
-    anova_results = pd.DataFrame(columns=['group', 'factor','F-value', 'pval', 'df', 'df_resid'])
+    anova_results = pd.DataFrame(columns=['group', 'factor', 'F-value', 'pval', 'df', 'df_resid'])
 
     # Iterate over each combination of group factors
     for group_vals, df_group in df.groupby(group_factors):
@@ -34,10 +36,51 @@ def rm_anova(df, group_factors, anova_factors):
                 df2 = res.anova_table.loc[factor, 'Den DF']
 
                 # Append results to the DataFrame
-                row = {'group': group_vals, 'factor': factor, 'F-value': F_value, 'pval': p_value, 'df': df1, 'df_resid': df2}
+                row = {'group': group_vals, 'factor': factor, 'F-value': F_value, 'pval': p_value, 'df': df1,
+                       'df_resid': df2}
                 anova_results.loc[len(anova_results)] = row
 
     return anova_results
+
+
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+import itertools
+
+
+def pairwise(df, factor, alpha=0.05):
+    """
+    Perform post hoc tests for a significant factor in repeated measures ANOVA.
+
+    Parameters:
+    df (pd.DataFrame): The DataFrame containing the data.
+    factor (str): The factor for which to perform post hoc tests.
+    alpha (float): Significance level for the tests.
+
+    Returns:
+    pd.DataFrame: A DataFrame with the post hoc test results.
+    """
+    posthoc_results = pd.DataFrame(columns=['group1', 'group2', 'stat', 'p-adj'])
+
+    # Get unique levels of the factor
+    levels = df[factor].unique()
+
+    # Perform pairwise tests
+    for (level1, level2) in itertools.combinations(levels, 2):
+        group1 = df[df[factor] == level1]['Value']
+        group2 = df[df[factor] == level2]['Value']
+
+        # Perform the paired t-test
+        stat, p = ttest_rel(group1, group2)
+
+        # Bonferroni correction
+        p_adj = p * len(levels) / 2  # Adjust for the number of comparisons
+
+        # Check against alpha
+        # if p_adj < alpha:
+        row = {'group1': level1, 'group2': level2, 'stat': stat, 'p-adj': p_adj}
+        posthoc_results.loc[len(posthoc_results)] = row
+
+    return posthoc_results
 
 
 class Anova3D:
@@ -69,7 +112,6 @@ class Anova3D:
                         }
         return df
 
-
     # def rm_anova(self, data, labels):
     #     n_conditions = len(self.conditions)
     #     n_timepoints = data.shape[-1]
@@ -98,7 +140,7 @@ class Anova3D:
     #             pval[c, tp] = res.anova_table['Pr > F'].to_numpy()[0]
     #
     #     return fval, num_df, den_df, pval
-                # print(res.summary())
+    # print(res.summary())
 
     # def _make_df_for_anova(self, data, condition):
 
