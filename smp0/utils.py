@@ -39,7 +39,7 @@ def sort_by_condition(Y, Z):
 
 
 def nnmf(X, n_components=2, init='random', random_state=0):
-    model = NMF(n_components=2, init='random', random_state=0)
+    model = NMF(n_components=n_components, init=init, random_state=random_state)
     W = model.fit_transform(X)
     H = model.components_
 
@@ -64,7 +64,7 @@ def assign_synergy(W, H, H_pred):
                 idx_synergy[h] = hp
                 max_d_prod = d_prod
 
-    return W[:, idx_synergy],  H[idx_synergy],
+    return W[:, idx_synergy],  H[idx_synergy]
 
 
 

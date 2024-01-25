@@ -121,24 +121,6 @@ if __name__ == "__main__":
         'ring, 100%',
     ])
     df = split_column_df(df, ['stimFinger', 'cue'], 'condition')
-    # rm_anova_cue_tp = rm_anova(df, ['channel', 'stimFinger'], ['cue', 'timepoint'])
-    #
-    # xTick = [str(group).strip("()").replace("'", "") + ", " + factor for group, factor in zip(rm_anova_cue_tp.group, rm_anova_cue_tp.factor)]
-    # fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
-    #                         figsize=(6.4, 8), sharey=True, sharex=True)
-    # significant = .05
-    # for xt, pval in zip(xTick, rm_anova_cue_tp.pval):
-    #     ch = xt.split(", ")[0]
-    #     sf = xt.split(", ")[1]
-    #     fc = xt.split(", ")[-1]
-    #     row = channels[datatype].index(ch)
-    #     col = stimFinger.index(sf)
-    #     axs[row, col].bar(fc, pval, color='green')
-    #     axs[row, col].axhline(significant, ls='--', color='r')
-    #     axs[row, col].set_title(ch)
-    # axs[0, 0].set_ylim([0, .1])
-    # fig.supylabel('p-pvalue')
-    # fig.tight_layout()
 
     df_rm_anova_cue = rm_anova(df, ['channel', 'stimFinger', 'timepoint'], ['cue'])
     df_pw_test = pd.DataFrame()
@@ -158,6 +140,7 @@ if __name__ == "__main__":
              zip(df_rm_anova_cue.group, df_rm_anova_cue.factor)]
     # fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
     #                         figsize=(6.4, 8), sharey=True, sharex=True)
+
     significant = .05
     for xt, pval in zip(xTick, df_rm_anova_cue.pval):
         ch = xt.split(", ")[0]

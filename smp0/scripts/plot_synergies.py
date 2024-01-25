@@ -14,8 +14,8 @@ if __name__ == "__main__":
     experiment = sys.argv[1]
     datatype = sys.argv[2]
 
-    participants = ['100', '101', '102', '103', '104'
-                    , '106', '107', '108', '109', '110']
+    participants = ['100', '101', '102', '103', '104',
+                    '106', '107', '108', '109', '110']
 
     Clamp = Clamped(experiment)
     Params = Param(datatype)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     Data = list()
     Synergies = list()
-    R_squared = np.zeros(len(Info_p.participants))
+    Rmin = list()
     for p, participant_id in enumerate(Info_p.participants):
         data = load_npy(Info_p.experiment, participant_id=participant_id, datatype=datatype)
         data = data[:, np.array([Info_p.channels[p].index(ch) for ch in channels[datatype]]), :]
@@ -55,19 +55,37 @@ if __name__ == "__main__":
         Info_p.cond_vec[p] = np.concatenate((Info_p.cond_vec[p][Zf[:, 0]], Info_p.cond_vec[p][Zf[:, 1]]),
                                             axis=0).astype(int)
 
-        # H_pred = np.array([np.zeros(len(Info_p.channels[p])), np.zeros(len(Info_p.channels[p]))])
-        # H_pred[0, Info_p.channels[p].index('index_flex')] = 1
-        # H_pred[1, Info_p.channels[p].index('ring_flex')] = 1
-        # if p==0:
-        #     H_pred =
+        R = 0
+        n = 2
+        nMax = n
+        while R < .9:
+            W, H, R = nnmf(bins.squeeze(), n_components=n)
+            print(f'participant_id: {participant_id}, R:{R}, n components: {n}')
+            n = n + 1
+            if n > nMax:
+                nMax = n
+            if n >= len(channels[datatype]):
+                break
+            # W, H = assign_synergy(W, H, H_pred)
 
-        W, H, R_squared[p] = nnmf(bins.squeeze())
-        # W, H = assign_synergy(W, H, H_pred)
+        Data.append(bins.squeeze())
+        Rmin.append(R)
 
+    # for p, participant_id in enumerate(Info_p.participants):
+    #     W, H, R = nnmf(Data[p], n_components=nMax)
+    #     print(f'participant_id: {participant_id}, R:{R}')
+
+        # if p == 0:
+        #     H_pred = H
+        # else:
+        #     W, H = assign_synergy(W, H, H_pred)
+        np.argmax(H, axis=1)
         Synergies.append(H)
-        Data.append(W)
 
-    print(f"mean $R^2$: {R_squared.mean()}")
+    # syns = np.array(Synergies)
+    # for n in range(nMax):
+
+    # print(f"mean $R^2$: {R_squared.mean()}")
 
     # Info_p.set_manual_channels(['index', 'ring'])
     Y = list_participants2D(Data, Info_p)
