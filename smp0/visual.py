@@ -48,7 +48,7 @@ dict_bars = {
 }
 
 
-class Plotter3D:
+class Plotter:
 
     def __init__(self, xAx, data, channels=None, conditions=None, labels=None,
                  vlines=None, text=None, lims=None, bar=None, legend=None,
@@ -133,34 +133,63 @@ class Plotter3D:
                 self.axs[0, 0].bar(np.nan, np.nan, label=label, color=color)
         self.fig.legend(ncol=self.legend['ncol'], fontsize=self.legend['fs'], loc=self.legend['loc'])
 
+    def set_suptitle(self, title):
+        self.fig.suptitle(title)
+
     def set_titles(self):
         n_conditions = len(self.conditions)
         for ch, channel in enumerate(self.channels):
             for c in range(n_conditions):
                 self.axs[ch, c].set_title(channel, fontsize=self.text['fs_title'], pad=3)
 
-    def subplots(self, colors):
+    def subplots3D(self, Y, err, colors):
         n_conditions = len(self.conditions)
         # n_channels = len(self.channels)
         self._setup_subplots()
-        Mean, SD, SE, channels_dict = self._av_across_participants()
-        for ch, channel in enumerate(self.channels):
-            for c in range(n_conditions):
-                for i in range(Mean[channel].shape[1]):
+        # Mean, SD, SE, channels_dict = self._av_across_participants()
+        for ch, channel in enumerate(self.channels):  # channel
+            for c in range(n_conditions):  # stimFinger
+                for i in range(Y[channel].shape[1]):  # timepoint
                     if self.plotstyle == 'plot':
-                        self.axs[ch, c].plot(self.xAx[c], Mean[channel][c, i], color=colors[c][i])
-                        self.axs[ch, c].fill_between(self.xAx[c],
-                                                     Mean[channel][c, i] - SE[channel][c, i],
-                                                     Mean[channel][c, i] + SE[channel][c, i],
-                                                     color=colors[c][i], alpha=.2, lw=0)
+                        self.axs[ch, c].plot(self.xAx[c], Y[channel][c, i], color=colors[c][i])
+                        if err is not None:
+                            self.axs[ch, c].fill_between(self.xAx[c],
+                                                         Y[channel][c, i] - err[channel][c, i],
+                                                         Y[channel][c, i] + err[channel][c, i],
+                                                         color=colors[c][i], alpha=.2, lw=0)
                     elif self.plotstyle == 'bar':
-                        self.axs[ch, c].bar(
-                            self.xAx[c] + (i - Mean[channel].shape[1] / 2) * self.bar['offset'] +
-                            self.bar['width'] / 2,
-                            Mean[channel][c, i], color=colors[c][i], yerr=SE[channel][c, i],
-                            width=self.bar['width'])
+                        if err is not None:
+                            self.axs[ch, c].bar(
+                                self.xAx[c] + (i - Y[channel].shape[1] / 2) * self.bar['offset'] +
+                                self.bar['width'] / 2,
+                                Y[channel][c, i], color=colors[c][i], yerr=err[channel][c, i],
+                                width=self.bar['width'])
+                        else:
+                            self.axs[ch, c].bar(
+                                self.xAx[c] + (i - Y[channel].shape[1] / 2) * self.bar['offset'] +
+                                (self.bar['width'] / 2) * (self.bar['offset'] != 0),
+                                Y[channel][c, i], color=colors[c][i], width=self.bar['width'])
                     else:
                         pass
+
+    def subplots2D(self, Y, err, colors):
+        n_conditions = len(self.conditions)
+        # n_channels = len(self.channels)
+        self._setup_subplots()
+        # Mean, SD, SE, channels_dict = self._av_across_participants()
+        for ch, channel in enumerate(self.channels):  # channel
+            for c in range(n_conditions):  # stimFinger
+                if self.plotstyle == 'bar':
+                    if err is not None:
+                        self.axs[ch, c].bar(
+                            self.xAx[c], Y[channel][c], color=colors[c], yerr=err[channel][c],
+                            width=self.bar['width'])
+                    else:
+                        self.axs[ch, c].bar(
+                            self.xAx[c], Y[channel][c], color=colors[c],
+                            width=self.bar['width'])
+                else:
+                    pass
 
     def _setup_subplots(self):
         n_conditions = len(self.conditions)
@@ -180,7 +209,7 @@ class Plotter3D:
 
         return colors
 
-    def _av_across_participants(self):
+    def av_across_participants(self):
 
         n_conditions = len(self.conditions)
 
@@ -188,7 +217,7 @@ class Plotter3D:
         N = len(self.data)
         for p_data in self.data:
             Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
-            M = av_within_participant(p_data.measurements, Z)
+            M, _ = av_within_participant(p_data.measurements, Z)
 
             for ch in self.channels:
                 if ch in p_data.channel_descriptors['channels']:
@@ -200,19 +229,54 @@ class Plotter3D:
             channel_data = np.array(channels_dict[ch])
             channels_dict[ch] = channel_data
 
-            # if channel_data.ndim == 3:
-            Mean[ch] = np.mean(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-                                                              channel_data.shape[2]))
-            SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-                                                           channel_data.shape[2]))
-            SE[ch] = (SD[ch] / np.sqrt(N)).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
-                                                    channel_data.shape[2]))
-            # else:
-            #     Mean[ch] = np.mean(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions)))
-            #     SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions)))
-            #     SE[ch] = (SD[ch] / np.sqrt(N)).reshape((n_conditions, int(channel_data.shape[1] / n_conditions)))
+            if channel_data.ndim == 3:
+                Mean[ch] = np.mean(channel_data, axis=0).reshape(
+                    (n_conditions, int(channel_data.shape[1] / n_conditions),
+                     channel_data.shape[2]))  # dimord: (stimFinger, cue, time)
+                SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
+                                                               channel_data.shape[2]))
+                SE[ch] = (SD[ch] / np.sqrt(N)).reshape((n_conditions, int(channel_data.shape[1] / n_conditions),
+                                                        channel_data.shape[2]))
+            else:
+                Mean[ch] = np.mean(channel_data, axis=0).reshape(
+                    (n_conditions, int(channel_data.shape[1] / n_conditions)))
+                SD[ch] = np.std(channel_data, axis=0).reshape((n_conditions, int(channel_data.shape[1] / n_conditions)))
+                SE[ch] = (SD[ch] / np.sqrt(N)).reshape((n_conditions, int(channel_data.shape[1] / n_conditions)))
 
         return Mean, SD, SE, channels_dict
+
+    def av_within_participant(self, N):
+
+        n_conditions = len(self.conditions)
+
+        channels_dictM = {ch: [] for ch in self.channels}
+        channels_dictSD = {ch: [] for ch in self.channels}
+        p_data = self.data[N]
+        Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
+        m, SD = av_within_participant(p_data.measurements, Z)
+
+        for ch in self.channels:
+            if ch in p_data.channel_descriptors['channels']:
+                channel_index = p_data.channel_descriptors['channels'].index(ch)
+                channels_dictM[ch].append(m[:, channel_index])
+                channels_dictSD[ch].append(SD[:, channel_index])
+
+        Mean, SD, SE = {}, {}, {}
+        for ch in self.channels:
+            av = np.array(channels_dictM[ch])
+            std = np.array(channels_dictSD[ch])
+            if av.ndim == 3:
+                Mean[ch] = av.reshape(
+                    (n_conditions, int(av.shape[1] / n_conditions), av.shape[2]))
+                SD[ch] = std.reshape(
+                    (n_conditions, int(std.shape[1] / n_conditions), std.shape[2]))
+            else:
+                Mean[ch] = av.reshape((n_conditions, int(av.shape[1] / n_conditions)))
+                SD[ch] = std.reshape((n_conditions, int(std.shape[1] / n_conditions)))
+
+        return Mean, SD
+
+    # def av_within_participant(self):
 
 
 def add_entry_to_legend(fig, label, color='k', ls='--'):
@@ -241,3 +305,18 @@ def add_entry_to_legend(fig, label, color='k', ls='--'):
     # Create a new legend with the same properties
     fig.legend(handles=existing_handles, labels=existing_labels, loc=loc, ncol=ncol, fontsize=fontsize)
 
+# def add_column_to_figure(fig, axs):
+#     num_rows, num_cols = axs.shape
+#     new_num_cols = num_cols + 1
+#
+#     # Create a new figure with the increased number of columns
+#     new_fig, new_axs = plt.subplots(num_rows, new_num_cols, figsize=(fig.get_figwidth(), fig.get_figheight()))
+#
+#     # Copy the content from the old axes to the new axes
+#     for i in range(num_rows):
+#         for j in range(num_cols):
+#
+#     # Close the old figure
+#     plt.close(fig)
+#
+#     return new_fig, new_axs

@@ -10,8 +10,8 @@ from smp0.experiment import Info, Clamped, Param
 from smp0.globals import base_dir
 from smp0.fetch import load_npy
 from smp0.stat import Anova3D, rm_anova, pairwise
-from smp0.utils import bin_traces, nnmf, assign_synergy, split_column_df
-from smp0.visual import Plotter3D, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
+from smp0.utils import bin_traces, split_column_df
+from smp0.visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants3D, list_participants2D
 
 if __name__ == "__main__":
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     dict_text['ylabel'] = ylabel[datatype]
     dict_text['xticklabels'] = [f"{win[0]}s to {win[1]}s" for win in wins]
 
-    Plot = Plotter3D(
+    Plot = Plotter(
         xAx=(xAx, xAx),
         data=Y,
         channels=channels[datatype],
@@ -92,7 +92,8 @@ if __name__ == "__main__":
     )
 
     colors = Plot.make_colors()
-    Plot.subplots((colors[1:], colors[:4]))
+    Mean, _, SE, _ = Plot.av_across_participants()
+    Plot.subplots3D(Mean, SE, (colors[1:], colors[:4]))
     Plot.set_titles()
     Plot.set_legend(colors)
     Plot.xylabels()
