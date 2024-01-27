@@ -99,7 +99,7 @@ class Anova3D:
         participants = [self.data[p].descriptors['participant_id'] for p in range(len(self.data))]
         for p, p_data in enumerate(self.data):
             Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
-            M, cond_names = av_within_participant(p_data.measurements, Z, cond_name=labels)
+            M, _, cond_names = av_within_participant(p_data.measurements, Z, cond_name=labels)
             for ch, channel in enumerate(p_data.channel_descriptors['channels']):
                 for c, cond in enumerate(cond_names):
                     for tp in range(n_timepoints):

@@ -66,6 +66,7 @@ if __name__ == "__main__":
         bins = np.concatenate((bins_i, bins_r), axis=0)
         Info_p.cond_vec[p] = np.concatenate((Info_p.cond_vec[p][Zf[:, 0]], Info_p.cond_vec[p][Zf[:, 1]]),
                                             axis=0).astype(int)
+        bins /= bins[..., 0][..., None]
         Data.append(bins)
 
     # create list of participants
