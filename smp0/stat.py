@@ -1,5 +1,6 @@
 import numpy as np
 from PcmPy.matrix import indicator
+from PcmPy.util import est_G_crossval
 from .workflow import av_within_participant
 import pandas as pd
 from statsmodels.stats.anova import AnovaRM
@@ -83,7 +84,7 @@ def pairwise(df, factor, alpha=0.05):
     return posthoc_results
 
 
-class Anova3D:
+class Stat:
 
     def __init__(self, data, channels, conditions, labels):
 
@@ -92,23 +93,48 @@ class Anova3D:
         self.conditions = conditions
         self.labels = labels
 
+    # def make_df(self, labels):
+    #     """
+    #
+    #     """
+    #     n_timepoints = self.data[0].timepoints
+    #     df = pd.DataFrame(columns=['participant_id', 'condition', 'channel', 'timepoint', 'Value'])
+    #     for p, p_data in enumerate(self.data):
+    #         Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
+    #         M, _, cond_names = av_within_participant(p_data.measurements, Z, cond_name=labels)
+    #         channels = p_data.channel_descriptors['channels']
+    #         for tp in range(n_timepoints):
+    #             for ch, channel in enumerate(channels):
+    #                 for c, cond in enumerate(cond_names):
+    #                     df.loc[len(df)] = {
+    #                         'participant_id': p_data.descriptors['participant_id'],
+    #                         'condition': cond,
+    #                         'channel': channel,
+    #                         'timepoint': tp,
+    #                         'Value': M[c, ch, tp]
+    #                     }
+    #     return df
+
     def make_df(self, labels):
-        n_conditions = len(self.conditions)
-        n_timepoints = self.data[0].timepoints
+        """
+
+        """
         df = pd.DataFrame(columns=['participant_id', 'condition', 'channel', 'timepoint', 'Value'])
-        participants = [self.data[p].descriptors['participant_id'] for p in range(len(self.data))]
         for p, p_data in enumerate(self.data):
-            Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
-            M, _, cond_names = av_within_participant(p_data.measurements, Z, cond_name=labels)
-            for ch, channel in enumerate(p_data.channel_descriptors['channels']):
-                for c, cond in enumerate(cond_names):
+            print(f'processing participant: {p_data.descriptors["participant_id"]}')
+            cond = np.unique(p_data.obs_descriptors['cond_vec'])
+            n_trials = p_data.measurements.shape[0]
+            n_channels = p_data.measurements.shape[1]
+            n_timepoints = p_data.measurements.shape[2]
+            for tr in range(n_trials):
+                for ch in range(n_channels):
                     for tp in range(n_timepoints):
                         df.loc[len(df)] = {
                             'participant_id': p_data.descriptors['participant_id'],
-                            'condition': cond,
-                            'channel': channel,
+                            'condition': labels[np.where(cond == (p_data.obs_descriptors['cond_vec'][tr]))[0][0]],
+                            'channel': p_data.channel_descriptors['channels'][ch],
                             'timepoint': tp,
-                            'Value': M[c, ch, tp]
+                            'Value': p_data.measurements[tr, ch, tp]
                         }
         return df
 

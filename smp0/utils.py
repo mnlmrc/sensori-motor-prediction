@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.signal import firwin, filtfilt
 
-from sklearn.metrics import mean_squared_error
-
 from .fetch import load_dat
 
 

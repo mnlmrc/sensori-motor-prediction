@@ -1,167 +1,129 @@
 import sys
 
-import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd
-from statsmodels.stats.anova import AnovaRM
-from PcmPy import indicator
-from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
+import matplotlib.patches as mpatches
 
-from smp0.experiment import Info, Clamped, Param
+from PcmPy.util import est_G_crossval, G_to_dist
+
+import numpy as np
+
 from smp0.globals import base_dir
-from smp0.fetch import load_npy
-from smp0.stat import Anova3D, rm_anova, pairwise
-from smp0.utils import bin_traces, split_column_df
-from smp0.visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
-from smp0.workflow import list_participants3D, list_participants2D
+
+
+def format_string_latex(txt):
+    parts = txt.split('_')
+    if len(parts) == 2:
+        return f"${parts[0]}_{{{parts[1]}}}$"
+    else:
+        return txt
+
+
+def make_colors(n_labels, ecol=('blue', 'red')):
+    cmap = mcolors.LinearSegmentedColormap.from_list(f"{ecol[0]}_to_{ecol[1]}",
+                                                     [ecol[0], ecol[1]], N=100)
+    norm = plt.Normalize(0, n_labels)
+    colors = [cmap(norm(lab)) for lab in range(n_labels)]
+
+    return colors
+
+
+def sort_cues(cue_list):
+    # Convert to integers (or floats) by removing the '%' sign and sorting
+    sorted_cues = sorted([int(cue.strip('%')) for cue in cue_list])
+
+    # Convert back to string with '%' sign
+    sorted_cues = [f"{cue}%" for cue in sorted_cues]
+
+    return sorted_cues
+
 
 if __name__ == "__main__":
-    experiment = sys.argv[1]
-    datatype = sys.argv[2]
+    datatype = sys.argv[1]
 
-    participants = ['100', '101', '102', '103', '104',
-                    '105', '106', '107', '108', '109', '110']
+    participants = [100, 101, 102, 103, 104,
+                    105, 106, 107, 108, 109, 110]
 
-    Clamp = Clamped(experiment)
-    Params = Param(datatype)
-    Info_p = Info(experiment, participants, datatype, ['stimFinger', 'cues'])
-    c_vec_f = Info(experiment, participants, datatype, ['stimFinger']).cond_vec
+    file_path = base_dir + f'/smp0/smp0_{datatype}_binned.stat'
+    data = pd.read_csv(file_path)
+    data = data[data['participant_id'].isin(participants)]
 
-    wins = {
-        'mov': ((-1, 0),
-                (0, .1),
-                (.1, .3),
-                (.3, 1)),
-        'emg': ((-1, 0),
-                (0, .05),
-                (.05, .1),
-                (.1, .3))
-    }
-    wins = wins[datatype]
+    colors = make_colors(len(data['cue'].unique()))
+    cues = sort_cues(data['cue'].unique())
+    palette = {cue: color for cue, color in zip(cues, colors)}
 
-    # define channels to plot for each datatype
-    channels = {
-        'mov': ["thumb", "index", "middle", "ring", "pinkie"],
-        'emg': ["thumb_flex", "index_flex", "middle_flex", "ring_flex",
-                "pinkie_flex", "thumb_ext", "index_ext",
-                "middle_ext", "ring_ext", "pinkie_ext", "fdi"]
-    }
+    # compute multivariated distance
+    n_participants = len(data['participant_id'].unique())
+    n_timepoints = len(data['timepoint'].unique())
+    n_stimF = len(data['stimFinger'].unique())
+    D = np.zeros((n_participants, n_stimF, n_timepoints, len(cues) - 1, len(cues) - 1))
+    Dav = np.zeros((n_participants, n_stimF, n_timepoints))
+    for p, participant_id in enumerate(data['participant_id'].unique()):
+        n_channels = len(data[data['participant_id'] == int(participant_id)]['channel'].unique())
+        for sf, stimF in enumerate(data['stimFinger'].unique()):
+            for tp in range(n_timepoints):
+                ydata = data[(data['participant_id'] == int(participant_id)) &
+                             (data['timepoint'] == tp) &
+                             (data['stimFinger'] == stimF)]
+                Y = ydata['Value'].to_numpy().reshape(((int(len(ydata) / n_channels)), n_channels))
+                cond_vec = ydata['cue'].to_numpy()[::n_channels]
+                n_blocks = int(Y.shape[0] / 10)
+                blocks = np.arange(n_blocks)
+                part_vec = np.repeat(blocks, 10)
+                G = est_G_crossval(Y, cond_vec, part_vec)[0]
+                dist = G_to_dist(G)
+                mask = ~np.eye(dist.shape[0], dtype=bool)
+                D[p, sf, tp] = dist
+                Dav[p, sf, tp] = dist[mask].mean()
 
-    # define ylabel per datatype
-    ylabel = {
-        'mov': 'force (N)',
-        'emg': 'emg (mV)'
-    }
+    fig, axs = plt.subplots(len(data['channel'].unique()), len(data['stimFinger'].unique()),
+                            figsize=(6, 8), sharex=True, sharey=True)
 
-    labels = ['0%', '25%', '50%', '75%', '100%']
-    stimFinger = ['index', 'ring']
+    for ch, channel in enumerate(data['channel'].unique()):
+        for sF, stimFinger in enumerate(data['stimFinger'].unique()):
+            subset = data[(data['channel'] == channel) & (data['stimFinger'] == stimFinger)]
+            sns.barplot(ax=axs[ch, sF], data=subset, x='timepoint', y='Value', hue='cue',
+                        estimator='mean', errorbar='se', palette=palette, legend=None,
+                        hue_order=['0%', '25%', '50%', '75%', '100%'], )
+            axs[ch, sF].set_ylabel('')
+            axs[ch, sF].set_xlabel('')
+            axs[ch, sF].tick_params(bottom=False)
 
-    Data = list()
-    for p, participant_id in enumerate(Info_p.participants):
-        data = load_npy(Info_p.experiment, participant_id=participant_id, datatype=datatype)
-        Zf = indicator(c_vec_f[p]).astype(bool)
-        bins_i = bin_traces(data[Zf[:, 0]], wins, fsample=Params.fsample,
-                            offset=Params.prestim + Clamp.latency[0])
-        bins_r = bin_traces(data[Zf[:, 1]], wins, fsample=Params.fsample,
-                            offset=Params.prestim + Clamp.latency[1])
-        bins = np.concatenate((bins_i, bins_r), axis=0)
-        Info_p.cond_vec[p] = np.concatenate((Info_p.cond_vec[p][Zf[:, 0]], Info_p.cond_vec[p][Zf[:, 1]]),
-                                            axis=0).astype(int)
-        bins /= bins[..., 0][..., None]
-        Data.append(bins)
+            axR = axs[ch, sF].twinx()
+            yerr = Dav[:, sF, :].std(axis=0) / np.sqrt(n_participants)
+            axR.errorbar(np.linspace(0, 3, 4), Dav[:, sF, :].mean(axis=0),
+                         marker='o', color='darkgrey', yerr=yerr)
+            axR.set_ylim([-.5, 4])
 
-    # create list of participants
-    Y = list_participants3D(Data, Info_p)
+            if sF == 0:
+                axs[ch, sF].spines[['top', 'bottom', 'right']].set_visible(False)
+                axR.spines[['top', 'bottom', 'left', 'right']].set_visible(False)
+                axR.set_yticks([])
+            elif sF == 1:
+                axs[ch, sF].spines[['top', 'bottom', 'right', 'left']].set_visible(False)
+                axR.spines[['top', 'bottom', 'left']].set_visible(False)
+                axs[ch, sF].tick_params(left=False)
 
-    xAx = np.array(list(range(len(wins))))
+        fig.text(.5, axs[ch, 0].get_position().p1[1], format_string_latex(channel), va='top', ha='left')
 
-    dict_lims['xlim'] = (-1, 4)
-    dict_text['xlabel'] = None
-    dict_text['ylabel'] = ylabel[datatype]
-    dict_text['xticklabels'] = [f"{win[0]}s to {win[1]}s" for win in wins]
-
-    Plot = Plotter(
-        xAx=(xAx, xAx),
-        data=Y,
-        channels=channels[datatype],
-        conditions=stimFinger,
-        labels=['0%', '25%', '50%', '75%', '100%'],
-        lims=dict_lims,
-        text=dict_text,
-        bar=dict_bars,
-        figsize=(6.4, 8),
-        plotstyle='bar'
-    )
-
-    colors = Plot.make_colors()
-    Mean, _, SE, _ = Plot.av_across_participants()
-    Plot.subplots3D(Mean, SE, (colors[1:], colors[:4]))
-    Plot.set_titles()
-    Plot.set_legend(colors)
-    Plot.xylabels()
-    Plot.set_xylim()
-    Plot.set_xyticklabels_size()
-    Plot.set_xticklabels()
-    # Plot.fig.set_constrained_layout(True)
-    Plot.fig.subplots_adjust(hspace=.5, bottom=.08, top=.95, left=.1, right=.9)
-
-    # statistics
-    Anova = Anova3D(
-        data=Y,
-        channels=channels[datatype],
-        conditions=stimFinger,
-        labels=labels
-    )
-
-    df = Anova.make_df(labels=[
-        'index, 25%',
-        'index, 50%',
-        'index, 75%',
-        'index, 100%',
-        'ring, 0%',
-        'ring, 25%',
-        'ring, 50%',
-        'ring, 100%',
-    ])
-    df = split_column_df(df, ['stimFinger', 'cue'], 'condition')
-
-    df_rm_anova_cue = rm_anova(df, ['channel', 'stimFinger', 'timepoint'], ['cue'])
-    df_pw_test = pd.DataFrame()
-    for sf in stimFinger:
-        for ch in channels[datatype]:
-            for tp in range(len(wins)):
-                df_in = df[(df['channel'] == ch) & (df['stimFinger'] == sf) & (df['timepoint'] == tp)]
-                pw = pairwise(df_in, 'cue')
-                pw['channel'] = ch
-                pw['stimFinger'] = sf
-                pw['timepoint'] = tp
-                df_pw_test = pd.concat([df_pw_test, pw], ignore_index=True)
-            # pairwise_test.append(pairwise(df_in, 'cue'))
-    df_rm_anova_cue.to_csv(base_dir + '/smp0/rm-anova_cue.stat')
-    df_pw_test.to_csv(base_dir + '/smp0/pw_cue.stat')
-    xTick = [str(group).strip("()").replace("'", "") + ", " + factor for group, factor in
-             zip(df_rm_anova_cue.group, df_rm_anova_cue.factor)]
-    # fig, axs = plt.subplots(len(channels[datatype]), len(stimFinger),
-    #                         figsize=(6.4, 8), sharey=True, sharex=True)
-
-    significant = .05
-    for xt, pval in zip(xTick, df_rm_anova_cue.pval):
-        ch = xt.split(", ")[0]
-        sf = xt.split(", ")[1]
-        tp = float(xt.split(", ")[2])
-        fc = xt.split(", ")[-1]
-        row = channels[datatype].index(ch)
-        col = stimFinger.index(sf)
-        if pval < significant:
-            llength = dict_bars['offset'] * 4
-            ly = Plot.axs[row, col].get_ylim()[1]
-            Plot.axs[row, col].hlines(ly, tp - llength / 2, tp + llength / 2, color='k', lw=3)
-
-        # axs[row, col].bar(tp, pval, color='green')
-        # axs[row, col].axhline(significant, ls='--', color='r')
-        # axs[row, col].set_title(ch)
-
-    # axs[0, 0].set_ylim([0, .1])
-    # fig.supylabel('p-pvalue')
-    # fig.tight_layout()
+    legend_handles = [mpatches.Patch(color=color, label=cue) for cue, color in palette.items()]
+    fig.legend(handles=legend_handles, loc='upper center', bbox_to_anchor=(0.5, 1), ncol=len(legend_handles))
+    axs[-1, 0].spines[['bottom']].set_visible(True)
+    axs[-1, 1].spines[['bottom']].set_visible(True)
+    axs[-1, 0].tick_params(bottom=True)
+    axs[-1, 1].tick_params(bottom=True)
 
     plt.show()
+
+    fig, axs = plt.subplots(len(cues), len(data['stimFinger'].unique()),
+                            figsize=(6, 8), sharex=True, sharey=True)
+
+    for c, cue in enumerate(cues):
+        for sF, stimFinger in enumerate(data['stimFinger'].unique()):
+            subset = data[(data['cue'] == cue) & (data['stimFinger'] == stimFinger)]
+
+            # Creating a bar plot
+            ax = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='Value', hue='channel',
+                             estimator='mean', errorbar='se', legend=None)
