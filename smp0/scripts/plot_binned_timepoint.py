@@ -11,33 +11,8 @@ from PcmPy.util import est_G_crossval, G_to_dist
 import numpy as np
 
 from smp0.globals import base_dir
-
-
-def format_string_latex(txt):
-    parts = txt.split('_')
-    if len(parts) == 2:
-        return f"${parts[0]}_{{{parts[1]}}}$"
-    else:
-        return txt
-
-
-def make_colors(n_labels, ecol=('blue', 'red')):
-    cmap = mcolors.LinearSegmentedColormap.from_list(f"{ecol[0]}_to_{ecol[1]}",
-                                                     [ecol[0], ecol[1]], N=100)
-    norm = plt.Normalize(0, n_labels)
-    colors = [cmap(norm(lab)) for lab in range(n_labels)]
-
-    return colors
-
-
-def sort_cues(cue_list):
-    # Convert to integers (or floats) by removing the '%' sign and sorting
-    sorted_cues = sorted([int(cue.strip('%')) for cue in cue_list])
-
-    # Convert back to string with '%' sign
-    sorted_cues = [f"{cue}%" for cue in sorted_cues]
-
-    return sorted_cues
+from smp0.utils import sort_cues, f_str_latex
+from smp0.visual import make_colors
 
 
 if __name__ == "__main__":
@@ -106,7 +81,7 @@ if __name__ == "__main__":
                 axR.spines[['top', 'bottom', 'left']].set_visible(False)
                 axs[ch, sF].tick_params(left=False)
 
-        fig.text(.5, axs[ch, 0].get_position().p1[1], format_string_latex(channel), va='top', ha='left')
+        fig.text(.5, axs[ch, 0].get_position().p1[1], f_str_latex(channel), va='top', ha='left')
 
     legend_handles = [mpatches.Patch(color=color, label=cue) for cue, color in palette.items()]
     fig.legend(handles=legend_handles, loc='upper center', bbox_to_anchor=(0.5, 1), ncol=len(legend_handles))
@@ -117,13 +92,13 @@ if __name__ == "__main__":
 
     plt.show()
 
-    fig, axs = plt.subplots(len(cues), len(data['stimFinger'].unique()),
-                            figsize=(6, 8), sharex=True, sharey=True)
-
-    for c, cue in enumerate(cues):
-        for sF, stimFinger in enumerate(data['stimFinger'].unique()):
-            subset = data[(data['cue'] == cue) & (data['stimFinger'] == stimFinger)]
-
-            # Creating a bar plot
-            ax = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='Value', hue='channel',
-                             estimator='mean', errorbar='se', legend=None)
+    # fig, axs = plt.subplots(len(cues), len(data['stimFinger'].unique()),
+    #                         figsize=(6, 8), sharex=True, sharey=True)
+    #
+    # for c, cue in enumerate(cues):
+    #     for sF, stimFinger in enumerate(data['stimFinger'].unique()):
+    #         subset = data[(data['cue'] == cue) & (data['stimFinger'] == stimFinger)]
+    #
+    #         # Creating a bar plot
+    #         ax = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='Value', hue='channel',
+    #                          estimator='mean', errorbar='se', legend=None)

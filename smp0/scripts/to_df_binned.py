@@ -1,22 +1,18 @@
 import sys
 
 import numpy as np
-import pandas as pd
-from statsmodels.stats.anova import AnovaRM
 from PcmPy import indicator
-from matplotlib import pyplot as plt
 
 from smp0.experiment import Info, Clamped, Param
-from smp0.globals import base_dir
 from smp0.fetch import load_npy
-from smp0.stat import Stat, rm_anova, pairwise
+from smp0.globals import base_dir
+from smp0.stat import Stat
 from smp0.utils import bin_traces, split_column_df
-from smp0.visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
-from smp0.workflow import list_participants3D, list_participants2D
+from smp0.workflow import list_participants3D
 
 if __name__ == "__main__":
-    experiment = sys.argv[1]
-    datatype = sys.argv[2]
+    experiment = 'smp0'
+    datatype = sys.argv[1]
 
     participants = ['100', '101', '102', '103', '104',
                     '105', '106', '107', '108', '109', '110']
