@@ -31,13 +31,18 @@ if __name__ == "__main__":
     # Angle for each channel
     angles = np.linspace(0, 2 * np.pi, len(channels) + 1, endpoint=True)
 
-    # Plotting data for each timepoint
+    n_participants = len(data['participant_id'].unique())
+    n_timepoints = len(data['timepoint'].unique())
+    n_stimF = len(data['stimFinger'].unique())
+    n_cues = len(cues)
 
-    for c, cue in enumerate(cues):
-        for sF, stimFinger in enumerate(data['stimFinger'].unique()):
-            for tp in timepoints:
+    # Plotting data for each timepoint
+    for tp in timepoints:
+        for c, cue in enumerate(cues):
+            for sF, stimFinger in enumerate(data['stimFinger'].unique()):
                 ch_dict = {ch: [] for ch in channels}
                 for p, participant_id in enumerate(data['participant_id'].unique()):
+                    print(f"cue: {cue}, stimFinger: {stimFinger}, timepoint: {tp}, participant: {participant_id}")
                     subset = data.query('timepoint == @tp and '
                                         'stimFinger == @stimFinger '
                                         'and cue == @cue and '
@@ -48,7 +53,9 @@ if __name__ == "__main__":
                             ch_dict[channel].append(subset.query('channel == @channel')['Value'].mean())
 
                 av = [np.array(ch_dict[ch]).mean() for ch in channels]
+                sem = [np.array(ch_dict[ch]).std() / np.sqrt(len(data['participant_id'].unique())) for ch in channels]
                 av += av[:1]  # Repeat the first value to close the plot
+                sem += sem[:1]
 
                 ax[c, sF].plot(angles, av, label=f'Timepoint {tp}')
 
@@ -65,3 +72,15 @@ if __name__ == "__main__":
                 # ax[c, sF].legend(loc='upper right')  # Legend with timepoints
 
     plt.show()
+
+    data['stimFinger_cue'] = data['stimFinger'].astype(str) + "," + data['cue']
+
+    # Initialize a dictionary to store correlation matrices
+    correlation_matrices = {}
+
+    # Iterate over each combination of timepoint and participant
+    corr_mat = np.zeros((n_participants, n_timepoints, int(n_stimF * n_cues - 2), int(n_stimF * n_cues - 2)))
+    for (tp, p), group in data.groupby(['timepoint', 'participant_id']):
+        pivot_table = group.pivot_table(index='channel', columns='stimFinger_cue', values='Value')
+        corr_mat[p-100, tp] = pivot_table.corr().to_numpy()
+
