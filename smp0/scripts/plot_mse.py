@@ -10,14 +10,14 @@ import seaborn as sns
 
 import matplotlib.patches as mpatches
 
-from smp0.stat import anova
+from smp0.stat import anova, pairwise
 from smp0.visual import make_colors
 
 if __name__ == "__main__":
     datatype = sys.argv[1]
 
     participants = [100, 101, 102, 103, 104,
-                        105, 106, 107, 108, 109, 110]
+                    105, 106, 107, 108, 109, 110]
 
     file_path = base_dir + f"/smp0/smp0_{datatype}_binned.stat"
     data = pd.read_csv(file_path)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
                                     'stimFinger': stimF,
                                     'cue': cue,
                                     'timepoint': tp,
-                                    'MSE': np.mean((Yhat - Y) ** 2)
+                                    'MSE': np.sum((Y - Yhat) ** 2) / np.sum((Y - Y.mean()) ** 2)
                                 }
                             else:
                                 pass
@@ -73,13 +73,27 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(len(cues), len(stimFingers),
                             figsize=(6.4, 8), sharex=True, sharey=True)
 
+    ttest = pd.DataFrame(columns=['group1', 'group2', 'stat', 'pval', 'p-adj', 'stimFinger', 'cue', 'timepoint'])
     for c, cue in enumerate(cues):
         for sF, stimF in enumerate(stimFingers):
             subset = mse[(mse['cue'] == cue) & (mse['stimFinger'] == stimF)]
             if len(subset) > 0:
-                res = anova(subset, within_subjects_vars=['timepoint', 'coeff'], dependent_var='MSE')
+                for tp in timepoints[1:]:
+                    subset_tp = subset[subset['timepoint'] == tp]
+                    pw = pairwise(subset_tp, 'coeff', dep_var='MSE')
+                    row = {
+                        'group1': pw['group1'][0],
+                        'group2': pw['group2'][0],
+                        'stat': pw['stat'][0],
+                        'pval': pw['pval'][0],
+                        'p-adj': pw['p-adj'][0],
+                        'cue': cue,
+                        'stimFinger': stimF,
+                        'timepoint': tp
+                    }
+                    ttest.loc[len(ttest)] = row
             g = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='MSE', hue='coeff', errorbar='se',
-                         palette=palette, legend=None, hue_order=labels, err_kws={'color': 'k'})
+                            palette=palette, legend=None, hue_order=labels, err_kws={'color': 'k'})
             axs[c, sF].set_ylabel('')
             axs[c, sF].set_xlabel('')
             axs[c, sF].set_xticks(np.linspace(0, 2, 3))
@@ -100,7 +114,6 @@ if __name__ == "__main__":
     axs[-1, 0].tick_params(bottom=True)
     axs[-1, 1].tick_params(bottom=True)
 
-
     lh = [mpatches.Patch(color=color, label=label)
           for label, color in zip(labels, colors)]
     fig.legend(handles=lh, loc='upper center', ncol=2, edgecolor='none', facecolor='whitesmoke')
@@ -116,3 +129,4 @@ if __name__ == "__main__":
 
     plt.show()
 
+    ttest.to_csv(base_dir + f"/smp0/smp0_mse_pairwise.stat")

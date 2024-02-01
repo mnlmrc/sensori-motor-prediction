@@ -99,7 +99,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 import itertools
 
 
-def pairwise(df, factor, alpha=0.05):
+def pairwise(df, factor, dep_var='Value', alpha=0.05):
     """
     Perform post hoc tests for a significant factor in repeated measures ANOVA.
 
@@ -111,15 +111,15 @@ def pairwise(df, factor, alpha=0.05):
     Returns:
     pd.DataFrame: A DataFrame with the post hoc test results.
     """
-    posthoc_results = pd.DataFrame(columns=['group1', 'group2', 'stat', 'p-adj'])
+    posthoc_results = pd.DataFrame(columns=['group1', 'group2', 'stat', 'pval', 'p-adj'])
 
     # Get unique levels of the factor
     levels = df[factor].unique()
 
     # Perform pairwise tests
     for (level1, level2) in itertools.combinations(levels, 2):
-        group1 = df[df[factor] == level1]['Value']
-        group2 = df[df[factor] == level2]['Value']
+        group1 = df[df[factor] == level1][dep_var]
+        group2 = df[df[factor] == level2][dep_var]
 
         # Perform the paired t-test
         stat, p = ttest_rel(group1, group2)
@@ -129,7 +129,7 @@ def pairwise(df, factor, alpha=0.05):
 
         # Check against alpha
         # if p_adj < alpha:
-        row = {'group1': level1, 'group2': level2, 'stat': stat, 'p-adj': p_adj}
+        row = {'group1': level1, 'group2': level2, 'stat': stat, 'pval': p, 'p-adj': p_adj}
         posthoc_results.loc[len(posthoc_results)] = row
 
     return posthoc_results
