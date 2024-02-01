@@ -10,6 +10,7 @@ import seaborn as sns
 
 import matplotlib.patches as mpatches
 
+from smp0.stat import anova
 from smp0.visual import make_colors
 
 if __name__ == "__main__":
@@ -75,6 +76,8 @@ if __name__ == "__main__":
     for c, cue in enumerate(cues):
         for sF, stimF in enumerate(stimFingers):
             subset = mse[(mse['cue'] == cue) & (mse['stimFinger'] == stimF)]
+            if len(subset) > 0:
+                res = anova(subset, within_subjects_vars=['timepoint', 'coeff'], dependent_var='MSE')
             g = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='MSE', hue='coeff', errorbar='se',
                          palette=palette, legend=None, hue_order=labels, err_kws={'color': 'k'})
             axs[c, sF].set_ylabel('')

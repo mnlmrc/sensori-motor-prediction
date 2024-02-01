@@ -5,6 +5,57 @@ from .workflow import av_within_participant
 import pandas as pd
 from statsmodels.stats.anova import AnovaRM
 from scipy.stats import ttest_rel
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
+
+from statsmodels.regression.mixed_linear_model import MixedLM
+
+
+def anova(data, dependent_var, between_subjects_vars=None, within_subjects_vars=None):
+    """
+    Perform a traditional ANOVA with the capability to handle both within-subjects (repeated measures)
+    and between-subjects factors.
+
+    Parameters:
+    data (DataFrame): The dataframe containing the data.
+    dependent_var (str): The name of the dependent variable column.
+    between_subjects_vars (list of str or None): List of the names of the between-subjects variable columns.
+    within_subjects_vars (list of str or None): List of the names of the within-subjects variable columns.
+
+    Returns:
+    DataFrame: ANOVA table result.
+    """
+
+    # Validate input
+    if not dependent_var or dependent_var not in data.columns:
+        raise ValueError("Dependent variable is missing or not found in data.")
+    if between_subjects_vars is None:
+        between_subjects_vars = []
+    if within_subjects_vars is None:
+        within_subjects_vars = []
+
+    # Construct the formula
+    independent_vars = between_subjects_vars + within_subjects_vars
+    formula = f'{dependent_var} ~ ' + ' + '.join([f'C({var})' for var in independent_vars])
+
+    # Fit the model
+    model = ols(formula, data=data).fit()
+
+    # Perform ANOVA
+    anova_results = anova_lm(model)
+
+    return anova_results
+
+
+
+
+
+# Example usage of the function
+# mixed_anova_result = mixed_anova(data, 'Value', ['participant_id', 'channel'], 'timepoint', 'participant_id')
+# print(mixed_anova_result.summary())
+
+# The function is commented out to prevent it from running without specific factors being chosen.
+# Uncomment and adjust the parameters to fit the specifics of your dataset.
 
 
 def rm_anova(df, group_factors, anova_factors):
