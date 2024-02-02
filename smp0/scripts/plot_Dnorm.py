@@ -77,6 +77,23 @@ if __name__ == "__main__":
     for c, cue in enumerate(cues):
         for sF, stimF in enumerate(stimFingers):
             subset = mse[(mse['cue'] == cue) & (mse['stimFinger'] == stimF)]
+            # g = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='Dnorm', hue='coeff', errorbar='se',
+            #                 palette=palette, legend=None, hue_order=labels, err_kws={'color': 'k'})
+            g = sns.boxplot(ax=axs[c, sF], data=subset, x='timepoint', y='Dnorm', hue='coeff',
+                            palette=palette, legend=None, hue_order=labels)
+            axs[c, sF].set_ylabel('')
+            axs[c, sF].set_xlabel('')
+            axs[c, sF].set_xticks(np.linspace(0, 2, 3))
+            axs[c, sF].set_xticklabels(['SLR', 'LLR', 'Vol'])
+            axs[c, sF].set_ylim([.2, 1.1])
+
+            if sF == 0:
+                axs[c, sF].spines[['top', 'bottom', 'right']].set_visible(False)
+                axs[c, sF].tick_params(bottom=False)
+            elif sF == 1:
+                axs[c, sF].spines[['top', 'bottom', 'right', 'left']].set_visible(False)
+                axs[c, sF].tick_params(left=False, bottom=False)
+
             if len(subset) > 0:
                 for tp in timepoints[1:]:
                     subset_tp = subset[subset['timepoint'] == tp]
@@ -92,23 +109,16 @@ if __name__ == "__main__":
                         'timepoint': tp
                     }
                     ttest.loc[len(ttest)] = row
-            g = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='Dnorm', hue='coeff', errorbar='se',
-                            palette=palette, legend=None, hue_order=labels, err_kws={'color': 'k'})
-            axs[c, sF].set_ylabel('')
-            axs[c, sF].set_xlabel('')
-            axs[c, sF].set_xticks(np.linspace(0, 2, 3))
-            axs[c, sF].set_xticklabels(['SLR', 'LLR', 'Vol'])
 
-            if sF == 0:
-                axs[c, sF].spines[['top', 'bottom', 'right']].set_visible(False)
-                axs[c, sF].tick_params(bottom=False)
-            elif sF == 1:
-                axs[c, sF].spines[['top', 'bottom', 'right', 'left']].set_visible(False)
-                axs[c, sF].tick_params(left=False, bottom=False)
+                    if pw['pval'][0] < .05:
+                        length = .5
+                        ylim = axs[c, sF].get_ylim()[1]
+                        axs[c, sF].hlines(ylim, tp - length / 2 - 1,
+                                          tp + length / 2 - 1, color='k', lw=3)
 
     # g.set_yscale("log")
 
-    axs[0, 0].set_title('StimFinger:index')
+    axs[1, 0].set_title('StimFinger:index')
     axs[0, 1].set_title('StimFinger:ring')
     axs[-1, 0].spines[['bottom']].set_visible(True)
     axs[-2, 1].spines[['bottom']].set_visible(True)
@@ -132,4 +142,4 @@ if __name__ == "__main__":
 
     plt.show()
 
-    ttest.to_csv(base_dir + f"/smp0/smp0_mse_pairwise.stat")
+    ttest.to_csv(base_dir + f"/smp0/smp0_Dnorm_pairwise.stat")

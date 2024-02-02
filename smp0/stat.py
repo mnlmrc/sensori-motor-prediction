@@ -58,7 +58,7 @@ def anova(data, dependent_var, between_subjects_vars=None, within_subjects_vars=
 # Uncomment and adjust the parameters to fit the specifics of your dataset.
 
 
-def rm_anova(df, group_factors, anova_factors):
+def rm_anova(df, anova_factors, group_factors=None):
     """
     Perform repeated measures ANOVA for specified group and ANOVA factors.
 
@@ -74,9 +74,9 @@ def rm_anova(df, group_factors, anova_factors):
     anova_results = pd.DataFrame(columns=['group', 'factor', 'F-value', 'pval', 'df', 'df_resid'])
 
     # Iterate over each combination of group factors
-    for group_vals, df_group in df.groupby(group_factors):
+    if group_factors is None:
         # Perform Repeated Measures ANOVA
-        aovrm = AnovaRM(df_group, depvar='Value', subject='participant_id', within=anova_factors)
+        aovrm = AnovaRM(df, depvar='Value', subject='participant_id', within=anova_factors, aggregate_func=np.mean)
         res = aovrm.fit()
 
         # Extract results for each factor and interaction
@@ -88,9 +88,27 @@ def rm_anova(df, group_factors, anova_factors):
                 df2 = res.anova_table.loc[factor, 'Den DF']
 
                 # Append results to the DataFrame
-                row = {'group': group_vals, 'factor': factor, 'F-value': F_value, 'pval': p_value, 'df': df1,
+                row = {'factor': factor, 'F-value': F_value, 'pval': p_value, 'df': df1,
                        'df_resid': df2}
                 anova_results.loc[len(anova_results)] = row
+    else:
+        for group_vals, df_group in df.groupby(group_factors):
+            # Perform Repeated Measures ANOVA
+            aovrm = AnovaRM(df_group, depvar='Value', subject='participant_id', within=anova_factors, aggregate_func=np.mean)
+            res = aovrm.fit()
+
+            # Extract results for each factor and interaction
+            for factor in anova_factors + [':'.join(anova_factors)]:
+                if factor in res.anova_table.index:
+                    F_value = res.anova_table.loc[factor, 'F Value']
+                    p_value = res.anova_table.loc[factor, 'Pr > F']
+                    df1 = res.anova_table.loc[factor, 'Num DF']
+                    df2 = res.anova_table.loc[factor, 'Den DF']
+
+                    # Append results to the DataFrame
+                    row = {'group': group_vals, 'factor': factor, 'F-value': F_value, 'pval': p_value, 'df': df1,
+                           'df_resid': df2}
+                    anova_results.loc[len(anova_results)] = row
 
     return anova_results
 

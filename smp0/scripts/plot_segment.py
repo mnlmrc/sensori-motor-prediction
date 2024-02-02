@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     axvline = {
         'mov': ([0, .1, .5], ['-', ':', '-.']),
-        'emg': ([0, .05, .1, .3], ['-', ':', '--', ':'])
+        'emg': ([0, .05, .1, .5], ['-', ':', '-.', ':'])
     }
     axvline = axvline[datatype]
 
@@ -53,12 +53,19 @@ if __name__ == "__main__":
     }
     xlim = xlim[datatype]
 
-    cues = ['0%', '25%', '50%', '75%', '100%']
+    ylim = {
+        'mov': [-1, 15],
+        'emg': [0, 25],
+    }
+
+    cues = ['0%', '25%', '50%', '75%', '100%', 'clamped']
     colors = make_colors(5)
-    lh = [mlines.Line2D([], [], color=color, label=label)
-          for label, color in zip(cues, colors)]
-    cues = (cues[1:], cues[:4])
-    colors = (colors[1:], colors[:4])
+    colors.append((0.0, 0.0, 0.0))
+    ls = ['-', '-', '-', '-', '-', '--']
+    lh = [mlines.Line2D([], [], color=color, label=label, ls=ls)
+          for label, color, ls in zip(cues, colors, ls)]
+    cues = (cues[1:5], cues[:4])
+    colors = (colors[1:5], colors[:4])
 
     # create list of 3D data (segmented trials)
     Data = list()
@@ -77,6 +84,7 @@ if __name__ == "__main__":
 
     timeAx = Params.timeAx()
     timeAx_c = (timeAx - Clamp.latency[0], timeAx - Clamp.latency[1])
+    timeAx_clamped = Clamp.timeAx()
 
     stimFingers = ['Index', 'Ring']
     n_stimF = len(stimFingers)
@@ -91,10 +99,23 @@ if __name__ == "__main__":
         avr = av[channel].reshape((n_stimF, int(av[channel].shape[0] / n_stimF), av[channel].shape[-1]))
         semr = sem[channel].reshape((n_stimF, int(sem[channel].shape[0] / n_stimF), sem[channel].shape[-1]))
         for sF, stimF in enumerate(stimFingers):
+            # add force clamped
+            if datatype == 'mov':
+                axs[ch, sF].plot(timeAx_clamped[sF], Clamp.clamped_f[sF], color='k', ls='--', lw=.8)
+            elif datatype == 'emg':
+                axr = axs[ch, sF].twinx()
+                axr.plot(timeAx_clamped[sF], Clamp.clamped_f[sF], color='k', ls='--', lw=.8)
+                axr.set_ylim(ylim['mov'])
+                if sF == 0:
+                    axr.spines[['left', 'top', 'right', 'bottom']].set_visible(False)
+                    axr.tick_params(left=False, bottom=False, right=False)
+                    axr.set_yticklabels([])
+                else:
+                    axr.spines[['left', 'top', 'bottom']].set_visible(False)
+                    axr.tick_params(left=False, bottom=False, )
+
             for l, lab in enumerate(cues[sF]):
                 axs[ch, sF].plot(timeAx_c[sF], avr[sF, l], color=colors[sF][l])
-                if datatype == 'mov':
-                    axs[ch, sF].plot(timeAx_c[sF], Clamp.clamped_f[sF], color='k', ls='--', lw=.8)
                 axs[ch, sF].fill_between(timeAx_c[sF], avr[sF, l] - semr[sF, l], avr[sF, l] + semr[sF, l],
                                          color=colors[sF][l], lw=0, alpha=.2)
 
@@ -103,6 +124,7 @@ if __name__ == "__main__":
 
                 axs[ch, sF].tick_params(bottom=False)
                 axs[ch, sF].set_xlim(xlim)
+                axs[ch, sF].set_ylim(ylim[datatype])
 
                 if sF == 0:
                     axs[ch, sF].spines[['top', 'right', 'bottom']].set_visible(False)
@@ -117,18 +139,21 @@ if __name__ == "__main__":
 
     fig.supylabel(ylabel)
     fig.supxlabel('Time (s)')
+    if datatype == 'emg':
+        fig.text(0.97, 0.5, 'force (N)', va='center', ha='left', rotation='vertical', fontsize=12)
 
-    fig.legend(handles=lh, loc='upper center', ncol=5, edgecolor='none', facecolor='whitesmoke')
+    fig.legend(handles=lh, loc='upper center', ncol=6, edgecolor='none', facecolor='whitesmoke')
 
     fig.tight_layout()
-    fig.subplots_adjust(top=.92)
+    fig.subplots_adjust(top=.92, right=.9)
 
     for ch, channel in enumerate(channels):
-        fig.text(.98, np.mean((axs[ch, 0].get_position().p0[1], axs[ch, 0].get_position().p1[1])),
+        fig.text(.51, np.mean((axs[ch, 0].get_position().p0[1], axs[ch, 0].get_position().p1[1])),
                  f"{f_str_latex(channel)}", va='center', ha='center', rotation=90)
 
     plt.show()
 
     fig.savefig(f'{base_dir}/smp0/figures/smp0_segment_{datatype}.svg')
+    fig.savefig(f'{base_dir}/smp0/figures/smp0_segment_{datatype}.png')
 
 

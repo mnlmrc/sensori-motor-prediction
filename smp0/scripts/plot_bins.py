@@ -11,6 +11,7 @@ from PcmPy.util import est_G_crossval, G_to_dist
 import numpy as np
 
 from smp0.globals import base_dir
+from smp0.stat import pairwise, rm_anova
 from smp0.utils import sort_cues, f_str_latex
 from smp0.visual import make_colors
 
@@ -27,6 +28,7 @@ if __name__ == "__main__":
 
     colors = make_colors(len(data['cue'].unique()))
     cues = sort_cues(data['cue'].unique())
+    timepoints = data['timepoint'].unique()
     palette = {cue: color for cue, color in zip(cues, colors)}
 
     channels = data['channel'].unique()
@@ -74,6 +76,7 @@ if __name__ == "__main__":
     #             D[p, sf, tp] = dist
     #             Dav[p, sf, tp] = dist[mask].mean()
 
+    ttest = pd.DataFrame()
     fig, axs = plt.subplots(len(data['channel'].unique()), len(data['stimFinger'].unique()),
                             figsize=(6.4, 9), sharex=True, sharey=True)
 
@@ -105,12 +108,29 @@ if __name__ == "__main__":
                 # axR.spines[['top', 'bottom', 'left']].set_visible(False)
                 axs[ch, sF].tick_params(left=False)
 
+                    # if pw['pval'][0] < .05:
+                    #     length = .5
+                    #     ylim = axs[ch, sF].get_ylim()[1]
+                    #     axs[ch, sF].hlines(ylim, tp - length / 2 - 1,
+                    #                       tp + length / 2 - 1, color='k', lw=3)
+
     axs[0, 0].set_title('StimFinger:index')
     axs[0, 1].set_title('StimFinger:ring')
     axs[-1, 0].spines[['bottom']].set_visible(True)
     axs[-1, 1].spines[['bottom']].set_visible(True)
     axs[-1, 0].tick_params(bottom=True)
     axs[-1, 1].tick_params(bottom=True)
+
+    # run statistics
+    anova = rm_anova(data, ['cue'], ['channel', 'stimFinger', 'timepoint'])
+    # pwise = pd.DataFrame()
+    subset = data.groupby(by=['participant_id', 'cue', 'channel', 'timepoint', 'stimFinger']).mean().reset_index()
+    pwise = pairwise(subset, 'cue')
+    # pw['channel'] = ch
+    # pw['stimFinger'] = sF
+    # pw['timepoint'] = tp
+    # pwise = pd.concat([pwise, pw], ignore_index=True)
+            # pairwise_test.append(pairwise(df_in, 'cue'))
 
     fig.legend(handles=lh, loc='upper center', ncol=5, edgecolor='none', facecolor='whitesmoke')
 
@@ -120,12 +140,13 @@ if __name__ == "__main__":
     fig.subplots_adjust(top=.92, wspace=.17)
 
     for ch, channel in enumerate(channels):
-        fig.text(.98, np.mean((axs[ch, 0].get_position().p0[1], axs[ch, 0].get_position().p1[1])),
+        fig.text(.54, np.mean((axs[ch, 0].get_position().p0[1], axs[ch, 0].get_position().p1[1])),
                  f"{f_str_latex(channel)}", va='center', ha='center', rotation=90)
 
     plt.show()
 
     fig.savefig(f'{base_dir}/smp0/figures/smp0_bins_{datatype}.svg')
+    fig.savefig(f'{base_dir}/smp0/figures/smp0_bins_{datatype}.png')
 
     # fig, axs = plt.subplots(len(cues), len(data['stimFinger'].unique()),
     #                         figsize=(6, 8), sharex=True, sharey=True)
