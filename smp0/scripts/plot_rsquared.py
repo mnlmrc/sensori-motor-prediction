@@ -14,7 +14,7 @@ if __name__ == "__main__":
     participants = [100, 101, 102, 103, 104,
                     105, 106, 107, 108, 109, 110]
 
-    file_path = base_dir + f"/smp0/smp0_{datatype}_binned.stat"
+    file_path = base_dir + f"/smp0/datasets/smp0_{datatype}_binned.stat"
     data = pd.read_csv(file_path)
     data = data[data['participant_id'].isin(participants)]
 
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     labels = ['coefficient #1 (index-like)', 'coefficient #2 (ring-like)']
     palette = {labels: color for labels, color in zip(labels, colors)}
 
-    R_squared = pd.DataFrame(columns=['participant_id', 'timepoint', 'Rsquared'])
+    R_squared = pd.DataFrame(columns=['participant_id', 'timepoint', '$R^2$'])
     for p, participant_id in enumerate(participants):
         for tp in timepoints[1:]:
             pdata = data[(data['participant_id'] == participant_id) & (data['timepoint'] == tp)]
@@ -39,13 +39,25 @@ if __name__ == "__main__":
                 _, _, R = nnmf(X)
 
                 R_squared.loc[len(R_squared)] = {
-                        'participant_id': str(participant_id),
-                        'timepoint': tp,
-                        'Rsquared': R
+                    'participant_id': str(participant_id),
+                    'timepoint': tp,
+                    '$R^2$': R
                 }
 
-    fig, axs = plt.subplots()
-    sns.barplot(ax=axs, data=R_squared, x='timepoint', y='Rsquared', errorbar='se',
-                color='red', legend=None, hue_order=labels, err_kws={'color': 'k'})
+    fig, axs = plt.subplots(figsize=(3, 5))
+    sns.boxplot(ax=axs, data=R_squared, x='timepoint', y='$R^2$',
+                color='pink', legend=None)
+    R_squared_mean = R_squared.groupby(by=['timepoint'])['$R^2$'].mean()
+    axs.plot([0, 1, 2], R_squared_mean, marker='o', color='k', markersize=10)
+    axs.spines[['top', 'right']].set_visible(False)
+    axs.set_xlabel('')
+    # axs.set_xticks([0, 1, 2])
+    axs.set_xticklabels(['SLR', 'LLR', 'Vol'])
+    # axs.set_title('$R^2$ after NNMF (two components)')
 
+    fig.tight_layout()
 
+    fig.savefig(base_dir + f"/smp0/figures/smp0_rsquared_{datatype}.png")
+    fig.savefig(base_dir + f"/smp0/figures/smp0_rsquared_{datatype}.svg")
+
+    plt.show()

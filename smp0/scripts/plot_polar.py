@@ -19,7 +19,7 @@ if __name__ == "__main__":
     participants = [100, 101, 102, 103, 104,
                     105, 106, 107, 108, 109, 110]
 
-    file_path = base_dir + f"/smp0/smp0_{datatype}_binned.stat"
+    file_path = base_dir + f"/smp0/datasets/smp0_{datatype}_binned.stat"
     data = pd.read_csv(file_path)
     data = data[data['participant_id'].isin(participants)]
 
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     labels = ['SLR', 'LLR', 'Vol']
     lh = [mlines.Line2D([], [], color=color, label=label)
           for label, color in zip(labels, colors[1:])]
-    fig.legend(handles=lh, loc='upper right', ncol=3)
+    fig.legend(handles=lh, loc='upper right', ncol=3, edgecolor='none', facecolor='whitesmoke')
 
     # fig2, axs2 = plt.subplots()
 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         axs[0, 0].set_rlabel_position(0)  # Position of radial labels
         axs[0, 0].set_ylim([0, 3.5])
         axs[0, 0].set_yticks([])
-        axs[0, 0].set_title('coefficient #1 (index-like)', fontsize=10, y=1.25)
+        axs[0, 0].set_title('component #1 (index-like)', fontsize=10, y=1.25)
 
         # ring
         ptnR = list(np.nanmean(coeff[tp, 1], axis=0))
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         ymargin = .035
         hlight = mpatches.Rectangle((pos.x0 - xmargin, pos.y0 - ymargin), pos.width + 2 * xmargin,
                                     pos.height + 2.6 * ymargin,
-                                    transform=fig.transFigure, color='#f0f0f0',
+                                    transform=fig.transFigure, color='whitesmoke',
                                     zorder=-1)
         fig.patches.append(hlight)
 
@@ -235,5 +235,6 @@ if __name__ == "__main__":
     #                 y = mse.mean(axis=1)[sy, sF, :, c]
     #                 yerr = mse.std(axis=1)[sy, sF, :, c] / np.sqrt(n_participants)
     #                 axs2[c, sF].bar(xAx + offset[sy] * width / 2, y, yerr=yerr, color=color[sy], width=width)
-
     plt.show()
+
+    fig.savefig(base_dir + '/smp0/figures/smp0_polar_emg.svg')

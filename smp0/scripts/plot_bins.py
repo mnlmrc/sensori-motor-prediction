@@ -39,6 +39,11 @@ if __name__ == "__main__":
         'emg': [.5, 3.5]
     }
 
+    ylim = {
+        'mov': [-.5, 3.5],
+        'emg': [.5, 3.5]
+    }
+
     ylabel = {
         'mov': 'force (N)',
         'emg': 'EMG (% of baseline)'
@@ -82,10 +87,14 @@ if __name__ == "__main__":
 
     for ch, channel in enumerate(channels):
         for sF, stimF in enumerate(stimFingers):
-            subset = data[(data['channel'] == channel) & (data['stimFinger'] == stimF)]
-            sns.barplot(ax=axs[ch, sF], data=subset, x='timepoint', y='Value', hue='cue',
-                        estimator='mean', errorbar='se', palette=palette, legend=None,
-                        hue_order=['0%', '25%', '50%', '75%', '100%'], err_kws={'color': 'k'})
+            subset = data[(data['channel'] == channel) &
+                          (data['stimFinger'] == stimF)] #.groupby(['cue',
+                                                                  # 'timepoint','stimFinger',
+                                                                  # 'channel', 'participant_id']).mean().reset_index()
+            # sns.boxplot(ax=axs[ch, sF], data=subset, x='timepoint', y='Value', hue='cue',
+            #              palette=palette, legend=None, hue_order=['0%', '25%', '50%', '75%', '100%'])
+            sns.barplot(ax=axs[ch, sF], data=subset, x='timepoint', y='Value', hue='cue', estimator='mean',
+                        errorbar='se', palette=palette, legend=None, hue_order=['0%', '25%', '50%', '75%', '100%'])
             axs[ch, sF].set_ylabel('')
             axs[ch, sF].set_xlabel('')
             axs[ch, sF].tick_params(bottom=False)
@@ -101,18 +110,9 @@ if __name__ == "__main__":
 
             if sF == 0:
                 axs[ch, sF].spines[['top', 'bottom', 'right']].set_visible(False)
-                # axR.spines[['top', 'bottom', 'left', 'right']].set_visible(False)
-                # axR.set_yticks([])
             elif sF == 1:
                 axs[ch, sF].spines[['top', 'bottom', 'right', 'left']].set_visible(False)
-                # axR.spines[['top', 'bottom', 'left']].set_visible(False)
                 axs[ch, sF].tick_params(left=False)
-
-                    # if pw['pval'][0] < .05:
-                    #     length = .5
-                    #     ylim = axs[ch, sF].get_ylim()[1]
-                    #     axs[ch, sF].hlines(ylim, tp - length / 2 - 1,
-                    #                       tp + length / 2 - 1, color='k', lw=3)
 
     axs[0, 0].set_title('StimFinger:index')
     axs[0, 1].set_title('StimFinger:ring')
@@ -123,9 +123,26 @@ if __name__ == "__main__":
 
     # run statistics
     anova = rm_anova(data, ['cue'], ['channel', 'stimFinger', 'timepoint'])
-    # pwise = pd.DataFrame()
-    subset = data.groupby(by=['participant_id', 'cue', 'channel', 'timepoint', 'stimFinger']).mean().reset_index()
-    pwise = pairwise(subset, 'cue')
+    for _, st in anova.iterrows():
+        pval = st['pval']
+        channel, stimF, tp = st['group']
+        row = list(channels).index(channel)
+        col = list(stimFingers).index(stimF)
+        if pval < .05:
+            ylim = axs[row, col].get_ylim()
+            axs[row, col].set_ylim(ylim)
+            if col == 0:
+                axs[row, col].text(tp + .1, ylim[1], '*', ha='center', va='top')
+            else:
+                axs[row, col].text(tp - .1, ylim[1], '*', ha='center', va='top')
+    # for ch, channel in enumerate(channels):
+    #     for sF, stimF in enumerate(stimFingers):
+    #         for tp in timepoints:
+
+
+    # # pwise = pd.DataFrame()
+    # subset = data.groupby(by=['participant_id', 'cue', 'channel', 'timepoint', 'stimFinger']).mean().reset_index()
+    # pwise = pairwise(subset, 'cue')
     # pw['channel'] = ch
     # pw['stimFinger'] = sF
     # pw['timepoint'] = tp

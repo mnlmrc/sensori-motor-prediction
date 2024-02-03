@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 
-from smp0.stat import anova, pairwise
+from smp0.stat import pairwise, rm_anova
 from smp0.visual import make_colors
 
 if __name__ == "__main__":
@@ -19,7 +20,7 @@ if __name__ == "__main__":
     participants = [100, 101, 102, 103, 104,
                     105, 106, 107, 108, 109, 110]
 
-    file_path = base_dir + f"/smp0/smp0_{datatype}_binned.stat"
+    file_path = base_dir + f"/smp0/datasets/smp0_{datatype}_binned.stat"
     data = pd.read_csv(file_path)
     data = data[data['participant_id'].isin(participants)]
 
@@ -29,8 +30,14 @@ if __name__ == "__main__":
     cues = ['0%', '25%', '50%', '75%', '100%']
 
     colors = make_colors(2, ecol=('orange', 'purple'))
-    labels = ['coefficient #1 (index-like)', 'coefficient #2 (ring-like)']
+    labels = ['component #1 (index-like)', 'component #2 (ring-like)']
     palette = {labels: color for labels, color in zip(labels, colors)}
+
+    colors_cues = make_colors(len(cues))
+    lh = [mlines.Line2D([], [], color=color, label=cues)
+          for cues, color in zip(cues, colors)]
+    # cues = (cues[1:], cues[:4])
+    colors_cues = ([''] + colors_cues[1:], colors_cues[:4] + [''])
 
     mse = pd.DataFrame(columns=['coeff', 'participant_id', 'stimFinger', 'cue', 'timepoint', 'Dnorm'])
     for p, participant_id in enumerate(participants):
@@ -79,8 +86,11 @@ if __name__ == "__main__":
             subset = mse[(mse['cue'] == cue) & (mse['stimFinger'] == stimF)]
             # g = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='Dnorm', hue='coeff', errorbar='se',
             #                 palette=palette, legend=None, hue_order=labels, err_kws={'color': 'k'})
-            g = sns.boxplot(ax=axs[c, sF], data=subset, x='timepoint', y='Dnorm', hue='coeff',
-                            palette=palette, legend=None, hue_order=labels)
+            sns.boxplot(ax=axs[c, sF], data=subset, x='timepoint', y='Dnorm', hue='coeff',
+                        palette=palette, legend=None, hue_order=labels)
+            D_mean = subset.groupby(['coeff', 'stimFinger', 'cue',
+                                    'participant_id', 'timepoint'], as_index=False).mean().reset_index()
+
             axs[c, sF].set_ylabel('')
             axs[c, sF].set_xlabel('')
             axs[c, sF].set_xticks(np.linspace(0, 2, 3))
@@ -96,6 +106,12 @@ if __name__ == "__main__":
 
             if len(subset) > 0:
                 for tp in timepoints[1:]:
+
+                    D_mean_tp = D_mean[(D_mean['timepoint'] == tp) & (D_mean['stimFinger'] == stimF)].groupby(by='coeff')['Dnorm'].mean()
+                    offset = [tp - .2 - 1, tp + .2 - 1]  # Adjust these values as needed for alignment
+                    axs[c, sF].plot(offset, D_mean_tp, marker='o', color='k', markersize=5, linestyle='-')
+                    axs[sF * -1, sF].plot(offset, D_mean_tp, marker='o', color=colors_cues[sF][c], markersize=5, linestyle='-')
+
                     subset_tp = subset[subset['timepoint'] == tp]
                     pw = pairwise(subset_tp, 'coeff', dep_var='Dnorm')
                     row = {
@@ -111,21 +127,21 @@ if __name__ == "__main__":
                     ttest.loc[len(ttest)] = row
 
                     if pw['pval'][0] < .05:
-                        length = .5
                         ylim = axs[c, sF].get_ylim()[1]
-                        axs[c, sF].hlines(ylim, tp - length / 2 - 1,
-                                          tp + length / 2 - 1, color='k', lw=3)
+                        axs[c, sF].text(tp - 1, ylim, '*', ha='center', va='top')
 
     # g.set_yscale("log")
 
-    axs[1, 0].set_title('StimFinger:index')
+    axs[0, 0].set_title('StimFinger:index')
     axs[0, 1].set_title('StimFinger:ring')
     axs[-1, 0].spines[['bottom']].set_visible(True)
-    axs[-2, 1].spines[['bottom']].set_visible(True)
+    axs[-1, 1].spines[['bottom']].set_visible(True)
     axs[-1, 0].tick_params(bottom=True)
-    axs[-2, 1].tick_params(bottom=True, labelbottom=True)
-    axs[0, 0].set_visible(False)
-    axs[-1, 1].set_visible(False)
+    axs[-1, 1].tick_params(bottom=True, labelbottom=True)
+    axs[0, 0].set_facecolor('whitesmoke')
+    axs[-1, 1].set_facecolor('whitesmoke')
+    # axs[0, 0].set_visible(False)
+    # axs[-1, 1].set_visible(False)
 
     lh = [mpatches.Patch(color=color, label=label)
           for label, color in zip(labels, colors)]
@@ -140,6 +156,27 @@ if __name__ == "__main__":
         fig.text(.53, np.mean((axs[c, 0].get_position().p0[1], axs[c, 0].get_position().p1[1])),
                  f"probability:{cue}", va='center', ha='center', rotation=90)
 
+    df_anova = pd.DataFrame()
+    for sF, stimF in enumerate(stimFingers):
+        for tp in timepoints[1:]:
+            subset = mse[(mse['timepoint'] == tp) & (mse['stimFinger'] == stimF)]
+
+            if len(subset) > 0:
+                res = rm_anova(subset, 'Dnorm', 'participant_id', ['cue', 'coeff'], include_interactions=True)
+                res['stimFinger'] = stimF
+                res['tp'] = tp
+                df_anova = pd.concat([df_anova, res])
+
+                pval_int = res.loc['cue:coeff']['PR(>F)']
+                if pval_int < .05:
+                    ylim = axs[0, sF].get_ylim()[1]
+                    axs[0, sF].text(tp - 1, ylim, '*', ha='center', va='top')
+
+    df_anova.to_csv(base_dir + f"/smp0/statistics/smp0_dnorm_anova_coeff_cue_{datatype}.stat")
+    ttest.to_csv(base_dir + f"/smp0/statistics/smp0_dnorm_pairwise_coeff_{datatype}.stat")
+    fig.savefig(base_dir + f"/smp0/figures/smp0_Dnorm_{datatype}.png")
+    fig.savefig(base_dir + f"/smp0/figures/smp0_Dnorm_{datatype}.svg")
+
     plt.show()
 
-    ttest.to_csv(base_dir + f"/smp0/smp0_Dnorm_pairwise.stat")
+
