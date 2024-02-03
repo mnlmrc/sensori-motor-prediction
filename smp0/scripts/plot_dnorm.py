@@ -7,6 +7,7 @@ from smp0.globals import base_dir
 from smp0.sinergies import nnmf, sort_sinergies
 import matplotlib.pyplot as plt
 import seaborn as sns
+from statannotations.Annotator import Annotator
 
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
@@ -87,7 +88,8 @@ if __name__ == "__main__":
             # g = sns.barplot(ax=axs[c, sF], data=subset, x='timepoint', y='Dnorm', hue='coeff', errorbar='se',
             #                 palette=palette, legend=None, hue_order=labels, err_kws={'color': 'k'})
             sns.boxplot(ax=axs[c, sF], data=subset, x='timepoint', y='Dnorm', hue='coeff',
-                        palette=palette, legend=None, hue_order=labels)
+                        palette=palette,  hue_order=labels)
+
             D_mean = subset.groupby(['coeff', 'stimFinger', 'cue',
                                     'participant_id', 'timepoint'], as_index=False).mean().reset_index()
 
@@ -95,7 +97,9 @@ if __name__ == "__main__":
             axs[c, sF].set_xlabel('')
             axs[c, sF].set_xticks(np.linspace(0, 2, 3))
             axs[c, sF].set_xticklabels(['SLR', 'LLR', 'Vol'])
+            axs[c, sF].legend().set_visible(False)
             axs[c, sF].set_ylim([.2, 1.1])
+            axs[c, sF].set_xlim([-.5, 2.5])
 
             if sF == 0:
                 axs[c, sF].spines[['top', 'bottom', 'right']].set_visible(False)
@@ -105,6 +109,10 @@ if __name__ == "__main__":
                 axs[c, sF].tick_params(left=False, bottom=False)
 
             if len(subset) > 0:
+                pval = list()
+                pairs = [((tp, "component #1 (index-like)"),
+                          (tp, "component #2 (ring-like)")) for tp in timepoints[1:]]
+                annotator = Annotator(axs[c, sF], pairs, data=subset, x='timepoint', y='Dnorm', hue='coeff')
                 for tp in timepoints[1:]:
 
                     D_mean_tp = D_mean[(D_mean['timepoint'] == tp) & (D_mean['stimFinger'] == stimF)].groupby(by='coeff')['Dnorm'].mean()
@@ -126,9 +134,14 @@ if __name__ == "__main__":
                     }
                     ttest.loc[len(ttest)] = row
 
-                    if pw['pval'][0] < .05:
-                        ylim = axs[c, sF].get_ylim()[1]
-                        axs[c, sF].text(tp - 1, ylim, '*', ha='center', va='top')
+                    pval.append(pw['pval'][0])
+
+                annotator.set_pvalues(pval)
+                annotator.annotate()
+
+                    # if pw['pval'][0] < .05:
+                    #     ylim = axs[c, sF].get_ylim()[1]
+                    #     axs[c, sF].text(tp - 1, ylim, '*', ha='center', va='top')
 
     # g.set_yscale("log")
 
