@@ -200,7 +200,7 @@ if __name__ == "__main__":
         axs[-1, -1].set_rlabel_position(0)  # Position of radial labels
         axs[-1, -1].set_ylim([0, 3.5])
         axs[-1, -1].set_yticks([])
-        axs[-1, -1].set_title('coefficient #2 (ring-like)', fontsize=10, y=1.25)
+        axs[-1, -1].set_title('component #2 (ring-like)', fontsize=10, y=1.25)
 
         # axs2.scatter(patternI, patternR, color=colors[tp])
 

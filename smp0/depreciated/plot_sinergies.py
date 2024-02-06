@@ -8,7 +8,7 @@ from smp0.experiment import Info, Clamped, Param
 from smp0.fetch import load_npy
 from smp0.sinergies import decompose_up_to_R, nnmf
 from smp0.utils import bin_traces
-from smp0.visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
+from smp0.visual import dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants3D, list_participants2D
 
 if __name__ == "__main__":
