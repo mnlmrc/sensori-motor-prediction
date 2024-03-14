@@ -1,8 +1,8 @@
 import numpy as np
 from PcmPy import indicator
 
-from .fetch import load_participants, load_dat, load_npy
-from .utils import remap_chordID, detect_response_latency
+from fetch import load_participants, load_dat, load_npy
+from utils import remap_chordID, detect_response_latency
 
 
 def remap_code_to_condition(cond_vec, d, cond_headers):
@@ -24,14 +24,23 @@ def remap_code_to_condition(cond_vec, d, cond_headers):
 
 class Info:
 
-    def __init__(self, experiment, participants, datatype=None, condition_headers=None, demographics=None):
+    def __init__(self, experiment, participants, folder=None, condition_headers=None, demographics=None):
+        """
+
+        Args:
+            experiment:
+            participants:
+            folder:
+            condition_headers:
+            demographics:
+        """
 
         self.experiment = experiment
         self._info = load_participants(self.experiment)  # load info from participants.tsv
         self.participants = participants
 
-        if datatype is not None:
-            self.datatype = datatype
+        if folder is not None:
+            self.folder = folder
             self.condition_headers = condition_headers
             self.cond_vec, self.channels, self.n_trials, self.cond_map = self._process_participant_info()
 
@@ -75,7 +84,7 @@ class Info:
             d = remap_chordID(load_dat(self.experiment, participant_id))
 
             # filter .dat using blocks available per datatype
-            blocks = self._info.at[f"subj{participant_id}", f"blocks_{self.datatype}"].split(",")
+            blocks = self._info.at[f"subj{participant_id}", f"blocks_{self.folder}"].split(",")
             blocks = [int(block) for block in blocks]
             d = d[d.BN.isin(blocks)]
 
@@ -89,7 +98,7 @@ class Info:
             cond_vec.append(c_vec)
 
             # store recorded channels
-            channels.append(self._info.at[f"subj{participant_id}", f"channels_{self.datatype}"].split(","))
+            channels.append(self._info.at[f"subj{participant_id}", f"channels_{self.folder}"].split(","))
 
         cond_map = remap_code_to_condition(cond_vec[0], remap_chordID(load_dat(self.experiment, self.participants[0])),
                                            self.condition_headers)
@@ -104,11 +113,10 @@ class Info:
 
 class Param:
 
-    def __init__(self, datatype=None, prestim=1, poststim=2):
-        self._fsample = {'emg': 2148.1481, 'mov': 500}
-        if datatype is not None:
-            self.fsample = self._fsample[datatype]
-            self.datatype = datatype
+    def __init__(self, folder=None, fsample=500, prestim=1, poststim=2):
+        self.fsample = fsample
+        self.fsample = self._fsample[folder]
+        self.folder = folder
         self.prestim = prestim
         self.poststim = poststim
 

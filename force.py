@@ -1,13 +1,13 @@
 import os
 import warnings
 
-import smp0.globals as gl
+import globals as gl
 import numpy as np
 
-from smp0.fetch import load_mov
+from fetch import load_mov
 
 
-def merge_blocks_mov(experiment=None, participant_id=None, blocks=None):
+def merge_blocks_mov(experiment=None, folder=None, participant_id=None, blocks=None):
     """
 
     :param experiment:
@@ -21,7 +21,7 @@ def merge_blocks_mov(experiment=None, participant_id=None, blocks=None):
 
         print(f"loading participant: {participant_id} - block: {block}")
 
-        rawF, st = load_mov(experiment, participant_id, block)
+        rawF, st = load_mov(experiment, folder, participant_id, block)
         num_of_trials = len(st)
 
         for ntrial in range(num_of_trials):
@@ -32,16 +32,20 @@ def merge_blocks_mov(experiment=None, participant_id=None, blocks=None):
     return rawForce, states
 
 
-def detect_state_change(states):
+def detect_state_change(states, planState=3):
     """
 
-    :param states:
-    :return:
+    Args:
+        states:
+        planState:
+
+    Returns:
+
     """
     idx = np.zeros(len(states)).astype(int)
     for st, state in enumerate(states):
         try:
-            idx[st] = np.where(state > 2)[0][0]
+            idx[st] = np.where(state > 3)[0][0]
         except:
             idx[st] = -1
 

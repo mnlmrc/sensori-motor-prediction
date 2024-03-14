@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.signal import resample
 
-import smp0.globals as gl
+import globals as gl
 
 
 def load_participants(experiment):
@@ -21,15 +21,19 @@ def load_participants(experiment):
     return participants
 
 
-def load_dat(experiment, participant_id):
+def load_dat(experiment, folder, participant_id):
     """
 
-    :param experiment:
-    :param participant_id:
-    :return:
+    Args:
+        experiment:
+        folder:
+        participant_id:
+
+    Returns:
+
     """
     fname = f"{experiment}_{participant_id}.dat"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, folder, participant_id), fname)
 
     try:
         fid = open(filepath, 'rt')
@@ -40,34 +44,41 @@ def load_dat(experiment, participant_id):
     return D
 
 
-def save_npy(data, experiment=None, participant_id=None, datatype=None):
+def save_npy(data, descriptor, experiment=None, folder=None, participant_id=None):
     """
 
-    :param data:
-    :param experiment:
-    :param participant_id:
-    :param datatype:
-    :return:
+    Args:
+        data:
+        descriptor:
+        experiment:
+        folder:
+        participant_id:
+
+    Returns:
+
     """
 
     fname = f"{experiment}_{participant_id}"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, datatype), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, folder, participant_id), fname)
     print(f"Saving data to {filepath}")
-    np.save(filepath, data, allow_pickle=False)
+    np.savez(filepath, data_array=data, descriptor=descriptor, allow_pickle=False)
     print("Data saved!")
 
 
-def load_npy(experiment=None, participant_id=None, datatype=None):
+def load_npy(experiment=None, folder=None, participant_id=None):
     """
 
-    :param experiment:
-    :param datatype:
-    :param participant_id:
-    :return:
+    Args:
+        experiment:
+        folder:
+        participant_id:
+
+    Returns:
+
     """
 
     fname = f"{experiment}_{participant_id}.npy"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, datatype), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, folder, participant_id), fname)
     print(f"Loading data from {filepath}")
     data = np.load(filepath)
 
@@ -85,7 +96,7 @@ def load_delsys(experiment=None, participant_id=None, block=None, muscle_names=N
     :return:
     """
     fname = f"{experiment}_{participant_id}_{block}.csv"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, "emg"), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, "emg", participant_id), fname)
 
     # read data from .csv file (Delsys output)
     with open(filepath, 'rt') as fid:
@@ -134,14 +145,14 @@ def load_delsys(experiment=None, participant_id=None, block=None, muscle_names=N
     return df_out
 
 
-def load_mov(experiment=None, participant_id=None, block=None):
+def load_mov(experiment=None, folder=None, participant_id=None, block=None):
     """
     load .mov file of one block
 
     :return:
     """
     fname = f"{experiment}_{participant_id}_{'{:02d}'.format(int(block))}.mov"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, "mov"), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, folder, participant_id), fname)
 
     try:
         with open(filepath, 'rt') as fid:

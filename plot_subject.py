@@ -4,23 +4,22 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.lines as mlines
 
-from smp0.experiment import Info, Clamped, Param
-from smp0.fetch import load_npy
-from smp0.globals import base_dir
-from smp0.utils import bin_traces, av_across_participants, f_str_latex
+from experiment import Info, Clamped, Param
+from fetch import load_npy
+from globals import base_dir
+from utils import bin_traces, av_across_participants, f_str_latex
 from smp0.visual import make_colors
 from smp0.workflow import list_participants3D
 
 if __name__ == "__main__":
-    experiment = 'smp0'
-    datatype = sys.argv[1]
+    experiment = sys.argv[1]
+    folder = sys.argv[2]
+    participant = sys.argv[3]
 
-    participant = [sys.argv[2]]
-
-    Clamp = Clamped(experiment)
+    # Clamp = Clamped(experiment)
     Params = Param(datatype)
-    Info_p = Info(experiment, participant, datatype, ['stimFinger', 'cues'])
-    c_vec_f = Info(experiment, participant, datatype, ['stimFinger']).cond_vec
+    Info_p = Info(experiment, [participant], datatype, ['stimFinger', 'cues'])
+    c_vec_f = Info(experiment, [participant], datatype, ['stimFinger']).cond_vec
 
     bs = (-1, 0)
 
@@ -80,8 +79,8 @@ if __name__ == "__main__":
     av, sd, sem, _ = av_across_participants(channels, Y)
 
     timeAx = Params.timeAx()
-    timeAx_c = (timeAx - Clamp.latency[0], timeAx - Clamp.latency[1])
-    timeAx_clamped = Clamp.timeAx()
+    # timeAx_c = (timeAx - Clamp.latency[0], timeAx - Clamp.latency[1])
+    # timeAx_clamped = Clamp.timeAx()
 
     stimFingers = ['Index', 'Ring']
     n_stimF = len(stimFingers)

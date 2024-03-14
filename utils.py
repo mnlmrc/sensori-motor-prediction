@@ -1,8 +1,5 @@
-import numpy as np
-from scipy.signal import firwin, filtfilt
-
-from .fetch import load_dat
 from PcmPy import indicator
+from scipy.signal import firwin, filtfilt
 
 
 def hp_filter(data, n_ord=None, cutoff=None, fsample=None):
