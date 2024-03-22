@@ -20,12 +20,13 @@ function varargout = smp1_imana(what,varargin)
     
     baseDir         = (sprintf('%s/',workdir));                            % Base directory of the project
     BIDS_dir        = 'BIDS';                                              % Raw data post AutoBids conversion
-    behaviourDir    = 'behavioural_data';                                  % Timing data from the scanner
+    behaviourDir    = 'behavioural';                                       % Timing data from the scanner
     imagingRawDir   = 'imaging_data_raw';                                  % Temporary directory for raw functional data
     imagingDir      = 'imaging_data';                                      % Preprocesses functional data
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
-    suitDir         = 'suit';
+    glm1Dir         = 'glm1';
+    glmEstDir       = 'glm_est';
     regDir          = 'RegionOfInterest';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
     startTR         = numDummys + 1;                                       % first TR after the dummy scans
@@ -701,6 +702,27 @@ function varargout = smp1_imana(what,varargin)
                 dest = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),'rmask_gray.nii');
                 movefile(source,dest);
             end
+
+        case 'GLM:design'
+
+            vararginoptions(varargin,{'sn'})
+            
+            D = dload(fullfile(baseDir,behaviourDir,char(pinfo.subj_id(pinfo.sn==sn)), ['smp1_', char(regexp(pinfo.subj_id{find(pinfo.sn == sn, 1)}, '\d+', 'match')), '.dat']));
+            Dd = dload(fullfile(baseDir,glm1Dir,"task_description.tsv"));
+            
+            for sess = 1:pinfo.numSess(pinfo.sn==sn)
+                J = [];
+                J.dir = fullfile(baseDir,glmEstDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess));
+                J.timing.units = 'secs';
+                J.timing.RT = 1;
+                
+
+
+
+
+
+            end
+            
     
     
         case 'GLM:make_glm_1'    % design glm
