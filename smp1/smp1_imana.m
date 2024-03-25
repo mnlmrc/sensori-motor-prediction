@@ -850,8 +850,8 @@ function varargout = smp1_imana(what,varargin)
                 end
 
                 spm_rwls_run_fmri_spec(J);
-                dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_str{s})), T);
-                fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
+                % dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_str{s})), T);
+                % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
             end
     
     
