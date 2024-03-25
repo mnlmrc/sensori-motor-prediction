@@ -258,7 +258,7 @@ function varargout = smp1_imana(what,varargin)
             % coordiantes. Doing that, the [0,0,0] coordiante of subject's
             % anatomical image will be the Anterior Commissure.
     
-            % You should manually find the voxel coordinates of AC 
+            % You should manually find the voxel coordinates (1-based index --> fslyes starts from 0) AC 
             % for each from their anatomical scans and add it to the
             % participants.tsv file under the loc_ACx loc_ACy loc_ACz columns.
     
