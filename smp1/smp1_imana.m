@@ -40,54 +40,7 @@ function varargout = smp1_imana(what,varargin)
     
     %% MAIN OPERATION 
     switch(what)
-        case 'PREP:step1'           
-            % All preprocessing steps by just one go (AC coordinates (loc_AC) are prerequisite)
-            % handling input args:
-            sn = [];
-            vararginoptions(varargin,{'sn'})
-            if isempty(sn)
-                error('PREP:step1 -> sn must be inputted to this function.')
-            end
-            
-            % loop on subjects and preprocessing the data:
-            for s = sn
-                % BIDS transfers:
-                smp1_imana('BIDS:move_unzip_raw_anat','sn',s);
-                smp1_imana('BIDS:move_unzip_raw_func','sn',s);
-                smp1_imana('BIDS:move_unzip_raw_fmap','sn',s);
-    
-                % ANAT functions:
-                smp1_imana('ANAT:reslice_LPI','sn',s);
-                smp1_imana('ANAT:centre_AC','sn',s);
-                smp1_imana('ANAT:segmentation','sn',s);
-                
-                % FUNC functions:
-                smp1_imana('FUNC:make_fmap','sn',s);
-                smp1_imana('FUNC:realign_unwarp','sn',s,'rtm',0);
-                smp1_imana('FUNC:move_realigned_images','sn',s,'prefix','u','rtm',0);
-                smp1_imana('FUNC:meanimage_bias_correction','sn',s,'prefix','u','rtm',0);
-                % after this step, manual aligment of mean bias corrected image
-                % and the anatomical is required.
-            end
-            fprintf('Manually align the mean bias corrected image and the anatomical\n')
-    
-        case 'PREP:step2'
-            % handling input args:
-            sn = [];
-            vararginoptions(varargin,{'sn'})
-            if isempty(sn)
-                error('PREP:step2 -> sn must be inputted to this function.')
-            end
-            
-            % loop on subjects and preprocessing the data:
-            for s = sn
-                % FUNC:
-                smp1_imana('FUNC:coreg','sn',s,'prefix','u','rtm',0);
-                smp1_imana('FUNC:make_samealign','sn',s);
-                smp1_imana('make_maskImage','sn',s);
-            end
-    
-    
+        
         case 'BIDS:move_unzip_raw_anat'
             % Moves, unzips and renames anatomical images from BIDS directory
             % to anatomicalDir
@@ -365,14 +318,7 @@ function varargout = smp1_imana(what,varargin)
                 % Prefix of the functional files:
                 prefixepi  = '';
     
-                % echo times of the gradient eho sequence:
-                et1 = 4.92;
-                et2 = 7.38;
-        
-                % total EPI readout time = = echo spacing (in ms) * base resolution 
-                % (also knows as number of echos). If you use GRAPPA acceleration, 
-                % you need to divide the total number of echos by two:
-                tert = 90 * 0.7 / 2;
+                [et1, et2, tert] = spmj_et1_et2_tert(dataDir, char(pinfo.subj_id(pinfo.sn==sn)), 'sn', sn + 99);
     
                 % pull list of runs from the participant.tsv:
                 run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
