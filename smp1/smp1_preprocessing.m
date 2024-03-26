@@ -108,8 +108,7 @@ smp1_imana('FUNC:realign_unwarp', 'sn', subj_number, ...
 %%
 
 smp1_imana('FUNC:move_realigned_images', 'sn', subj_number, ...
-                                             'rtm', reference_image_option, ...
-                                             'prefix', prefix_for_functional_files)
+                                             'rtm', reference_image_option)
 
 %%
 

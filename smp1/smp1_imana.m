@@ -388,6 +388,30 @@ function varargout = smp1_imana(what,varargin)
                 fprintf('- runs realigned for %s  ',subj_id);
     
             end % s (sn)
+
+        case 'FUNC:inspect_realign_parameters'
+
+            % handling input args:
+            sn = [];
+            sess = [];   
+            vararginoptions(varargin,{'sn','sess'})
+            if isempty(sn)
+                error('FUNC:inspect_realign_parameters -> ''sn'' must be passed to this function.')
+            end
+
+            if isempty(sess)
+                error('FUNC:inspect_realign_parameters -> ''sess'' must be passed to this function.')
+            end
+            
+            run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
+            run_list = split(run_list,'.');
+            run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+
+            file_list = cellfun(@(run) fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),...
+                sprintf('sess%d',sess),['rp_', char(pinfo.subj_id(pinfo.sn==sn)),...
+                '_run_', run, '.txt']), run_list, 'UniformOutput', false);
+
+            smpj_plot_mov_corr(file_list)
             
         case 'FUNC:move_realigned_images'          
             % Move images created by realign(+unwarp) into imaging_data
@@ -699,11 +723,11 @@ function varargout = smp1_imana(what,varargin)
                         
                         % Define duration
                         durField = char(Dd.duration(regr));
-                        J.sess(run).cond(regr).duration = D.(durField)(D.BN == run & D.cue == cue & D.stimFinger == stimFinger);
+                        J.sess(run).cond(regr).duration = D.(durField)(D.BN == run & D.cue == cue & D.stimFinger == stimFinger) ./ 1000;
                         
                         % Define onset
                         onsetFields = strsplit(char(Dd.onset(regr)), '+');
-                        onset = sum(cell2mat(cellfun(@(f) D.(f)(D.BN == run & D.cue == cue & D.stimFinger == stimFinger), onsetFields, 'UniformOutput', false)), 2);
+                        onset = sum(cell2mat(cellfun(@(f) D.(f)(D.BN == run & D.cue == cue & D.stimFinger == stimFinger), onsetFields, 'UniformOutput', false)), 2) ./1000;
                         J.sess(run).cond(regr).onset = onset;
                         
                         % Define time modulator
@@ -773,25 +797,25 @@ function varargout = smp1_imana(what,varargin)
                     % *Example Usage*: Most analyses use 1, assuming a linear
                     % relationship between neural activity and the BOLD
                     % signal.
-                    J.volt             = 1;
+                    J.volt = 1;
 
                     % Specifies the method for global normalization, which
                     % is a step to account for global differences in signal
                     % intensity across the entire brain or between scans.
-                    J.global           = 'None';
+                    J.global = 'None';
 
                     % remove voxels involving non-neural tissue (e.g., skull)
-                    J.mask             = {fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), 'rmask_noskull.nii')};
+                    J.mask = {fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), 'rmask_noskull.nii')};
                     
                     % Set threshold for statistical significance
-                    J.mthresh          = 0.05;
+                    J.mthresh = 0.05;
 
                     % Create map where non-sphericity correction must be
                     % applied
-                    J.cvi_mask         = {fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), 'rmask_gray.nii')};
+                    J.cvi_mask = {fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), 'rmask_gray.nii')};
 
                     % Method for non sphericity correction
-                    J.cvi              =  'fast';
+                    J.cvi =  'fast';
                     
                 end
 
@@ -799,142 +823,6 @@ function varargout = smp1_imana(what,varargin)
                 % dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_str{s})), T);
                 % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
             end
-    
-    
-        case 'GLM:make_glm_1'    % design glm
-            % make the design matrix for the glm
-            % models each condition as a separate regressors
-            % For conditions with multiple repetitions, one regressor
-            % represents all the instances
-            
-            sn = [1:length(pinfo.participant_id)];
-            hrf_cutoff = Inf;
-            prefix = 'r'; % prefix of the preprocessed epi we want to use
-            glm = 1;
-            vararginoptions(varargin, {'sn', 'hrf_cutoff', 'ses'});
-            
-    
-            % get the info file that specifies the the tasks and order?
-            Dd = dload(fullfile(base_dir, 'task_description.tsv'));
-            
-            for s = sn
-                    func_subj_dir = fullfile(base_dir, func_dir,subj_str{s});
-     
-                    % loop through runs within the current sessions
-                    itaskUni = 0;
-                    for ses = [1]
-                     % create a directory to save the design
-                      subj_est_dir = fullfile(base_dir, glm_first_dir,subj_str{s}, sprintf('ses-%02d',ses));
-                      dircheck(subj_est_dir)
-                      
-                      T = []; % task/condition + session + run info
-                      J = []; % structure with SPM fields to make the design
-                     
-                      J.dir            = {subj_est_dir};
-                      J.timing.units   = 'secs';
-                      J.timing.RT      = 1.3;
-                      J.timing.fmri_t  = 16;
-                      J.timing.fmri_t0 = 8;
-                      
-                        % get the list of runs for the current session
-                        runs = run_list{ses};
-                        for run = 1:2 %length(runs)
-                           %V = spm_vol(fullfile(base_dir,func_dir, subj_str{s},sprintf('ses-%02d', ses),sprintf('r%s_run-%02d.nii', subj_str{s}, run)));
-                           %numTRs = length(V);
-                 
-                           % get the path to the tsv file
-                           tsv_path = fullfile(base_dir, func_dir,subj_str{s});
-                           % get the tsvfile for the current run
-                           D = dload(fullfile(tsv_path,sprintf('ses-%02d',ses), sprintf('run%d.tsv', run)));
-                           
-                           % Get the onset and duration of the last sentence
-                           lastSentenceOnset = D.onset(end);
-                           lastSentenceDuration = D.duration(end);
-                           
-                           % Convert the end time of the last sentence to TRs
-                           endTimeInTRs = ceil((lastSentenceOnset + lastSentenceDuration) / J.timing.RT);
-    
-    
-                           % Define scans up to the last sentence's end time
-                           N = cell(endTimeInTRs - numDummys, 1);
-                           
-                           for i = 1:(endTimeInTRs - numDummys)
-                               N{i} = fullfile(func_subj_dir, sprintf('ses-%02d', ses), sprintf('%s%s_run-%02d.nii, %d', prefix, subj_str{s}, run, i+numDummys)); % to exclude dummy volumes
-                           end % i (image numbers)
-                           J.sess(run).scans = N; % scans in the current runs
-                            
-                           % loop over trials within the current run and build up
-                           % the design matrix
-                           for ic = 1:length(Dd.task_name)
-                               itaskUni = itaskUni+1;
-                               % get the indices corresponding to the current
-                               % condition.
-                               % this line is necessary as there are some
-                               % conditions with more than 1 repetition
-                               idx = strcmp(D.trial_type, Dd.task_name{ic});
-                               fprintf('* %d instances found for condition %s in run %02d\n', sum(idx), Dd.task_name{ic}, run)
-                                
-                               %
-                               % filling in "reginfo"
-                               TT.sn        = s;
-                               TT.sess      = ses;
-                               TT.run       = run;
-                               TT.task_name = Dd.task_name(ic);
-                               TT.task      = ic;
-                               TT.taskUni   = itaskUni;
-                               TT.n_rep     = sum(idx);
-                                
-                               % filling in fields of J (SPM Job)
-                               J.sess(run).cond(ic).name = Dd.task_name{ic};
-                               J.sess(run).cond(ic).tmod = 0;
-                               J.sess(run).cond(ic).orth = 0;
-                               J.sess(run).cond(ic).pmod = struct('name', {}, 'param', {}, 'poly', {});
-                                
-                               % get onset and duration (should be in seconds)
-                               onset    = D.onset(idx) - (J.timing.RT*numDummys);
-                               fprintf("The onset is %f\n", onset)
-                               if onset < 0
-                                   warning("negative onset found")
-                               end
-                               duration = D.duration(idx);
-                               fprintf("The duration is %f\n", duration);
-                                
-                               J.sess(run).cond(ic).onset    = onset;
-                               J.sess(run).cond(ic).duration = duration;
-                                
-                               % add the condition info to the reginfo structure
-                               T = addstruct(T, TT);
-                                
-                                
-                            end % ic (conditions)
-                            
-                            % Regressors of no interest 
-                           J.sess(run).multi     = {''};
-                           J.sess(run).regress   = struct('name', {}, 'val', {});
-                           J.sess(run).multi_reg = {''};
-                           J.sess(run).hpf       = hrf_cutoff; % set to 'inf' if using J.cvi = 'FAST'. SPM HPF not applied
-                       end % run (runs of current session)
-                    
-                    
-                   J.fact             = struct('name', {}, 'levels', {});
-                   J.bases.hrf.derivs = [0 0];
-                   J.bases.hrf.params = [4.5 11];                                  % set to [] if running wls
-                   J.volt             = 1;
-                   J.global           = 'None';
-                   J.mask             = {fullfile(func_subj_dir,'ses-01','rmask_noskull.nii')};
-                   J.mthresh          = 0.05;
-                   J.cvi_mask         = {fullfile(func_subj_dir, 'ses-01', 'rmask_gray.nii')};
-                   J.cvi              =  'fast';
-                    
-                   spm_rwls_run_fmri_spec(J);
-                    
-                    
-                   dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_str{s})), T);
-                   fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
-                 end % ses (session)
-                
-                
-            end % sn (subject)   
         
         case 'GLM:estimate'      % estimate beta values
             
