@@ -678,6 +678,10 @@ function varargout = smp1_imana(what,varargin)
 
             vararginoptions(varargin,{'sn'})
 
+            if isempty(sn)
+                error('FUNC:check_samealign -> ''sn'' must be passed to this function.')
+            end
+
             % Example preallocation (assuming you know the maximum size in advance)
              % or another way to determine the max number
             
@@ -704,7 +708,7 @@ function varargout = smp1_imana(what,varargin)
 
                 % slice number that corresponds to that acquired halfway in
                 % each TR
-                J.timing.fmri_t0 = 8;
+                J.timing.fmri_t0 = J.timing.fmri_t / 2;
             
                 for run = 1:max(D.BN)
                     % Setup scans for current session
@@ -748,7 +752,7 @@ function varargout = smp1_imana(what,varargin)
                     end
 
                     % Specify high pass filter
-                    J.sess(run).hpf = Inf;
+                    J.sess(run).hpf = 128;
 
                     % J.sess(run).multi
                     % Purpose: Specifies multiple conditions for a session. Usage: It is used
@@ -808,7 +812,7 @@ function varargout = smp1_imana(what,varargin)
                     J.mask = {fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), 'rmask_noskull.nii')};
                     
                     % Set threshold for statistical significance
-                    J.mthresh = 0.05;
+                    J.mthresh = 1.;
 
                     % Create map where non-sphericity correction must be
                     % applied
@@ -823,26 +827,50 @@ function varargout = smp1_imana(what,varargin)
                 % dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_str{s})), T);
                 % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
             end
+
+        case 'GLM:visualize_design_matrix'
+
+            vararginoptions(varargin,{'sn', 'sess'})
+
+            if isempty(sn)
+                error('FUNC:visualize_design_matrix -> ''sn'' must be passed to this function.')
+            end
+
+            if isempty(sess)
+                error('FUNC:visualize_design_matrix -> ''sess'' must be passed to this function.')
+            end
+
+            load(fullfile(baseDir,glmEstDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), 'SPM.mat'));
+
+            X = SPM.xX.X; % Assuming 'X' is the field holding the design matrix
+
+            imagesc(X); % Plot the design matrix
+            colormap('gray'); % Optional: Use a grayscale colormap for better visibility
+            colorbar; % Optional: Include a colorbar to indicate scaling
+            xlabel('Regressors');
+            ylabel('Scans');
+            title('Design Matrix');
         
         case 'GLM:estimate'      % estimate beta values
             
-            sn       = subj_id; % subject list
-            sessions   = [1];       % session number
-            
-            vararginoptions(varargin, {'sn', 'sessions'})
-            
-            for s = sn
+            vararginoptions(varargin, {'sn', 'sess'})
+
+            if isempty(sn)
+                error('FUNC:visualize_design_matrix -> ''sn'' must be passed to this function.')
+            end
+
+            if isempty(sess)
+                error('FUNC:visualize_design_matrix -> ''sess'' must be passed to this function.')
+            end
              
-                for ses = sessions
-                    fprintf('- Doing glm estimation for session %02d %s\n', ses, subj_str{s});
-                    subj_est_dir = fullfile(base_dir, glm_first_dir,subj_str{s}, sprintf('ses-%02d', ses));         
-                
-                    load(fullfile(subj_est_dir,'SPM.mat'));
-                    SPM.swd = subj_est_dir;
-                
-                    spm_rwls_spm(SPM);
-                end
-            end % s (sn),  
+            for sess = 1:pinfo.numSess(pinfo.sn==sn)
+                fprintf('- Doing glm estimation for session %02d %s\n', sess, char(pinfo.subj_id(pinfo.sn==sn)));
+                subj_est_dir = fullfile(baseDir, glmEstDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d', sess));                
+                load(fullfile(subj_est_dir,'SPM.mat'));
+                SPM.swd = subj_est_dir;
+            
+                spm_rwls_spm(SPM);
+            end
              
         case 'GLM:T_contrast'    % make T contrasts for each condition
             %%% Calculating contrast images.
