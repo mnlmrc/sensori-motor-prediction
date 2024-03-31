@@ -3,9 +3,9 @@ close all
 clear
 
 %% params
-subj_number = 1;
-reference_image_option = 0;
-prefix_for_functional_files = 'u';
+subj_number = 100;
+% reference_image_option = 0;
+% prefix_for_functional_files = 'u';
 
 %% Move from BIDS
 % Unzip, move and rename T1 anatomical from BIDS to
@@ -49,18 +49,18 @@ disp('ANAT:segmentation')
 smp1_imana('ANAT:segmentation', 'sn', subj_number)
 
 %% Move from BIDS
-% (Optional) Unzip, move and rename fmap phase and magnitude from BIDS<> to
+% Unzip, move and rename fmap phase and magnitude from BIDS<> to
 % fieldmaps/subj_id/sess<sess number>/<subj_id>_magnitude.nii and
 % <subj_id>_phase.nii 
 
-disp('preprocessing BIDS:move_unzip_raw_func')
-smp1_imana('BIDS:move_unzip_raw_func', 'sn', subj_number)
+disp('preprocessing BIDS:move_unzip_raw_fmap')
+smp1_imana('BIDS:move_unzip_raw_fmap', 'sn', subj_number)
 
 % Unzip, move and rename functional runs from BIDS to
 % imaging_data_raw/subj_id/sess<sess_number>/<subj_id>_run_<run_number>.nii
 
-disp('preprocessing BIDS:move_unzip_raw_fmap')
-smp1_imana('BIDS:move_unzip_raw_fmap', 'sn', subj_number)
+disp('preprocessing BIDS:move_unzip_raw_func')
+smp1_imana('BIDS:move_unzip_raw_func', 'sn', subj_number)
 
 %% Make VDM fieldmaps
 % In some projects you may use fieldmaps to unwarp your functional images.

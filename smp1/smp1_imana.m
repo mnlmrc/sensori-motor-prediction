@@ -20,17 +20,14 @@ function varargout = smp1_imana(what,varargin)
     end
     
     baseDir         = (sprintf('%s/',workdir));                            % Base directory of the project
-    BIDS_dir        = 'BIDS';                                              % Raw data post AutoBids conversion
-    behaviourDir    = 'behavioural';                                       % Timing data from the scanner
+    bidsDir        = 'BIDS';                                              % Raw data post AutoBids conversion
     imagingRawDir   = 'imaging_data_raw';                                  % Temporary directory for raw functional data
     imagingDir      = 'imaging_data';                                      % Preprocesses functional data
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
     glm1Dir         = 'glm1';
     glmEstDir       = 'glm_est';
-    regDir          = 'RegionOfInterest';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
-    startTR         = numDummys + 1;                                       % first TR after the dummy scans
     
     %% subject info
     
@@ -42,22 +39,25 @@ function varargout = smp1_imana(what,varargin)
     switch(what)
         
         case 'BIDS:move_unzip_raw_anat'
-            % Moves, unzips and renames anatomical images from BIDS directory
-            % to anatomicalDir
-            
+            % Moves, unzips and renames anatomical images from BIDS
+            % directory to anatomicalDir. After you run this function you 
+            % will find a <subj_id>_anatomical_raw.nii file in the
+            % <project_id>/anatomicals/<subj_id>/ directory.
+                        
             % handling input args:
             sn = [];
             vararginoptions(varargin,{'sn'})
             if isempty(sn)
                 error('BIDS:move_unzip_raw_anat -> ''sn'' must be passed to this function.')
             end
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % path to the subj anat data:
-            anat_raw_path = fullfile(baseDir,BIDS_dir,sprintf('subj%.03d',sn + 99), 'anat',[char(pinfo.AnatRawName(pinfo.sn==sn)) '.nii.gz']);
+            anat_raw_path = fullfile(baseDir,bidsDir,sprintf('subj%.03d',sn), 'anat',[pinfo.AnatRawName{pinfo.sn==sn}, '.nii.gz']);
     
             % destination path:
-            output_folder = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)));
-            output_file = fullfile(output_folder,[char(pinfo.subj_id(pinfo.sn==sn)) '_anatomical_raw.nii.gz']);
+            output_folder = fullfile(baseDir,anatomicalDir,subj_id);
+            output_file = fullfile(output_folder,[subj_id '_anatomical_raw.nii.gz']);
     
             if ~exist(output_folder,"dir")
                 mkdir(output_folder);
@@ -76,8 +76,10 @@ function varargout = smp1_imana(what,varargin)
             delete(output_file);
     
         case 'BIDS:move_unzip_raw_func'
-            % Moves, unzips and renames raw functional (BOLD) images from BIDS
-            % directory
+            % Moves, unzips and renames raw functional (BOLD) images from 
+            % BIDS directory. After you run this function you will find
+            % nRuns Nifti files named <subj_id>_run_XX.nii in the 
+            % <project_id>/imaging_data_raw/<subj_id>/sess<N>/ directory.
             
             % handling input args:
             sn = [];
@@ -85,30 +87,30 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('BIDS:move_unzip_raw_func -> ''sn'' must be passed to this function.')
             end
-            
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
                 
                 % pull list of runs from the participant.tsv:
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
                 run_list = str2double(split(run_list,'.'));
     
                 % loop on runs of sess:
                 for i = 1:length(run_list)
                     
                     % pull functional raw name from the participant.tsv:
-                    FuncRawName_tmp = eval(['pinfo.FuncRawNameSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                    FuncRawName_tmp = [char(FuncRawName_tmp) '.nii.gz'];
+                    FuncRawName_tmp = [pinfo.(['FuncRawNameSess', num2str(sess)]){pinfo.sn==sn} '.nii.gz'];  
     
                     % add run number to the name of the file:
                     FuncRawName_tmp = replace(FuncRawName_tmp,'XX',sprintf('%.02d',i));
     
                     % path to the subj func data:
-                    func_raw_path = fullfile(baseDir,BIDS_dir,sprintf('subj%.02d',sn + 99),'func',FuncRawName_tmp);
+                    func_raw_path = fullfile(baseDir,bidsDir,sprintf('subj%.02d',sn),'func',FuncRawName_tmp);
             
                     % destination path:
-                    output_folder = fullfile(baseDir,imagingRawDir,char(pinfo.subj_id(pinfo.sn==sn)),['sess' num2str(sess)]);
-                    output_file = fullfile(output_folder,[char(pinfo.subj_id(pinfo.sn==sn)) sprintf('_run_%.02d.nii.gz',run_list(i))]);
+                    output_folder = fullfile(baseDir,imagingRawDir,subj_id,['sess' num2str(sess)]);
+                    output_file = fullfile(output_folder,[subj_id sprintf('_run_%.02d.nii.gz',run_list(i))]);
                     
                     if ~exist(output_folder,"dir")
                         mkdir(output_folder);
@@ -130,7 +132,10 @@ function varargout = smp1_imana(what,varargin)
     
         case 'BIDS:move_unzip_raw_fmap'
             % Moves, unzips and renames raw fmap images from BIDS
-            % directory
+            % directory. After you run this function you will find
+            % two files named <subj_id>_phase.nii and 
+            % <subj_id>_magnitude.nii in the 
+            % <project_id>/fieldmaps/<subj_id>/sess<N>/ directory.
             
             % handling input args:
             sn = [];
@@ -138,24 +143,25 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('BIDS:move_unzip_raw_fmap -> ''sn'' must be passed to this function.')
             end
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
             
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
                 % pull fmap raw names from the participant.tsv:
-                fmapMagnitudeName_tmp = eval(['pinfo.fmapMagnitudeNameSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                magnitude = [char(fmapMagnitudeName_tmp) '.nii.gz'];
+                fmapMagnitudeName_tmp = pinfo.(['fmapMagnitudeNameSess', num2str(sess)]){pinfo.sn==sn};
+                magnitude = [fmapMagnitudeName_tmp '.nii.gz'];
                 
-                fmapPhaseName_tmp = eval(['pinfo.fmapPhaseNameSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                phase = [char(fmapPhaseName_tmp) '.nii.gz'];
+                fmapPhaseName_tmp = pinfo.(['fmapPhaseNameSess', num2str(sess)]){pinfo.sn==sn};
+                phase = [fmapPhaseName_tmp '.nii.gz'];
     
                 % path to the subj fmap data:
-                magnitude_path = fullfile(baseDir,BIDS_dir,sprintf('subj%.02d',sn + 99),'fmap',magnitude);
-                phase_path = fullfile(baseDir,BIDS_dir,sprintf('subj%.02d',sn + 99),'fmap',phase);
+                magnitude_path = fullfile(baseDir,bidsDir,sprintf('subj%.02d',sn),'fmap',magnitude);
+                phase_path = fullfile(baseDir,bidsDir,sprintf('subj%.02d',sn),'fmap',phase);
         
                 % destination path:
-                output_folder = fullfile(baseDir,fmapDir,char(pinfo.subj_id(pinfo.sn==sn)),['sess' num2str(sess)]);
-                output_magnitude = fullfile(output_folder,[char(pinfo.subj_id(pinfo.sn==sn)) '_magnitude.nii.gz']);
-                output_phase = fullfile(output_folder,[char(pinfo.subj_id(pinfo.sn==sn)) '_phase.nii.gz']);
+                output_folder = fullfile(baseDir,fmapDir,subj_id,['sess' num2str(sess)]);
+                output_magnitude = fullfile(output_folder,[subj_id '_magnitude.nii.gz']);
+                output_phase = fullfile(output_folder,[subj_id '_phase.nii.gz']);
                 
                 if ~exist(output_folder,"dir")
                     mkdir(output_folder);
@@ -185,35 +191,42 @@ function varargout = smp1_imana(what,varargin)
             end 
     
         case 'ANAT:reslice_LPI'          
-            % Reslice anatomical image within LPI coordinate systems
+            % Reslice anatomical image within LPI coordinate systems. This
+            % function creates a <subj_id>_anatomical.nii file in the
+            % <project_id>/anatomicals/<subj_id>/ directory.
+
+
             % handling input args:
             sn = [];
             vararginoptions(varargin,{'sn'})
             if isempty(sn)
                 error('ANAT:reslice_LPI -> ''sn'' must be passed to this function.')
             end
+            subj_id = char(pinfo.subj_id(pinfo.sn==sn));
             
             % (1) Reslice anatomical image to set it within LPI co-ordinate frames
-            source = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),[char(pinfo.subj_id(pinfo.sn==sn)) '_anatomical_raw.nii']);
-            dest = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),[char(pinfo.subj_id(pinfo.sn==sn)) '_anatomical.nii']);
+            source = fullfile(baseDir,anatomicalDir,subj_id,[subj_id '_anatomical_raw.nii']);
+            dest = fullfile(baseDir,anatomicalDir,subj_id,[subj_id '_anatomical.nii']);
             spmj_reslice_LPI(source,'name', dest);
             
-            % (2) In the resliced image, set translation to zero (why?)
-            V               = spm_vol(dest);
-            dat             = spm_read_vols(V);
-            V.mat(1:3,4)    = [0 0 0];
-            spm_write_vol(V,dat);
+            % WE DONT NEED THIS!!!!
+            % % (2) In the resliced image, set translation to zero (why?)
+            % V               = spm_vol(dest);
+            % dat             = spm_read_vols(V);
+            % V.mat(1:3,4)    = [0 0 0];
+            % spm_write_vol(V,dat);
     
     
         case 'ANAT:centre_AC'            
             % Description:
             % Recenters the anatomical data to the Anterior Commissure
-            % coordiantes. Doing that, the [0,0,0] coordiante of subject's
+            % coordiantes. Doing that, the [0,0,0] coordinate of subject's
             % anatomical image will be the Anterior Commissure.
     
-            % You should manually find the voxel coordinates (1-based index --> fslyes starts from 0) AC 
-            % for each from their anatomical scans and add it to the
-            % participants.tsv file under the loc_ACx loc_ACy loc_ACz columns.
+            % You should manually find the voxel coordinates 
+            % (1-based index --> fslyes starts from 0) AC for each from 
+            % their anatomical scans and add it to the participants.tsv 
+            % file under the loc_ACx loc_ACy loc_ACz columns.
     
             % This function runs for all subjects and sessions.
     
@@ -223,9 +236,10 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('ANAT:centre_AC -> ''sn'' must be passed to this function.')
             end
+            subj_id = char(pinfo.subj_id(pinfo.sn==sn));
             
             % path to the raw anatomical:
-            anat_raw_file = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),[char(pinfo.subj_id(pinfo.sn==sn)) '_anatomical.nii']);
+            anat_raw_file = fullfile(baseDir,anatomicalDir,subj_id,[subj_id '_anatomical.nii']);
             if ~exist(anat_raw_file,"file")
                 error('ANAT:centre_AC -> file %s was not found.',anat_raw_file)
             end
@@ -238,7 +252,8 @@ function varargout = smp1_imana(what,varargin)
             % changing the transform matrix translations to put AC near [0,0,0]
             % coordinates:
             R = V.mat(1:3,1:3);
-            t = -1 * R * [pinfo.locACx(pinfo.sn==sn),pinfo.locACy(pinfo.sn==sn),pinfo.locACz(pinfo.sn==sn)];
+            AC = [pinfo.locACx(pinfo.sn==sn),pinfo.locACy(pinfo.sn==sn),pinfo.locACz(pinfo.sn==sn)]';
+            t = -1 * R * AC;
             V.mat(1:3,4) = t;
             sprintf('ACx: %d, ACy: %d, ACz: %d', pinfo.locACx(pinfo.sn==sn), pinfo.locACy(pinfo.sn==sn), pinfo.locACz(pinfo.sn==sn))
     
@@ -247,8 +262,14 @@ function varargout = smp1_imana(what,varargin)
     
         
         case 'ANAT:segmentation'
-            % Segmentation + Normalization
-            % manually check results when done
+            % Segmentation + Normalization. Manually check results when
+            % done. This step creates five files named 
+            % c1<subj_id>_anatomical.nii, c2<subj_id>_anatomical.nii, 
+            % c3<subj_id>_anatomical.nii, c4<subj_id>_anatomical.nii, 
+            % c5<subj_id>_anatomical.nii, in the 
+            % <project_id>/anatomicals/<subj_id>/ directory. Each of these
+            % files contains a segment (e.g., white matter, grey matter) of
+            % the centered anatomical image.
     
             % handling input args:
             sn = [];
@@ -256,55 +277,69 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('ANAT:segmentation -> ''sn'' must be passed to this function.')
             end
-            
-            SPMhome=fileparts(which('spm.m'));
-            J=[];
-            for s=sn
-                J.channel.vols = {fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),[char(pinfo.subj_id(pinfo.sn==sn)),'_anatomical.nii,1'])};
-                J.channel.biasreg = 0.001;
-                J.channel.biasfwhm = 60;
-                J.channel.write = [0 0];
-                J.tissue(1).tpm = {fullfile(SPMhome,'tpm/TPM.nii,1')};
-                J.tissue(1).ngaus = 1;
-                J.tissue(1).native = [1 0];
-                J.tissue(1).warped = [0 0];
-                J.tissue(2).tpm = {fullfile(SPMhome,'tpm/TPM.nii,2')};
-                J.tissue(2).ngaus = 1;
-                J.tissue(2).native = [1 0];
-                J.tissue(2).warped = [0 0];
-                J.tissue(3).tpm = {fullfile(SPMhome,'tpm/TPM.nii,3')};
-                J.tissue(3).ngaus = 2;
-                J.tissue(3).native = [1 0];
-                J.tissue(3).warped = [0 0];
-                J.tissue(4).tpm = {fullfile(SPMhome,'tpm/TPM.nii,4')};
-                J.tissue(4).ngaus = 3;
-                J.tissue(4).native = [1 0];
-                J.tissue(4).warped = [0 0];
-                J.tissue(5).tpm = {fullfile(SPMhome,'tpm/TPM.nii,5')};
-                J.tissue(5).ngaus = 4;
-                J.tissue(5).native = [1 0];
-                J.tissue(5).warped = [0 0];
-                J.tissue(6).tpm = {fullfile(SPMhome,'tpm/TPM.nii,6')};
-                J.tissue(6).ngaus = 2;
-                J.tissue(6).native = [0 0];
-                J.tissue(6).warped = [0 0];
-                J.warp.mrf = 1;
-                J.warp.cleanup = 1;
-                J.warp.reg = [0 0.001 0.5 0.05 0.2];
-                J.warp.affreg = 'mni';
-                J.warp.fwhm = 0;
-                J.warp.samp = 3;
-                J.warp.write = [0 0];
-                matlabbatch{1}.spm.spatial.preproc=J;
-                spm_jobman('run',matlabbatch);
-            end
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            anat_path = fullfile(baseDir,anatomicalDir,subj_id,[subj_id '_anatomical.nii,1']);
+
+            spmj_segmentation(anat_path);
+            % SPMhome=fileparts(which('spm.m'));
+            % J=[];
+            % % for s=sn WE DONT NEED THIS FOR LOOP 
+            % J.channel.vols = {fullfile(baseDir,anatomicalDir,subj_id,[subj_id '_anatomical.nii,1'])};
+            % J.channel.biasreg = 0.001;
+            % J.channel.biasfwhm = 60;
+            % J.channel.write = [0 0];
+            % J.tissue(1).tpm = {fullfile(SPMhome,'tpm/TPM.nii,1')};
+            % J.tissue(1).ngaus = 1;
+            % J.tissue(1).native = [1 0];
+            % J.tissue(1).warped = [0 0];
+            % J.tissue(2).tpm = {fullfile(SPMhome,'tpm/TPM.nii,2')};
+            % J.tissue(2).ngaus = 1;
+            % J.tissue(2).native = [1 0];
+            % J.tissue(2).warped = [0 0];
+            % J.tissue(3).tpm = {fullfile(SPMhome,'tpm/TPM.nii,3')};
+            % J.tissue(3).ngaus = 2;
+            % J.tissue(3).native = [1 0];
+            % J.tissue(3).warped = [0 0];
+            % J.tissue(4).tpm = {fullfile(SPMhome,'tpm/TPM.nii,4')};
+            % J.tissue(4).ngaus = 3;
+            % J.tissue(4).native = [1 0];
+            % J.tissue(4).warped = [0 0];
+            % J.tissue(5).tpm = {fullfile(SPMhome,'tpm/TPM.nii,5')};
+            % J.tissue(5).ngaus = 4;
+            % J.tissue(5).native = [1 0];
+            % J.tissue(5).warped = [0 0];
+            % J.tissue(6).tpm = {fullfile(SPMhome,'tpm/TPM.nii,6')};
+            % J.tissue(6).ngaus = 2;
+            % J.tissue(6).native = [0 0];
+            % J.tissue(6).warped = [0 0];
+            % J.warp.mrf = 1;
+            % J.warp.cleanup = 1;
+            % J.warp.reg = [0 0.001 0.5 0.05 0.2];
+            % J.warp.affreg = 'mni';
+            % J.warp.fwhm = 0;
+            % J.warp.samp = 3;
+            % J.warp.write = [0 0];
+            % matlabbatch{1}.spm.spatial.preproc=J;
+            % spm_jobman('run',matlabbatch);
+            % end
     
         case 'FUNC:make_fmap'                
             % Description:
             % Generates VDM files from the presubtracted phase & magnitude
             % images acquired from the field map sequence. Also, just as a
             % quality control this function creates unwarped EPIs from the
-            % functional data with the prefix 'u' for each run.
+            % functional data with the prefix 'u' for each run. After you
+            % run this step you will have:
+            % - nBlock vdm5*.nii files in the 
+            %   <project_id>/fieldmaps/<subj_id>/sess<N> directory: these 
+            %   are the voxel displacement  maps registered to the first 
+            %   image (if you set 'image', 1 below) of each functional run.
+            % - 
+            % - nBlock wfmag*.nii forward warped fieldmap magnitude image used for 
+            %   coregistration (?)
+            % - 
+
             
             % handling input args:
             sn = [];
@@ -312,34 +347,36 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('FUNC:make_fmap -> ''sn'' must be passed to this function.')
             end
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
             
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
                 % Prefix of the functional files:
                 prefixepi  = '';
     
-                [et1, et2, tert] = spmj_et1_et2_tert(dataDir, char(pinfo.subj_id(pinfo.sn==sn)), 'sn', sn + 99);
+                [et1, et2, tert] = spmj_et1_et2_tert(baseDir, subj_id, sn);
     
                 % pull list of runs from the participant.tsv:
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                run_list = split(run_list,'.');
-                run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+                run_list = str2double(split(run_list,'.'));
+                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
     
                 subfolderFieldmap = sprintf('sess%d',sess);
                 % function to create the makefieldmap job and passing it to the SPM
                 % job manager:
-                spmj_makefieldmap(baseDir,char(pinfo.subj_id(pinfo.sn==sn)),run_list, ...
+                spmj_makefieldmap(baseDir,subj_id,run_list, ...
                                   'et1', et1, ...
                                   'et2', et2, ...
                                   'tert', tert, ...
-                                  'image', numDummys+1, ...
+                                  'image', 1, ... % remove numDummys?
                                   'prefix',prefixepi, ...
-                                  'rawdataDir',fullfile(baseDir,imagingRawDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess)), ...
+                                  'rawdataDir',fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess)), ...
                                   'subfolderFieldmap',subfolderFieldmap);
             end
     
         case 'FUNC:realign_unwarp'      
             % Do spm_realign_unwarp
+            startTR         = 1;                                                   % first TR after the dummy scans
             
             % handling input args:
             sn = [];
@@ -348,48 +385,52 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('FUNC:make_fmap -> ''sn'' must be passed to this function.')
             end
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
-                % Prefix of the functional files:
+                % Prefix of the functional files (default 'a')
                 prefixepi  = '';
     
                 % pull list of runs from the participant.tsv:
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                run_list = split(run_list,'.');
-                run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+                run_list = str2double(split(run_list,'.'));
+                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
                 
                 subfolderFieldmap = sprintf('sess%d',sess);
-                spmj_realign_unwarp(baseDir,char(pinfo.subj_id(pinfo.sn==sn)),run_list, startTR, inf, ...
+                spmj_realign_unwarp(baseDir,subj_id,run_list, startTR, inf, ...
                                     'prefix',prefixepi,...
-                                    'rawdataDir',fullfile(baseDir,imagingRawDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess)),...
+                                    'rawdataDir',fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess)),...
                                     'subfolderFieldmap',subfolderFieldmap,...
                                     'rtm',rtm);
             end
     
-        case 'FUNC:realign'          
-            % realign functional images
-            % SPM realigns all volumes to the mean volume of first run
-                    
-            for s = sn
-                spm_jobman('initcfg')
-                
-                data = {};
-                    % initialize data cell array which will contain file names for runs/TR images
-                    func_ses_subj_dir = fullfile(imaging_dir ,subj_id);
-                                    
-                    for r = runs
-                        % Obtain the number of TRs for the current run
-                        for j = 1:numTRs - numDummys
-                            data{r}{j,1} = fullfile(func_ses_subj_dir,sprintf('%s_run-%02d.nii,%d', subj_id, r,j));
-                        end % j (TRs/images)
-                    end % r (runs)            
-                spmj_realign(data);
-                fprintf('- runs realigned for %s  ',subj_id);
-    
-            end % s (sn)
+        % case 'FUNC:realign'          
+        %     % realign functional images
+        %     % SPM realigns all volumes to the mean volume of first run
+        % 
+        %     for s = sn
+        %         spm_jobman('initcfg')
+        % 
+        %         data = {};
+        %             % initialize data cell array which will contain file names for runs/TR images
+        %             func_ses_subj_dir = fullfile(imaging_dir ,subj_id);
+        % 
+        %             for r = runs
+        %                 % Obtain the number of TRs for the current run
+        %                 for j = 1:numTRs - numDummys
+        %                     data{r}{j,1} = fullfile(func_ses_subj_dir,sprintf('%s_run-%02d.nii,%d', subj_id, r,j));
+        %                 end % j (TRs/images)
+        %             end % r (runs)            
+        %         spmj_realign(data);
+        %         fprintf('- runs realigned for %s  ',subj_id);
+        % 
+        %     end % s (sn)
 
         case 'FUNC:inspect_realign_parameters'
+            % looks for motion correction logs into imaging_data, needs to
+            % be run after realigned images are moved there from
+            % imaging_data_raw
 
             % handling input args:
             sn = [];
@@ -402,13 +443,16 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sess)
                 error('FUNC:inspect_realign_parameters -> ''sess'' must be passed to this function.')
             end
-            
-            run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-            run_list = split(run_list,'.');
-            run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
 
-            file_list = cellfun(@(run) fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),...
-                sprintf('sess%d',sess),['rp_', char(pinfo.subj_id(pinfo.sn==sn)),...
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+            
+            % pull list of runs from the participant.tsv:
+            run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+            run_list = str2double(split(run_list,'.'));
+            run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
+
+            file_list = cellfun(@(run) fullfile(baseDir,imagingDir, subj_id,...
+                sprintf('sess%d',sess),['rp_', subj_id,...
                 '_run_', run, '.txt']), run_list, 'UniformOutput', false);
 
             smpj_plot_mov_corr(file_list)
@@ -424,13 +468,16 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('FUNC:move_realigned_images -> ''sn'' must be passed to this function.')
             end
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
+
                 % pull list of runs from the participant.tsv:
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                run_list = split(run_list,'.');
-                run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+                run_list = str2double(split(run_list,'.'));
+                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
                 
                 % loop on runs of the session:
                 for r = 1:length(run_list)
@@ -441,6 +488,8 @@ function varargout = smp1_imana(what,varargin)
                     if ~exist(dest,'dir')
                         mkdir(dest)
                     end
+
+                    file_name = file_name(length(prefix) + 1:end); % skip prefix in realigned (and unwarped) files
                     dest = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),file_name);
                     % move to destination:
                     [status,msg] = movefile(source,dest);
@@ -449,8 +498,8 @@ function varargout = smp1_imana(what,varargin)
                     end
     
                     % realign parameters names:
-                    source = fullfile(baseDir,imagingRawDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['rp_', char(pinfo.subj_id(pinfo.sn==sn)), '_run_', run_list{r}, '.txt']);
-                    dest = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['rp_', char(pinfo.subj_id(pinfo.sn==sn)), '_run_', run_list{r}, '.txt']);
+                    source = fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess),['rp_', subj_id, '_run_', run_list{r}, '.txt']);
+                    dest = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['rp_', subj_id, '_run_', run_list{r}, '.txt']);
                     % move to destination:
                     [status,msg] = movefile(source,dest);
                     if ~status  
@@ -462,11 +511,11 @@ function varargout = smp1_imana(what,varargin)
                 % rtm=0 and rtm=1. Extra note: rtm is an option in
                 % realign_unwarp function. Refer to spmj_realign_unwarp().
                 if rtm==0   % if registered to first volume of each run:
-                    source = fullfile(baseDir,imagingRawDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['mean', prefix, char(pinfo.subj_id(pinfo.sn==sn)), '_run_', run_list{1}, '.nii']);
-                    dest = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['mean', prefix, char(pinfo.subj_id(pinfo.sn==sn)), '_run_', run_list{1}, '.nii']);
+                    source = fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess),['mean', prefix, subj_id, '_run_', run_list{1}, '.nii']);
+                    dest = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['mean', prefix, subj_id, '_run_', run_list{1}, '.nii']);
                 else        % if registered to mean image of each run:
-                    source = fullfile(baseDir,imagingRawDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),[prefix, 'meanepi_', char(pinfo.subj_id(pinfo.sn==sn)), '.nii']);
-                    dest = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),[prefix, 'meanepi_', char(pinfo.subj_id(pinfo.sn==sn)), '.nii']);
+                    source = fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess),[prefix, 'meanepi_', subj_id, '.nii']);
+                    dest = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),[prefix, 'meanepi_', subj_id, '.nii']);
                 end
                 % move to destination:
                 [status,msg] = movefile(source,dest);
@@ -476,16 +525,23 @@ function varargout = smp1_imana(what,varargin)
             end
         
         case 'FUNC:meanimage_bias_correction'                                         
-            % correct bias for mean image of 1st session. If the realignment
+            % EPI images often contain smooth artifacts caused by MRI
+            % physics which make the intensity of signal from the same
+            % tissue (e.g., grey matter, white matter) non-uniform. This
+            % step perform bias correction and created an image where the
+            % signal from each tissue type is more uniform. This image is
+            % then co-registered to the anatomical image. Bias correction
+            % help make co-registration more accurate. If the realignment
             % was done with respect to the first volume of each run of each 
             % session, the mean image will be calculated on the first run of
             % each session and will be called 'meanu*_run_01.nii' ('mean' 
             % indicates the image is average of the volumes and 'u' indicates
             % it's unwarped). Therefore, we do the bias correction on this 
-            % file.
-            % But if you do the realignment to the mean epi of every run, the
+            % file. But if you do the realignment to the mean epi of every run, the
             % generated mean file will be named 'umeanepi_*' and we do the bias
-            % correction on this file.
+            % correction on this file. In addition, this step generates
+            % five tissue probability maps (c1-5) for grey matter, white
+            % matter, csf, bone and soft tissue.
     
             % handling input args:
             sn = [];
@@ -495,18 +551,21 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('FUNC:meanimage_bias_correction -> ''sn'' must be passed to this function.')
             end
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
+
                 % pull list of runs from the participant.tsv:
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                run_list = split(run_list,'.');
-                run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+                run_list = str2double(split(run_list,'.'));
+                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
     
                 if rtm==0   % if registered to first volume of each run:
-                    P{1} = fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), ['mean', prefix,  char(pinfo.subj_id(pinfo.sn==sn)), '_run_', run_list{1}, '.nii']);
+                    P{1} = fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), ['mean', prefix,  subj_id, '_run_', run_list{1}, '.nii']);
                 else        % if registered to mean image of each run:
-                    P{1} = fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), [prefix, 'meanepi_', char(pinfo.subj_id(pinfo.sn==sn)), '.nii']);
+                    P{1} = fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), [prefix, 'meanepi_', subj_id, '.nii']);
                 end
                 spmj_bias_correct(P);
             end
@@ -522,6 +581,8 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('FUNC:coreg -> ''sn'' must be passed to this function.')
             end
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
             
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
@@ -546,17 +607,17 @@ function varargout = smp1_imana(what,varargin)
                 % (2) Run automated co-registration to register bias-corrected meanimage to anatomical image
                 
                 % pull list of runs from the participant.tsv:
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                run_list = split(run_list,'.');
-                run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+                run_list = str2double(split(run_list,'.'));
+                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
     
                 if rtm==0   % if registered to first volume
-                    mean_file_name = sprintf('mean%s%s_run_%s.nii', prefix, char(pinfo.subj_id(pinfo.sn==sn)), run_list{1});
+                    mean_file_name = sprintf('mean%s%s_run_%s.nii', prefix, subj_id, run_list{1});
                 else    % if registered to the mean image
-                    mean_file_name = sprintf('rb%smeanepi_%s.nii', prefix, char(pinfo.subj_id(pinfo.sn==sn)));
+                    mean_file_name = sprintf('rb%smeanepi_%s.nii', prefix, subj_id);
                 end
-                J.source = {fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),mean_file_name)}; 
-                J.ref = {fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),[char(pinfo.subj_id(pinfo.sn==sn)), '_anatomical','.nii'])};
+                J.source = {fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),mean_file_name)}; 
+                J.ref = {fullfile(baseDir,anatomicalDir,subj_id,[subj_id, '_anatomical','.nii'])};
                 J.other = {''};
                 J.eoptions.cost_fun = 'nmi';
                 J.eoptions.sep = [4 2];
@@ -593,26 +654,29 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sn)
                 error('FUNC:make_samealign -> ''sn'' must be passed to this function.')
             end
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
+
                 % pull list of runs from the participant.tsv:
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                run_list = split(run_list,'.');
-                run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+                run_list = str2double(split(run_list,'.'));
+                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
                 
                 % select the reference image:
                 if rtm==0
-                    P{1} = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['mean' prefix char(pinfo.subj_id(pinfo.sn==sn)) '_run_' run_list{1} '.nii']);
+                    P{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['mean' prefix subj_id '_run_' run_list{1} '.nii']);
                 else
-                    P{1} = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['rb' prefix 'meanepi_' char(pinfo.subj_id(pinfo.sn==sn)) '.nii']);
+                    P{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['rb' prefix 'meanepi_' subj_id '.nii']);
                 end
     
                 % select images to be realigned:
                 Q = {};
                 for r = 1:length(run_list)
                     for i = 1:pinfo.numTR
-                         Q{end+1} = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),[prefix char(pinfo.subj_id(pinfo.sn==sn)) '_run_' run_list{r} '.nii,' num2str(i)]);
+                         Q{end+1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),[prefix subj_id '_run_' run_list{r} '.nii,' num2str(i)]);
                     end
                 end
     
@@ -628,28 +692,32 @@ function varargout = smp1_imana(what,varargin)
             rtm = 0;        % realign_unwarp registered to the first volume (0) or mean image (1).
             vararginoptions(varargin,{'sn','prefix','rtm'})
             if isempty(sn)
-                error('FUNC:check_samealign -> ''sn'' must be passed to this function.')
+                error('FUNC:make_maskImage -> ''sn'' must be passed to this function.')
             end
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                run_list = split(run_list,'.');
-                run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+
+                % pull list of runs from the participant.tsv:
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+                run_list = str2double(split(run_list,'.'));
+                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
             
                 % bias corrected mean epi image:
                 if rtm==0
-                    nam{1} = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['mean' prefix char(pinfo.subj_id(pinfo.sn==sn)) '_run_' run_list{1} '.nii']);
+                    nam{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['mean' prefix subj_id '_run_' run_list{1} '.nii']);
                 else
-                    nam{1} = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['rb' prefix 'meanepi_' char(pinfo.subj_id(pinfo.sn==sn)) '.nii']);
+                    nam{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['rb' prefix 'meanepi_' subj_id '.nii']);
                 end
-                nam{2}  = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),['c1',char(pinfo.subj_id(pinfo.sn==sn)), '_anatomical','.nii']);
-                nam{3}  = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),['c2',char(pinfo.subj_id(pinfo.sn==sn)), '_anatomical','.nii']);
-                nam{4}  = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),['c3',char(pinfo.subj_id(pinfo.sn==sn)), '_anatomical','.nii']);
-                spm_imcalc(nam, fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), 'rmask_noskull.nii'), 'i1>1 & (i2+i3+i4)>0.2')
+                nam{2}  = fullfile(baseDir,anatomicalDir,subj_id,['c1',subj_id, '_anatomical','.nii']);
+                nam{3}  = fullfile(baseDir,anatomicalDir,subj_id,['c2',subj_id, '_anatomical','.nii']);
+                nam{4}  = fullfile(baseDir,anatomicalDir,subj_id,['c3',subj_id, '_anatomical','.nii']);
+                spm_imcalc(nam, fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess), 'rmask_noskull.nii'), 'i1>1 & (i2+i3+i4)>0.2')
                 
-                source = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), 'rmask_noskull.nii'); % does this need to have some flag for session?
-                dest = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),'rmask_noskull.nii');
+                source = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess), 'rmask_noskull.nii'); % does this need to have some flag for session?
+                dest = fullfile(baseDir,anatomicalDir,subj_id,'rmask_noskull.nii');
                 movefile(source,dest);
                 
                 % gray matter mask for covariance estimation
@@ -661,44 +729,48 @@ function varargout = smp1_imana(what,varargin)
                 % nam{1}  = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), ['rb' prefix 'meanepi_' char(pinfo.subj_id(pinfo.sn==sn)) '.nii']);
                 % bias corrected mean epi image:
                 if rtm==0
-                    nam{1} = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['mean' prefix char(pinfo.subj_id(pinfo.sn==sn)) '_run_' run_list{1} '.nii']);
+                    nam{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['mean' prefix subj_id '_run_' run_list{1} '.nii']);
                 else
-                    nam{1} = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),['rb' prefix 'meanepi_' char(pinfo.subj_id(pinfo.sn==sn)) '.nii']);
+                    nam{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['rb' prefix 'meanepi_' subj_id '.nii']);
                 end
 
-                nam{2}  = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),['c1',char(pinfo.subj_id(pinfo.sn==sn)), '_anatomical','.nii']);
-                spm_imcalc(nam, fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), 'rmask_gray.nii'), 'i1>1 & i2>0.4')
+                nam{2}  = fullfile(baseDir,anatomicalDir,subj_id,['c1',subj_id, '_anatomical','.nii']);
+                spm_imcalc(nam, fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess), 'rmask_gray.nii'), 'i1>1 & i2>0.4')
                 
-                source = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), 'rmask_gray.nii');
-                dest = fullfile(baseDir,anatomicalDir,char(pinfo.subj_id(pinfo.sn==sn)),'rmask_gray.nii');
+                source = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess), 'rmask_gray.nii');
+                dest = fullfile(baseDir,anatomicalDir,subj_id,'rmask_gray.nii');
                 movefile(source,dest);
             end
 
         case 'GLM:design'
-
+            
+            sn = [];
             vararginoptions(varargin,{'sn'})
 
             if isempty(sn)
-                error('FUNC:check_samealign -> ''sn'' must be passed to this function.')
+                error('GLM:design -> ''sn'' must be passed to this function.')
             end
 
-            % Example preallocation (assuming you know the maximum size in advance)
-             % or another way to determine the max number
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
             
             % Load data once, outside of session loop
-            D = dload(fullfile(baseDir,behaviourDir,char(pinfo.subj_id(pinfo.sn==sn)), sprintf('smp1_%d.dat', sn + 99)));
-            Dd = dload(fullfile(baseDir,glm1Dir,"task_description.tsv"));
+            % D = dload(fullfile(baseDir,behavDir,subj_id, sprintf('smp1_%d.dat', sn)));
             
-            maxRegressors = length(Dd.regressor); 
             
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
-                run_list = eval(['pinfo.runsSess',num2str(sess),'(pinfo.sn==',num2str(sn),')']);
-                run_list = split(run_list,'.');
-                run_list = cellfun(@(x) sprintf('%.02d',str2double(x)), run_list, 'UniformOutput', false);
+
+                Dd = dload(fullfile(baseDir,glm1Dir,subj_id, sprintf("sess%01d", sess), "events.tsv"));
+                regressors = unique(Dd.eventtype);
+                nRegr = length(regressors); 
+
+                % pull list of runs from the participant.tsv:
+                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+                run_list = str2double(split(run_list,'.'));
+                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
             
                 % init J
                 J = [];
-                J.dir = {fullfile(baseDir,glmEstDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess))};
+                J.dir = {fullfile(baseDir,glmEstDir,subj_id,sprintf('sess%d',sess))};
                 J.timing.units = 'secs';
                 J.timing.RT = 1;
 
@@ -708,31 +780,29 @@ function varargout = smp1_imana(what,varargin)
 
                 % slice number that corresponds to that acquired halfway in
                 % each TR
-                J.timing.fmri_t0 = J.timing.fmri_t / 2;
+                J.timing.fmri_t0 = 1;
             
-                for run = 1:max(D.BN)
+                for run = 1:max(Dd.BN)
                     % Setup scans for current session
-                    J.sess(run).scans = {fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), ['u' char(pinfo.subj_id(pinfo.sn==sn)), '_run_', run_list{run}, '.nii'])};
+                    J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), ['u' subj_id, '_run_', run_list{run}, '.nii'])};
             
             
                     % Preallocate memory for conditions
-                    J.sess(run).cond = repmat(struct('name', '', 'onset', [], 'duration', []), maxRegressors, 1);
+                    J.sess(run).cond = repmat(struct('name', '', 'onset', [], 'duration', []), nRegr, 1);
                     
-                    for regr = 1:maxRegressors
-                        cue = Dd.cue(regr);
-                        stimFinger = Dd.stimFinger(regr);
+                    for regr = 1:nRegr
+                        % cue = Dd.cue(regr);
+                        % stimFinger = Dd.stimFinger(regr);
+                        rows = find (Dd.BN == run & strcmp(Dd.eventtype, regressors(regr)));
             
                         % Regressor name
-                        J.sess(run).cond(regr).name = char(Dd.regressor(regr));
+                        J.sess(run).cond(regr).name = regressors{regr};
                         
-                        % Define duration
-                        durField = char(Dd.duration(regr));
-                        J.sess(run).cond(regr).duration = D.(durField)(D.BN == run & D.cue == cue & D.stimFinger == stimFinger) ./ 1000;
+                        % Define durationDuration(regr));
+                        J.sess(run).cond(regr).duration = Dd.Duration(rows); % needs to be in seconds
                         
                         % Define onset
-                        onsetFields = strsplit(char(Dd.onset(regr)), '+');
-                        onset = sum(cell2mat(cellfun(@(f) D.(f)(D.BN == run & D.cue == cue & D.stimFinger == stimFinger), onsetFields, 'UniformOutput', false)), 2) ./1000;
-                        J.sess(run).cond(regr).onset = onset;
+                        J.sess(run).cond(regr).onset  = Dd.Onset(rows);
                         
                         % Define time modulator
                         % Add a regressor that account for modulation of
@@ -752,7 +822,7 @@ function varargout = smp1_imana(what,varargin)
                     end
 
                     % Specify high pass filter
-                    J.sess(run).hpf = 128;
+                    J.sess(run).hpf = Inf;
 
                     % J.sess(run).multi
                     % Purpose: Specifies multiple conditions for a session. Usage: It is used
@@ -809,14 +879,15 @@ function varargout = smp1_imana(what,varargin)
                     J.global = 'None';
 
                     % remove voxels involving non-neural tissue (e.g., skull)
-                    J.mask = {fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), 'rmask_noskull.nii')};
+                    J.mask = {fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), 'rmask_noskull.nii')};
                     
-                    % Set threshold for statistical significance
-                    J.mthresh = 1.;
+                    % Set threshold for brightness threshold for masking 
+                    % If supplying explicit mask, set to 0  (default is 0.8)
+                    J.mthresh = 0.;
 
                     % Create map where non-sphericity correction must be
                     % applied
-                    J.cvi_mask = {fullfile(baseDir, imagingDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d',sess), 'rmask_gray.nii')};
+                    J.cvi_mask = {fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), 'rmask_gray.nii')};
 
                     % Method for non sphericity correction
                     J.cvi =  'fast';
@@ -829,7 +900,9 @@ function varargout = smp1_imana(what,varargin)
             end
 
         case 'GLM:visualize_design_matrix'
-
+            
+            sn = [];
+            sess  = [];
             vararginoptions(varargin,{'sn', 'sess'})
 
             if isempty(sn)
@@ -840,9 +913,11 @@ function varargout = smp1_imana(what,varargin)
                 error('FUNC:visualize_design_matrix -> ''sess'' must be passed to this function.')
             end
 
-            load(fullfile(baseDir,glmEstDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), 'SPM.mat'));
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
 
-            X = SPM.xX.X; % Assuming 'X' is the field holding the design matrix
+            SPM = load(fullfile(baseDir,glmEstDir,subj_id,sprintf('sess%d',sess), 'SPM.mat'));
+
+            X = SPM.SPM.xX.X; % Assuming 'X' is the field holding the design matrix
 
             imagesc(X); % Plot the design matrix
             colormap('gray'); % Optional: Use a grayscale colormap for better visibility
@@ -853,6 +928,8 @@ function varargout = smp1_imana(what,varargin)
         
         case 'GLM:estimate'      % estimate beta values
             
+            sn = [];
+            sess = [];
             vararginoptions(varargin, {'sn', 'sess'})
 
             if isempty(sn)
@@ -862,14 +939,16 @@ function varargout = smp1_imana(what,varargin)
             if isempty(sess)
                 error('FUNC:visualize_design_matrix -> ''sess'' must be passed to this function.')
             end
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
              
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
-                fprintf('- Doing glm estimation for session %02d %s\n', sess, char(pinfo.subj_id(pinfo.sn==sn)));
-                subj_est_dir = fullfile(baseDir, glmEstDir, char(pinfo.subj_id(pinfo.sn==sn)), sprintf('sess%d', sess));                
-                load(fullfile(subj_est_dir,'SPM.mat'));
-                SPM.swd = subj_est_dir;
+                fprintf('- Doing glm estimation for session %02d %s\n', sess, subj_id);
+                subj_est_dir = fullfile(baseDir, glmEstDir, subj_id, sprintf('sess%d', sess));                
+                SPM = load(fullfile(subj_est_dir,'SPM.mat'));
+                SPM.SPM.swd = subj_est_dir;
             
-                spm_rwls_spm(SPM);
+                spm_rwls_spm(SPM.SPM);
             end
              
         case 'GLM:T_contrast'    % make T contrasts for each condition
