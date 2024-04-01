@@ -7,8 +7,10 @@ function varargout = smp1_imana(what,varargin)
     % Directory specification
     addpath("/Users/mnlmrc/Documents/GitHub/spmj_tools")
     addpath("/Users/mnlmrc/Documents/GitHub/dataframe/util")
+    addpath("/Users/mnlmrc/Documents/GitHub/surfAnalysis/")
     addpath("/Users/mnlmrc/Documents/MATLAB/spm12")
     addpath("/Users/mnlmrc/Documents/GitHub/rwls/")
+    addpath("/Users/mnlmrc/Documents/GitHub/surfing/surfing/")
     % Define the data base directory 
     
     % automatic detection of datashare location:
@@ -27,6 +29,8 @@ function varargout = smp1_imana(what,varargin)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
     glm1Dir         = 'glm1';
     glmEstDir       = 'glm_est';
+    wbDir   = 'surfaceWB';
+    fsDir = 'surfaceFreesurfer';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
     
     %% subject info
@@ -906,11 +910,11 @@ function varargout = smp1_imana(what,varargin)
             vararginoptions(varargin,{'sn', 'sess'})
 
             if isempty(sn)
-                error('FUNC:visualize_design_matrix -> ''sn'' must be passed to this function.')
+                error('GLM:visualize_design_matrix -> ''sn'' must be passed to this function.')
             end
 
             if isempty(sess)
-                error('FUNC:visualize_design_matrix -> ''sess'' must be passed to this function.')
+                error('GLM:visualize_design_matrix -> ''sess'' must be passed to this function.')
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
@@ -950,72 +954,116 @@ function varargout = smp1_imana(what,varargin)
             
                 spm_rwls_spm(SPM.SPM);
             end
+
+        case 'GLM:T_contrast'
+
+            sn = [];
+            sess = [];
+
+            vararginoptions(varargin, {'sn', 'sess'})
+            
+            if isempty(sn)
+                error('GLM:T_contrast -> ''sn'' must be passed to this function.')
+            end
+
+            if isempty(sess)
+                error('GLM:T_contrast -> ''sess'' must be passed to this function.')
+            end
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            SPM = load(fullfile(baseDir, glmEstDir, subj_id, sprintf('sess%d',sess), 'SPM.mat'));
+            SPM = SPM.SPM;
+
+            if isfield(SPM, 'xCon') && ~isempty(SPM.xCon)
+                xCon = SPM.xCon;
+            else
+                xCon = []; % Initialize as an empty array if not existing
+            end
+
+            co = length(xCon);
+            j = 1;
+            for i = SPM.xX.iC
+                c = zeros(size(SPM.xX.X,2),1);
+                c(i) = 1;
+                if isempty(xCon)
+                    xCon = spm_FcUtil('Set', SPM.xX.name{i}, 'T', 'c', c, SPM.xX.xKXs);
+                else
+                    xCon(co+j) = spm_FcUtil('Set', SPM.xX.name{i}, 'T', 'c', c, SPM.xX.xKXs);
+                end
+                j = j + 1;
+            end
+            SPM.xCon = xCon;
+            % Call to keyboard removed for clarity
+            spm_contrasts(SPM, [co+1:co+j-1]);
+            
+
              
-        case 'GLM:T_contrast'    % make T contrasts for each condition
-            %%% Calculating contrast images.
-            
-            sn             = subj_id;    % subjects list
-            ses            = 1;              % task number
-            glm            = 1;              % glm number
-            baseline       = 'rest';         % contrast will be calculated against base (available options: 'rest')
-            
-            vararginoptions(varargin, {'sn', 'glm', 'ses', 'baseline'})
-            
-            for s = sn
-                
-                % get the subject id folder name
-                fprintf('Contrasts for session %02d %s\n', ses, subj_str{s})
-                glm_dir = fullfile(base_dir, glm_first_dir, subj_str{s}, ses_str{ses}); 
-                
-                cd(glm_dir);
-                
-                % load the SPM.mat file
-                load(fullfile(glm_dir, 'SPM.mat'))
-                
-                SPM  = rmfield(SPM,'xCon');
-                T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_str{s})));
-                
-                % t contrast for each condition type
-                utask = unique(T.task)';
-                idx = 1;
-                for ic = utask
-                    switch baseline
-                        case 'myBase' % contrast vs future baseline :)))
-                            % put your new contrasts here!
-                        case 'rest' % contrast against rest
-                            con                          = zeros(1,size(SPM.xX.X,2));
-                            con(:,logical((T.task == ic)& (T.n_rep>0))) = 1;
-    %                         n_rep = length(T.run(T.task == ic));
-    %                         n_rep_t = T.n_rep(T.task == ic);
-    %                         name = unique(T.task_name(T.task == ic));
-    %                         fprintf('- task is %s: \n', name{1});
-    %                         fprintf('number of reps in all runs = %d\n', n_rep);
-    %                         fprintf('numberof reps recorded in tsv = %d\n', n_rep_t);
-                            con                          = con/abs(sum(con));            
-                    end % switch base
-    
-                    % set the name of the contrast
-                    contrast_name = sprintf('%s-%s', char(unique(T.task_name(T.task == ic))), baseline);
-                    SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', con', SPM.xX.xKXs);
-                    
-                    idx = idx + 1;
-                end % ic (conditions)
-                
-                SPM = spm_contrasts(SPM,1:length(SPM.xCon));
-                save('SPM.mat', 'SPM','-v7.3');
-                SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
-                save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
-    
-                % rename contrast images and spmT images
-                conName = {'con','spmT'};
-                for i = 1:length(SPM.xCon)
-                    for n = 1:numel(conName)
-                        oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},i));
-                        newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(i).name));
-                        movefile(oldName, newName);
-                    end % conditions (n, conName: con and spmT)
-                end % i (contrasts)
-            end % sn
+    %     case 'GLM:T_contrast'    % make T contrasts for each condition
+    %         %%% Calculating contrast images.
+    % 
+    %         sn             = subj_id;    % subjects list
+    %         ses            = 1;              % task number
+    %         glm            = 1;              % glm number
+    %         baseline       = 'rest';         % contrast will be calculated against base (available options: 'rest')
+    % 
+    %         vararginoptions(varargin, {'sn', 'glm', 'ses', 'baseline'})
+    % 
+    %         for s = sn
+    % 
+    %             % get the subject id folder name
+    %             fprintf('Contrasts for session %02d %s\n', ses, subj_str{s})
+    %             glm_dir = fullfile(base_dir, glm_first_dir, subj_str{s}, ses_str{ses}); 
+    % 
+    %             cd(glm_dir);
+    % 
+    %             % load the SPM.mat file
+    %             load(fullfile(glm_dir, 'SPM.mat'))
+    % 
+    %             SPM  = rmfield(SPM,'xCon');
+    %             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_str{s})));
+    % 
+    %             % t contrast for each condition type
+    %             utask = unique(T.task)';
+    %             idx = 1;
+    %             for ic = utask
+    %                 switch baseline
+    %                     case 'myBase' % contrast vs future baseline :)))
+    %                         % put your new contrasts here!
+    %                     case 'rest' % contrast against rest
+    %                         con                          = zeros(1,size(SPM.xX.X,2));
+    %                         con(:,logical((T.task == ic)& (T.n_rep>0))) = 1;
+    % %                         n_rep = length(T.run(T.task == ic));
+    % %                         n_rep_t = T.n_rep(T.task == ic);
+    % %                         name = unique(T.task_name(T.task == ic));
+    % %                         fprintf('- task is %s: \n', name{1});
+    % %                         fprintf('number of reps in all runs = %d\n', n_rep);
+    % %                         fprintf('numberof reps recorded in tsv = %d\n', n_rep_t);
+    %                         con                          = con/abs(sum(con));            
+    %                 end % switch base
+    % 
+    %                 % set the name of the contrast
+    %                 contrast_name = sprintf('%s-%s', char(unique(T.task_name(T.task == ic))), baseline);
+    %                 SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', con', SPM.xX.xKXs);
+    % 
+    %                 idx = idx + 1;
+    %             end % ic (conditions)
+    % 
+    %             SPM = spm_contrasts(SPM,1:length(SPM.xCon));
+    %             save('SPM.mat', 'SPM','-v7.3');
+    %             SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
+    %             save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
+    % 
+    %             % rename contrast images and spmT images
+    %             conName = {'con','spmT'};
+    %             for i = 1:length(SPM.xCon)
+    %                 for n = 1:numel(conName)
+    %                     oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},i));
+    %                     newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(i).name));
+    %                     movefile(oldName, newName);
+    %                 end % conditions (n, conName: con and spmT)
+    %             end % i (contrasts)
+    %         end % sn
         
         case 'SURF:reconall' % Freesurfer reconall routine
             % Calls recon-all, which performs, all of the
@@ -1035,17 +1083,44 @@ function varargout = smp1_imana(what,varargin)
             
         case 'SURF:fs2wb'          % Resampling subject from freesurfer fsaverage to fs_LR
             
-            sn   = subj_id; % subject list
+            sn   = []; % subject list
             res  = 32;          % resolution of the atlas. options are: 32, 164
-            hemi = [1, 2];      % list of hemispheres
+            % hemi = [1, 2];      % list of hemispheres
            
-            vararginoptions(varargin, {'sn', 'res', 'hemi'});
-    
-            for s = sn 
-                % get the subject id folder name
-                outDir   = fullfile(baseDir, 'surfaceWB', 'data'); dircheck(outDir);
-                surf_resliceFS2WB(subj_str{s}, fs_dir, outDir, 'hemisphere', hemi, 'resolution', sprintf('%dk', res))
-            end % s (sn)  
+            vararginoptions(varargin, {'sn'});
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            % dircheck(outDir);
+            surf_resliceFS2WB(subj_id, fsDir, wbDir, 'resolution', sprintf('%dk', res))
+
+        case 'SURF:vol2surf'
+
+            sn   = []; % subject list
+            res  = 32;          % resolution of the atlas. options are: 32, 164
+            % hemi = [1, 2];      % list of hemispheres
+           
+            vararginoptions(varargin, {'sn'});
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            hemLpial = fullfile(baseDir, wbDir, subj_id, subj_id, [subj_id '.L.pial.32k.surf.gii']);
+            % hemRpial = fullfile(baseDir, wbDir, [subj_id '.R.pial.32k.surf.gii']);
+            hemLwhite = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.white.32k.surf.gii']);
+            % hemRwhite = fullfile(baseDir, wbDir, [subj_id '.R.white.32k.surf.gii']);
+            
+            hemLpial = gifti(hemLpial);
+            % hemRpial = gifti(hemRpial);
+            hemLwhite = gifti(hemLwhite);
+            % hemRwhite = gifti(hemRwhite);
+
+            c1 = hemLpial.vertices;
+            c2 = hemLwhite.vertices;
+            V = spm_vol('/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/smp1/anatomicals/subj100/subj100_anatomical.nii');
+
+            [G, D] = surf_vol2surf(c1,c2,V.fname,'anatomicalStruct','CortexLeft');
+            
+            save(G, fullfile(baseDir, wbDir, subj_id, subj_id, 'test.label.gii'))
     
     end
 
