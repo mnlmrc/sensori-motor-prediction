@@ -52,6 +52,10 @@ for ntrial = 1:length(exec.BN)
     end
     
     exec.eventtype{ntrial, 1} = [cue '_' stimFinger '_exec'];
+    exec.cue_id{ntrial, 1} = cue;
+    exec.stimFinger_id{ntrial, 1} = stimFinger;
+    exec.epoch{ntrial, 1} = 'exec';
+    exec.instruction{ntrial, 1} = 'go';
     
 end
 
@@ -86,6 +90,10 @@ for ntrial = 1:length(exec.BN)
     end
     
     planGo.eventtype{ntrial, 1} = [cue '_' stimFinger '_planGo'];
+    planGo.cue_id{ntrial, 1} = cue;
+    planGo.stimFinger_id{ntrial, 1} = stimFinger;
+    planGo.epoch{ntrial, 1} = 'plan';
+    planGo.instruction{ntrial, 1} = 'go';
     
 end
 
@@ -113,6 +121,10 @@ for ntrial = 1:length(planNoGo.BN)
     end
     
     planNoGo.eventtype{ntrial, 1} = [cue '_planNoGo'];
+    planNoGo.cue_id{ntrial, 1} = cue;
+    planNoGo.stimFinger_id{ntrial, 1} = stimFinger;
+    planNoGo.epoch{ntrial, 1} = 'plan';
+    planNoGo.instruction{ntrial, 1} = 'nogo';
     
 end
 
@@ -125,6 +137,10 @@ rest.stimFinger = [];
 rest.Onset = [];
 rest.Duration = [];
 rest.eventtype = [];
+rest.cue_id = [];
+rest.stimFinger_id = [];
+rest.epoch = [];
+rest.instruction = [];
 for run = 1:max(D.BN)
 
     % retrieve trial log
@@ -150,6 +166,10 @@ for run = 1:max(D.BN)
     rest.Onset = [rest.Onset; onset];
     rest.Duration = [rest.Duration;12000; 12000; 12000;];
     rest.eventtype = [rest.eventtype;{'rest'}; {'rest'}; {'rest'}];
+    rest.cue_id = [rest.cue_id;{'rest'}; {'rest'}; {'rest'}];
+    rest.stimFinger_id = [rest.stimFinger_id;{'rest'}; {'rest'}; {'rest'}];
+    rest.epoch = [rest.epoch;{'rest'}; {'rest'}; {'rest'}];
+    rest.instruction = [rest.instruction;{'rest'}; {'rest'}; {'rest'}];
 
 end
 
@@ -166,7 +186,7 @@ events.Onset = events.Onset ./ 1000;
 events.Duration = events.Duration ./ 1000;
 
 %% export
- output_folder = fullfile(baseDir, glmDir, subj_id, session);
+ output_folder = fullfile(baseDir, behavDir, subj_id);
  if ~exist(output_folder, "dir")
     mkdir(output_folder);
  end

@@ -798,7 +798,7 @@ function varargout = smp1_imana(what,varargin)
                         % cue = Dd.cue(regr);
                         % stimFinger = Dd.stimFinger(regr);
                         rows = find (Dd.BN == run & strcmp(Dd.eventtype, regressors(regr)));
-            
+                        
                         % Regressor name
                         J.sess(run).cond(regr).name = regressors{regr};
                         
@@ -812,16 +812,26 @@ function varargout = smp1_imana(what,varargin)
                         % Add a regressor that account for modulation of
                         % betas over time
                         J.sess(run).cond(regr).tmod = 0;
-
+                        
                         % Orthogonalize parametric modulator
                         % Make the parametric modulator orthogonal to the
                         % main regressor
                         J.sess(run).cond(regr).orth = 0;
-
+                        
                         % Define parametric modulators
                         % Add a parametric modulators, like force or
                         % reaction time. 
                         J.sess(run).cond(regr).pmod = struct('name', {}, 'param', {}, 'poly', {});
+
+                        %
+                        % filling in "reginfo"
+                        TT.sn        = sn;
+                        TT.sess      = sess;
+                        TT.run       = run;
+                        TT.task_name = Dd.task_name(ic);
+                        TT.task      = ic;
+                        TT.taskUni   = itaskUni;
+                        TT.n_rep     = sum(idx);
 
                     end
 
@@ -955,115 +965,115 @@ function varargout = smp1_imana(what,varargin)
                 spm_rwls_spm(SPM.SPM);
             end
 
-        case 'GLM:T_contrast'
-
-            sn = [];
-            sess = [];
-
-            vararginoptions(varargin, {'sn', 'sess'})
-            
-            if isempty(sn)
-                error('GLM:T_contrast -> ''sn'' must be passed to this function.')
-            end
-
-            if isempty(sess)
-                error('GLM:T_contrast -> ''sess'' must be passed to this function.')
-            end
-
-            subj_id = pinfo.subj_id{pinfo.sn==sn};
-
-            SPM = load(fullfile(baseDir, glmEstDir, subj_id, sprintf('sess%d',sess), 'SPM.mat'));
-            SPM = SPM.SPM;
-
-            if isfield(SPM, 'xCon') && ~isempty(SPM.xCon)
-                xCon = SPM.xCon;
-            else
-                xCon = []; % Initialize as an empty array if not existing
-            end
-
-            co = length(xCon);
-            j = 1;
-            for i = SPM.xX.iC
-                c = zeros(size(SPM.xX.X,2),1);
-                c(i) = 1;
-                if isempty(xCon)
-                    xCon = spm_FcUtil('Set', SPM.xX.name{i}, 'T', 'c', c, SPM.xX.xKXs);
-                else
-                    xCon(co+j) = spm_FcUtil('Set', SPM.xX.name{i}, 'T', 'c', c, SPM.xX.xKXs);
-                end
-                j = j + 1;
-            end
-            SPM.xCon = xCon;
-            % Call to keyboard removed for clarity
-            spm_contrasts(SPM, [co+1:co+j-1]);
+        % case 'GLM:T_contrast'
+        % 
+        %     sn = [];
+        %     sess = [];
+        % 
+        %     vararginoptions(varargin, {'sn', 'sess'})
+        % 
+        %     if isempty(sn)
+        %         error('GLM:T_contrast -> ''sn'' must be passed to this function.')
+        %     end
+        % 
+        %     if isempty(sess)
+        %         error('GLM:T_contrast -> ''sess'' must be passed to this function.')
+        %     end
+        % 
+        %     subj_id = pinfo.subj_id{pinfo.sn==sn};
+        % 
+        %     SPM = load(fullfile(baseDir, glmEstDir, subj_id, sprintf('sess%d',sess), 'SPM.mat'));
+        %     SPM = SPM.SPM;
+        % 
+        %     if isfield(SPM, 'xCon') && ~isempty(SPM.xCon)
+        %         xCon = SPM.xCon;
+        %     else
+        %         xCon = []; % Initialize as an empty array if not existing
+        %     end
+        % 
+        %     co = length(xCon);
+        %     j = 1;
+        %     for i = SPM.xX.iC
+        %         c = zeros(size(SPM.xX.X,2),1);
+        %         c(i) = 1;
+        %         if isempty(xCon)
+        %             xCon = spm_FcUtil('Set', SPM.xX.name{i}, 'T', 'c', c, SPM.xX.xKXs);
+        %         else
+        %             xCon(co+j) = spm_FcUtil('Set', SPM.xX.name{i}, 'T', 'c', c, SPM.xX.xKXs);
+        %         end
+        %         j = j + 1;
+        %     end
+        %     SPM.xCon = xCon;
+        %     % Call to keyboard removed for clarity
+        %     spm_contrasts(SPM, [co+1:co+j-1]);
             
 
              
-    %     case 'GLM:T_contrast'    % make T contrasts for each condition
-    %         %%% Calculating contrast images.
-    % 
-    %         sn             = subj_id;    % subjects list
-    %         ses            = 1;              % task number
-    %         glm            = 1;              % glm number
-    %         baseline       = 'rest';         % contrast will be calculated against base (available options: 'rest')
-    % 
-    %         vararginoptions(varargin, {'sn', 'glm', 'ses', 'baseline'})
-    % 
-    %         for s = sn
-    % 
-    %             % get the subject id folder name
-    %             fprintf('Contrasts for session %02d %s\n', ses, subj_str{s})
-    %             glm_dir = fullfile(base_dir, glm_first_dir, subj_str{s}, ses_str{ses}); 
-    % 
-    %             cd(glm_dir);
-    % 
-    %             % load the SPM.mat file
-    %             load(fullfile(glm_dir, 'SPM.mat'))
-    % 
-    %             SPM  = rmfield(SPM,'xCon');
-    %             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_str{s})));
-    % 
-    %             % t contrast for each condition type
-    %             utask = unique(T.task)';
-    %             idx = 1;
-    %             for ic = utask
-    %                 switch baseline
-    %                     case 'myBase' % contrast vs future baseline :)))
-    %                         % put your new contrasts here!
-    %                     case 'rest' % contrast against rest
-    %                         con                          = zeros(1,size(SPM.xX.X,2));
-    %                         con(:,logical((T.task == ic)& (T.n_rep>0))) = 1;
-    % %                         n_rep = length(T.run(T.task == ic));
-    % %                         n_rep_t = T.n_rep(T.task == ic);
-    % %                         name = unique(T.task_name(T.task == ic));
-    % %                         fprintf('- task is %s: \n', name{1});
-    % %                         fprintf('number of reps in all runs = %d\n', n_rep);
-    % %                         fprintf('numberof reps recorded in tsv = %d\n', n_rep_t);
-    %                         con                          = con/abs(sum(con));            
-    %                 end % switch base
-    % 
-    %                 % set the name of the contrast
-    %                 contrast_name = sprintf('%s-%s', char(unique(T.task_name(T.task == ic))), baseline);
-    %                 SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', con', SPM.xX.xKXs);
-    % 
-    %                 idx = idx + 1;
-    %             end % ic (conditions)
-    % 
-    %             SPM = spm_contrasts(SPM,1:length(SPM.xCon));
-    %             save('SPM.mat', 'SPM','-v7.3');
-    %             SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
-    %             save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
-    % 
-    %             % rename contrast images and spmT images
-    %             conName = {'con','spmT'};
-    %             for i = 1:length(SPM.xCon)
-    %                 for n = 1:numel(conName)
-    %                     oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},i));
-    %                     newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(i).name));
-    %                     movefile(oldName, newName);
-    %                 end % conditions (n, conName: con and spmT)
-    %             end % i (contrasts)
-    %         end % sn
+        case 'GLM:T_contrast'    % make T contrasts for each condition
+            %%% Calculating contrast images.
+
+            sn             = subj_id;    % subjects list
+            ses            = 1;              % task number
+            glm            = 1;              % glm number
+            baseline       = 'rest';         % contrast will be calculated against base (available options: 'rest')
+
+            vararginoptions(varargin, {'sn', 'glm', 'ses', 'baseline'})
+
+            for s = sn
+
+                % get the subject id folder name
+                fprintf('Contrasts for session %02d %s\n', ses, subj_str{s})
+                glm_dir = fullfile(base_dir, glm_first_dir, subj_str{s}, ses_str{ses}); 
+
+                cd(glm_dir);
+
+                % load the SPM.mat file
+                load(fullfile(glm_dir, 'SPM.mat'))
+
+                SPM  = rmfield(SPM,'xCon');
+                T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_str{s})));
+
+                % t contrast for each condition type
+                utask = unique(T.task)';
+                idx = 1;
+                for ic = utask
+                    switch baseline
+                        case 'myBase' % contrast vs future baseline :)))
+                            % put your new contrasts here!
+                        case 'rest' % contrast against rest
+                            con                          = zeros(1,size(SPM.xX.X,2));
+                            con(:,logical((T.task == ic)& (T.n_rep>0))) = 1;
+    %                         n_rep = length(T.run(T.task == ic));
+    %                         n_rep_t = T.n_rep(T.task == ic);
+    %                         name = unique(T.task_name(T.task == ic));
+    %                         fprintf('- task is %s: \n', name{1});
+    %                         fprintf('number of reps in all runs = %d\n', n_rep);
+    %                         fprintf('numberof reps recorded in tsv = %d\n', n_rep_t);
+                            con                          = con/abs(sum(con));            
+                    end % switch base
+
+                    % set the name of the contrast
+                    contrast_name = sprintf('%s-%s', char(unique(T.task_name(T.task == ic))), baseline);
+                    SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', con', SPM.xX.xKXs);
+
+                    idx = idx + 1;
+                end % ic (conditions)
+
+                SPM = spm_contrasts(SPM,1:length(SPM.xCon));
+                save('SPM.mat', 'SPM','-v7.3');
+                SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
+                save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
+
+                % rename contrast images and spmT images
+                conName = {'con','spmT'};
+                for i = 1:length(SPM.xCon)
+                    for n = 1:numel(conName)
+                        oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},i));
+                        newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(i).name));
+                        movefile(oldName, newName);
+                    end % conditions (n, conName: con and spmT)
+                end % i (contrasts)
+            end % sn
         
         case 'SURF:reconall' % Freesurfer reconall routine
             % Calls recon-all, which performs, all of the
