@@ -4,7 +4,7 @@ function varargout = smp1_imana(what,varargin)
     % Don't forget to add path the required tools!
     
     localPath = "/Users/mnlmrc/Documents/";
-    cbsPath = '/home/ROBARTS/memanue5/tsclient/mnlmrc/Documents/';
+    cbsPath = '/home/ROBARTS/memanue5/Documents/';
     % Directory specification
     if isfolder("/Users/mnlmrc/Documents/")
         addpath("/Users/mnlmrc/Documents/GitHub/spmj_tools/")
