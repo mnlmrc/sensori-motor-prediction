@@ -89,7 +89,7 @@ for ntrial = 1:length(exec.BN)
             stimFinger = 'ring';
     end
     
-    planGo.eventtype{ntrial, 1} = [cue '_' stimFinger '_planGo'];
+    planGo.eventtype{ntrial, 1} = [cue '_' stimFinger '_plan_go'];
     planGo.cue_id{ntrial, 1} = cue;
     planGo.stimFinger_id{ntrial, 1} = stimFinger;
     planGo.epoch{ntrial, 1} = 'plan';
@@ -120,7 +120,7 @@ for ntrial = 1:length(planNoGo.BN)
             cue = '0%';
     end
     
-    planNoGo.eventtype{ntrial, 1} = [cue '_planNoGo'];
+    planNoGo.eventtype{ntrial, 1} = [cue '_plan_nogo'];
     planNoGo.cue_id{ntrial, 1} = cue;
     planNoGo.stimFinger_id{ntrial, 1} = stimFinger;
     planNoGo.epoch{ntrial, 1} = 'plan';
