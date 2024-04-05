@@ -6,7 +6,7 @@ function varargout = smp1_imana(what,varargin)
     localPath = "/Users/mnlmrc/Documents/";
     cbsPath = '/home/ROBARTS/memanue5/Documents/';
     % Directory specification
-    if isfolder("/Users/mnlmrc/Documents/")
+    if isfolder(localPath)
         addpath("/Users/mnlmrc/Documents/GitHub/spmj_tools/")
         addpath("/Users/mnlmrc/Documents/GitHub/dataframe/util/")
         addpath("/Users/mnlmrc/Documents/GitHub/surfAnalysis/")
@@ -693,7 +693,7 @@ function varargout = smp1_imana(what,varargin)
                 Q = {};
                 for r = 1:length(run_list)
                     for i = 1:pinfo.numTR
-                         Q{end+1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),[prefix subj_id '_run_' run_list{r} '.nii,' num2str(i)]);
+                         Q{end+1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),[ subj_id '_run_' run_list{r} '.nii,' num2str(i)]);
                     end
                 end
     
