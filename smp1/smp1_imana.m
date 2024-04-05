@@ -36,12 +36,12 @@ function varargout = smp1_imana(what,varargin)
     
     baseDir         = (sprintf('%s/',workdir));                            % Base directory of the project
     bidsDir        = 'BIDS';                                              % Raw data post AutoBids conversion
+    behavDir = 'behavioural';       
     imagingRawDir   = 'imaging_data_raw';                                  % Temporary directory for raw functional data
     imagingDir      = 'imaging_data';                                      % Preprocesses functional data
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
-    glm1Dir         = 'glm1';
-    glmEstDir       = 'glm_est';
+    glmEstDir       = 'glm1';
     wbDir   = 'surfaceWB';
     fsDir = 'surfaceFreesurfer';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
@@ -762,10 +762,15 @@ function varargout = smp1_imana(what,varargin)
         case 'GLM:design'
             
             sn = [];
-            vararginoptions(varargin,{'sn'})
+            glm = [];
+            vararginoptions(varargin,{'sn', 'glm'})
 
             if isempty(sn)
                 error('GLM:design -> ''sn'' must be passed to this function.')
+            end
+
+            if isempty(sn)
+                error('GLM:design -> ''glm'' must be passed to this function.')
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
@@ -773,158 +778,162 @@ function varargout = smp1_imana(what,varargin)
             % Load data once, outside of session loop
             % D = dload(fullfile(baseDir,behavDir,subj_id, sprintf('smp1_%d.dat', sn)));
             
-            
-            for sess = 1:pinfo.numSess(pinfo.sn==sn)
 
-                Dd = dload(fullfile(baseDir,glm1Dir,subj_id, sprintf("sess%01d", sess), "events.tsv"));
-                regressors = unique(Dd.eventtype);
-                nRegr = length(regressors); 
+            Dd = dload(fullfile(baseDir,behavDir,subj_id, "events.tsv"));
+            regressors = unique(Dd.eventtype);
+            nRegr = length(regressors); 
 
-                % pull list of runs from the participant.tsv:
-                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
-                run_list = str2double(split(run_list,'.'));
-                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
-            
-                % init J
-                J = [];
-                J.dir = {fullfile(baseDir,glmEstDir,subj_id,sprintf('sess%d',sess))};
-                J.timing.units = 'secs';
-                J.timing.RT = 1;
+            % pull list of runs from the participant.tsv:
+            run_list = pinfo.('runsSess1'){pinfo.sn==sn};
+            run_list = str2double(split(run_list,'.'));
+            run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
+        
+            % init J
+            J = [];
+            T = [];
+            J.dir = {fullfile(baseDir,sprintf('glm%d', glm),subj_id)};
+            J.timing.units = 'secs';
+            J.timing.RT = 1;
 
-                % number of temporal bins in which the TR is divided,
-                % defines the discrtization of the HRF inside each TR
-                J.timing.fmri_t = 16;
+            % number of temporal bins in which the TR is divided,
+            % defines the discrtization of the HRF inside each TR
+            J.timing.fmri_t = 16;
 
-                % slice number that corresponds to that acquired halfway in
-                % each TR
-                J.timing.fmri_t0 = 1;
-            
-                for run = 1:max(Dd.BN)
-                    % Setup scans for current session
-                    J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), ['u' subj_id, '_run_', run_list{run}, '.nii'])};
-            
-            
-                    % Preallocate memory for conditions
-                    J.sess(run).cond = repmat(struct('name', '', 'onset', [], 'duration', []), nRegr, 1);
+            % slice number that corresponds to that acquired halfway in
+            % each TR
+            J.timing.fmri_t0 = 1;
+        
+            for run = 1:max(Dd.BN)
+                % Setup scans for current session
+                J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id,'sess1', ['u' subj_id, '_run_', run_list{run}, '.nii'])};
+        
+        
+                % Preallocate memory for conditions
+                J.sess(run).cond = repmat(struct('name', '', 'onset', [], 'duration', []), nRegr, 1);
+                
+                for regr = 1:nRegr
+                    % cue = Dd.cue(regr);
+                    % stimFinger = Dd.stimFinger(regr);
+                    rows = find (Dd.BN == run & strcmp(Dd.eventtype, regressors(regr)));
+                    cue_id = unique(Dd.cue_id(rows));
+                    stimFinger_id = unique(Dd.stimFinger_id(rows));
+                    epoch = unique(Dd.epoch(rows));
+                    instr = unique(Dd.instruction(rows));
                     
-                    for regr = 1:nRegr
-                        % cue = Dd.cue(regr);
-                        % stimFinger = Dd.stimFinger(regr);
-                        rows = find (Dd.BN == run & strcmp(Dd.eventtype, regressors(regr)));
-                        
-                        % Regressor name
-                        J.sess(run).cond(regr).name = regressors{regr};
-                        
-                        % Define durationDuration(regr));
-                        J.sess(run).cond(regr).duration = Dd.Duration(rows); % needs to be in seconds
-                        
-                        % Define onset
-                        J.sess(run).cond(regr).onset  = Dd.Onset(rows);
-                        
-                        % Define time modulator
-                        % Add a regressor that account for modulation of
-                        % betas over time
-                        J.sess(run).cond(regr).tmod = 0;
-                        
-                        % Orthogonalize parametric modulator
-                        % Make the parametric modulator orthogonal to the
-                        % main regressor
-                        J.sess(run).cond(regr).orth = 0;
-                        
-                        % Define parametric modulators
-                        % Add a parametric modulators, like force or
-                        % reaction time. 
-                        J.sess(run).cond(regr).pmod = struct('name', {}, 'param', {}, 'poly', {});
-
-                        %
-                        % filling in "reginfo"
-                        TT.sn        = sn;
-                        TT.sess      = sess;
-                        TT.run       = run;
-                        TT.task_name = Dd.task_name(ic);
-                        TT.task      = ic;
-                        TT.taskUni   = itaskUni;
-                        TT.n_rep     = sum(idx);
-
-                    end
-
-                    % Specify high pass filter
-                    J.sess(run).hpf = Inf;
-
-                    % J.sess(run).multi
-                    % Purpose: Specifies multiple conditions for a session. Usage: It is used
-                    % to point to a file (.mat or .txt) that contains multiple conditions,
-                    % their onsets, durations, and names in a structured format. If you have a
-                    % complex design where specifying conditions manually within the script is
-                    % cumbersome, you can prepare this information in advance and just
-                    % reference the file here. Example Setting: J.sess(run).multi =
-                    % {'path/to/multiple_conditions_file.mat'}; If set to {' '}, it indicates
-                    % that you are not using an external file to specify multiple conditions,
-                    % and you will define conditions directly in the script (as seen with
-                    % J.sess(run).cond).
-                    J.sess(run).multi     = {''};                        
-
-                    % J.sess(run).regress
-                    % Purpose: Allows you to specify additional regressors that are not
-                    % explicitly modeled as part of the experimental design but may account for
-                    % observed variations in the BOLD signal. Usage: This could include
-                    % physiological measurements (like heart rate or respiration) or other
-                    % variables of interest. Each regressor has a name and a vector of values
-                    % corresponding to each scan/time point.
-                    J.sess(run).regress   = struct('name', {}, 'val', {});                        
-
-                    % J.sess(run).multi_reg Purpose: Specifies a file containing multiple
-                    % regressors that will be included in the model as covariates. Usage: This
-                    % is often used for motion correction, where the motion parameters
-                    % estimated during preprocessing are included as regressors to account for
-                    % motion-related artifacts in the BOLD signal. Example Setting:
-                    % J.sess(run).multi_reg = {'path/to/motion_parameters.txt'}; The file
-                    % should contain a matrix with as many columns as there are regressors and
-                    % as many rows as there are scans/time points. Each column represents a
-                    % different regressor (e.g., the six motion parameters from realignment),
-                    % and each row corresponds to the value of those regressors at each scan.
-                    J.sess(run).multi_reg = {''};
+                    % Regressor name
+                    J.sess(run).cond(regr).name = regressors{regr};
                     
-                    % Specify factorial design
-                    J.fact             = struct('name', {}, 'levels', {});
-
-                    % Specify hrf parameters for convolution with
-                    % regressors
-                    J.bases.hrf.derivs = [0 0];
-                    J.bases.hrf.params = [4.5 11];  % positive and negative peak of HRF - set to [] if running wls (?)
+                    % Define durationDuration(regr));
+                    J.sess(run).cond(regr).duration = Dd.Duration(rows); % needs to be in seconds
                     
-                    % Specify the order of the Volterra series expansion 
-                    % for modeling nonlinear interactions in the BOLD response
-                    % *Example Usage*: Most analyses use 1, assuming a linear
-                    % relationship between neural activity and the BOLD
-                    % signal.
-                    J.volt = 1;
-
-                    % Specifies the method for global normalization, which
-                    % is a step to account for global differences in signal
-                    % intensity across the entire brain or between scans.
-                    J.global = 'None';
-
-                    % remove voxels involving non-neural tissue (e.g., skull)
-                    J.mask = {fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), 'rmask_noskull.nii')};
+                    % Define onset
+                    J.sess(run).cond(regr).onset  = Dd.Onset(rows);
                     
-                    % Set threshold for brightness threshold for masking 
-                    % If supplying explicit mask, set to 0  (default is 0.8)
-                    J.mthresh = 0.;
-
-                    % Create map where non-sphericity correction must be
-                    % applied
-                    J.cvi_mask = {fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), 'rmask_gray.nii')};
-
-                    % Method for non sphericity correction
-                    J.cvi =  'fast';
+                    % Define time modulator
+                    % Add a regressor that account for modulation of
+                    % betas over time
+                    J.sess(run).cond(regr).tmod = 0;
                     
+                    % Orthogonalize parametric modulator
+                    % Make the parametric modulator orthogonal to the
+                    % main regressor
+                    J.sess(run).cond(regr).orth = 0;
+                    
+                    % Define parametric modulators
+                    % Add a parametric modulators, like force or
+                    % reaction time. 
+                    J.sess(run).cond(regr).pmod = struct('name', {}, 'param', {}, 'poly', {});
+
+                    %
+                    % filling in "reginfo"
+                    TT.sn        = sn;
+                    TT.run       = run;
+                    TT.name      = regressors(regr);
+                    TT.cue       = cue_id;
+                    TT.epoch     = epoch;
+                    TT.stimFinger = stimFinger_id;
+                    TT.instr = instr;       
+
+                    T = addstruct(T, TT);
+
                 end
 
-                spm_rwls_run_fmri_spec(J);
-                % dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_str{s})), T);
-                % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
+                % Specify high pass filter
+                J.sess(run).hpf = Inf;
+
+                % J.sess(run).multi
+                % Purpose: Specifies multiple conditions for a session. Usage: It is used
+                % to point to a file (.mat or .txt) that contains multiple conditions,
+                % their onsets, durations, and names in a structured format. If you have a
+                % complex design where specifying conditions manually within the script is
+                % cumbersome, you can prepare this information in advance and just
+                % reference the file here. Example Setting: J.sess(run).multi =
+                % {'path/to/multiple_conditions_file.mat'}; If set to {' '}, it indicates
+                % that you are not using an external file to specify multiple conditions,
+                % and you will define conditions directly in the script (as seen with
+                % J.sess(run).cond).
+                J.sess(run).multi     = {''};                        
+
+                % J.sess(run).regress
+                % Purpose: Allows you to specify additional regressors that are not
+                % explicitly modeled as part of the experimental design but may account for
+                % observed variations in the BOLD signal. Usage: This could include
+                % physiological measurements (like heart rate or respiration) or other
+                % variables of interest. Each regressor has a name and a vector of values
+                % corresponding to each scan/time point.
+                J.sess(run).regress   = struct('name', {}, 'val', {});                        
+
+                % J.sess(run).multi_reg Purpose: Specifies a file containing multiple
+                % regressors that will be included in the model as covariates. Usage: This
+                % is often used for motion correction, where the motion parameters
+                % estimated during preprocessing are included as regressors to account for
+                % motion-related artifacts in the BOLD signal. Example Setting:
+                % J.sess(run).multi_reg = {'path/to/motion_parameters.txt'}; The file
+                % should contain a matrix with as many columns as there are regressors and
+                % as many rows as there are scans/time points. Each column represents a
+                % different regressor (e.g., the six motion parameters from realignment),
+                % and each row corresponds to the value of those regressors at each scan.
+                J.sess(run).multi_reg = {''};
+                
+                % Specify factorial design
+                J.fact             = struct('name', {}, 'levels', {});
+
+                % Specify hrf parameters for convolution with
+                % regressors
+                J.bases.hrf.derivs = [0 0];
+                J.bases.hrf.params = [4.5 11];  % positive and negative peak of HRF - set to [] if running wls (?)
+                
+                % Specify the order of the Volterra series expansion 
+                % for modeling nonlinear interactions in the BOLD response
+                % *Example Usage*: Most analyses use 1, assuming a linear
+                % relationship between neural activity and the BOLD
+                % signal.
+                J.volt = 1;
+
+                % Specifies the method for global normalization, which
+                % is a step to account for global differences in signal
+                % intensity across the entire brain or between scans.
+                J.global = 'None';
+
+                % remove voxels involving non-neural tissue (e.g., skull)
+                J.mask = {fullfile(baseDir, imagingDir, subj_id, 'sess1', 'rmask_noskull.nii')};
+                
+                % Set threshold for brightness threshold for masking 
+                % If supplying explicit mask, set to 0  (default is 0.8)
+                J.mthresh = 0.;
+
+                % Create map where non-sphericity correction must be
+                % applied
+                J.cvi_mask = {fullfile(baseDir, imagingDir, subj_id, 'sess1', 'rmask_gray.nii')};
+
+                % Method for non sphericity correction
+                J.cvi =  'fast';
+                
             end
+
+            spm_rwls_run_fmri_spec(J);
+            dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
+            % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
 
         case 'GLM:visualize_design_matrix'
             
