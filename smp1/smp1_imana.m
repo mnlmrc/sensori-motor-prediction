@@ -3,20 +3,33 @@ function varargout = smp1_imana(what,varargin)
     % Rename this function to <experiment_name>_imana.m 
     % Don't forget to add path the required tools!
     
-    
+    localPath = "/Users/mnlmrc/Documents/";
+    cbsPath = '/home/ROBARTS/memanue5/tsclient/mnlmrc/Documents/';
     % Directory specification
-    addpath("/Users/mnlmrc/Documents/GitHub/spmj_tools")
-    addpath("/Users/mnlmrc/Documents/GitHub/dataframe/util")
-    addpath("/Users/mnlmrc/Documents/GitHub/surfAnalysis/")
-    addpath("/Users/mnlmrc/Documents/MATLAB/spm12")
-    addpath("/Users/mnlmrc/Documents/GitHub/rwls/")
-    addpath("/Users/mnlmrc/Documents/GitHub/surfing/surfing/")
+    if isfolder("/Users/mnlmrc/Documents/")
+        addpath("/Users/mnlmrc/Documents/GitHub/spmj_tools/")
+        addpath("/Users/mnlmrc/Documents/GitHub/dataframe/util/")
+        addpath("/Users/mnlmrc/Documents/GitHub/surfAnalysis/")
+        addpath("/Users/mnlmrc/Documents/MATLAB/spm12/")
+        addpath("/Users/mnlmrc/Documents/GitHub/rwls/")
+        addpath("/Users/mnlmrc/Documents/GitHub/surfing/surfing/")
+    elseif isfolder(cbsPath)
+        addpath([cbsPath 'GitHub/spmj_tools/'])
+        addpath([cbsPath 'GitHub/dataframe/util/'])
+        addpath([cbsPath 'GitHub/surfAnalysis/'])
+        addpath([cbsPath 'MATLAB/spm12/'])
+        addpath([cbsPath 'GitHub/rwls/'])
+        addpath([cbsPath 'GitHub/surfing/surfing/'])
+    end
+
     % Define the data base directory 
     
     % automatic detection of datashare location:
     % After mounting the diedrichsen datashare on a mac computer.
     if isfolder("/Volumes/diedrichsen_data$//data/SensoriMotorPrediction/smp1")
         workdir = "/Volumes/diedrichsen_data$//data/SensoriMotorPrediction/smp1";
+    elseif isfolder("/cifs/diedrichsen/data/SensoriMotorPrediction/smp1")
+        workdir = "/cifs/diedrichsen/data/SensoriMotorPrediction/smp1";
     else
         fprintf('Workdir not found. Mount or connect to server and try again.');
     end
