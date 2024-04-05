@@ -298,48 +298,48 @@ function varargout = smp1_imana(what,varargin)
 
             anat_path = fullfile(baseDir,anatomicalDir,subj_id,[subj_id '_anatomical.nii,1']);
 
-            spmj_segmentation(anat_path);
-            % SPMhome=fileparts(which('spm.m'));
-            % J=[];
-            % % for s=sn WE DONT NEED THIS FOR LOOP 
-            % J.channel.vols = {fullfile(baseDir,anatomicalDir,subj_id,[subj_id '_anatomical.nii,1'])};
-            % J.channel.biasreg = 0.001;
-            % J.channel.biasfwhm = 60;
-            % J.channel.write = [0 0];
-            % J.tissue(1).tpm = {fullfile(SPMhome,'tpm/TPM.nii,1')};
-            % J.tissue(1).ngaus = 1;
-            % J.tissue(1).native = [1 0];
-            % J.tissue(1).warped = [0 0];
-            % J.tissue(2).tpm = {fullfile(SPMhome,'tpm/TPM.nii,2')};
-            % J.tissue(2).ngaus = 1;
-            % J.tissue(2).native = [1 0];
-            % J.tissue(2).warped = [0 0];
-            % J.tissue(3).tpm = {fullfile(SPMhome,'tpm/TPM.nii,3')};
-            % J.tissue(3).ngaus = 2;
-            % J.tissue(3).native = [1 0];
-            % J.tissue(3).warped = [0 0];
-            % J.tissue(4).tpm = {fullfile(SPMhome,'tpm/TPM.nii,4')};
-            % J.tissue(4).ngaus = 3;
-            % J.tissue(4).native = [1 0];
-            % J.tissue(4).warped = [0 0];
-            % J.tissue(5).tpm = {fullfile(SPMhome,'tpm/TPM.nii,5')};
-            % J.tissue(5).ngaus = 4;
-            % J.tissue(5).native = [1 0];
-            % J.tissue(5).warped = [0 0];
-            % J.tissue(6).tpm = {fullfile(SPMhome,'tpm/TPM.nii,6')};
-            % J.tissue(6).ngaus = 2;
-            % J.tissue(6).native = [0 0];
-            % J.tissue(6).warped = [0 0];
-            % J.warp.mrf = 1;
-            % J.warp.cleanup = 1;
-            % J.warp.reg = [0 0.001 0.5 0.05 0.2];
-            % J.warp.affreg = 'mni';
-            % J.warp.fwhm = 0;
-            % J.warp.samp = 3;
-            % J.warp.write = [0 0];
-            % matlabbatch{1}.spm.spatial.preproc=J;
-            % spm_jobman('run',matlabbatch);
-            % end
+            % spmj_segmentation(anat_path);
+            SPMhome=fileparts(which('spm.m'));
+            J=[];
+            % for s=sn WE DONT NEED THIS FOR LOOP 
+            J.channel.vols = {fullfile(baseDir,anatomicalDir,subj_id,[subj_id '_anatomical.nii,1'])};
+            J.channel.biasreg = 0.001;
+            J.channel.biasfwhm = 60;
+            J.channel.write = [0 0];
+            J.tissue(1).tpm = {fullfile(SPMhome,'tpm/TPM.nii,1')};
+            J.tissue(1).ngaus = 1;
+            J.tissue(1).native = [1 0];
+            J.tissue(1).warped = [0 0];
+            J.tissue(2).tpm = {fullfile(SPMhome,'tpm/TPM.nii,2')};
+            J.tissue(2).ngaus = 1;
+            J.tissue(2).native = [1 0];
+            J.tissue(2).warped = [0 0];
+            J.tissue(3).tpm = {fullfile(SPMhome,'tpm/TPM.nii,3')};
+            J.tissue(3).ngaus = 2;
+            J.tissue(3).native = [1 0];
+            J.tissue(3).warped = [0 0];
+            J.tissue(4).tpm = {fullfile(SPMhome,'tpm/TPM.nii,4')};
+            J.tissue(4).ngaus = 3;
+            J.tissue(4).native = [1 0];
+            J.tissue(4).warped = [0 0];
+            J.tissue(5).tpm = {fullfile(SPMhome,'tpm/TPM.nii,5')};
+            J.tissue(5).ngaus = 4;
+            J.tissue(5).native = [1 0];
+            J.tissue(5).warped = [0 0];
+            J.tissue(6).tpm = {fullfile(SPMhome,'tpm/TPM.nii,6')};
+            J.tissue(6).ngaus = 2;
+            J.tissue(6).native = [0 0];
+            J.tissue(6).warped = [0 0];
+            J.warp.mrf = 1;
+            J.warp.cleanup = 1;
+            J.warp.reg = [0 0.001 0.5 0.05 0.2];
+            J.warp.affreg = 'mni';
+            J.warp.fwhm = 0;
+            J.warp.samp = 3;
+            J.warp.write = [0 0];
+            matlabbatch{1}.spm.spatial.preproc=J;
+            spm_jobman('run',matlabbatch);
+%             end
     
         case 'FUNC:make_fmap'                
             % Description:
