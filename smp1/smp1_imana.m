@@ -966,22 +966,22 @@ function varargout = smp1_imana(what,varargin)
         case 'GLM:estimate'      % estimate beta values
             
             sn = [];
-            sess = [];
-            vararginoptions(varargin, {'sn', 'sess'})
+            glm = [];
+            vararginoptions(varargin, {'sn', 'glm'})
 
             if isempty(sn)
-                error('FUNC:visualize_design_matrix -> ''sn'' must be passed to this function.')
+                error('GLM:estimate -> ''sn'' must be passed to this function.')
             end
 
-            if isempty(sess)
-                error('FUNC:visualize_design_matrix -> ''sess'' must be passed to this function.')
+            if isempty(glm)
+                error('GLM:estimate -> ''glm'' must be passed to this function.')
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
              
             for sess = 1:pinfo.numSess(pinfo.sn==sn)
-                fprintf('- Doing glm estimation for session %02d %s\n', sess, subj_id);
-                subj_est_dir = fullfile(baseDir, glmEstDir, subj_id, sprintf('sess%d', sess));                
+                fprintf('- Doing glm%d estimation for subj %s\n', glm, subj_id);
+                subj_est_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id);                
                 SPM = load(fullfile(subj_est_dir,'SPM.mat'));
                 SPM.SPM.swd = subj_est_dir;
             
