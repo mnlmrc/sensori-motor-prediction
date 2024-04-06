@@ -805,7 +805,7 @@ function varargout = smp1_imana(what,varargin)
         
             for run = 1:max(Dd.BN)
                 % Setup scans for current session
-                J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id,'sess1', ['u' subj_id, '_run_', run_list{run}, '.nii'])};
+                J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id,'sess1', [subj_id, '_run_', run_list{run}, '.nii'])};
         
         
                 % Preallocate memory for conditions
