@@ -1058,7 +1058,7 @@ function varargout = smp1_imana(what,varargin)
 
             % get the subject id folder name
             fprintf('Contrasts for participant %s\n', subj_id)
-            glm_dir = fullfile(base_dir, sprintf('glm%d', glm), subj_id); 
+            glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
 
             % load the SPM.mat file
             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
