@@ -1061,27 +1061,27 @@ function varargout = smp1_imana(what,varargin)
             glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
 
             % load the SPM.mat file
-            SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
-
-            SPM  = rmfield(SPM,'xCon');
+%             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
+% 
+%             SPM  = rmfield(SPM,'xCon');
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
 
             % t contrast for each condition type
-            for c=condition
+            for c=1:length(condition)
 %                 c = char(c);
-                ucond = unique(T.(c));
+                ucond = unique(T.(condition{c}));
                 ucond(strcmp(ucond, 'rest')) = [];
-                idx = 1;
-                for ic = ucond
+%                 idx = 1;
+                for ic = 1:length(ucond)
                     xcon = zeros(1, size(SPM.xX.X,2));
-                    idx_c = find(strcmp(T.(c), ic));
+                    idx_c = find(strcmp(T.(condition{c}), ucond{ic}));
                     idx_b = find(strcmp(T.name, baseline));
                     xcon(:, idx_c) = 1;
                     xcon(:, idx_b) = -1; 
                     xcon = xcon/abs(sum(xcon));
-                    contrast_name = sprintf('%s-%s', unique(T.name(strcmp(T.(c), ic))), baseline);
-                    SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon', SPM.xX.xKXs);
-                    idx = idx +1;
+                    contrast_name = sprintf('%s-%s', unique(T.name(strcmp(T.(condition{c}), ucond{ic}))), baseline);
+                    SPM.xCon(ic) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon', SPM.xX.xKXs);
+%                     idx = idx +1;
                 end
             end
             
