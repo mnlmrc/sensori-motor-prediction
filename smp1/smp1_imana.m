@@ -1061,9 +1061,9 @@ function varargout = smp1_imana(what,varargin)
             glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
 
             % load the SPM.mat file
-%             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
-% 
-%             SPM  = rmfield(SPM,'xCon');
+            SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
+
+            SPM  = rmfield(SPM,'xCon');
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
 
             % t contrast for each condition type
