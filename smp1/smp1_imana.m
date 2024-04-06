@@ -1079,7 +1079,7 @@ function varargout = smp1_imana(what,varargin)
                     xcon(:, idx_c) = 1;
                     xcon(:, idx_b) = -1; 
                     xcon = xcon/abs(sum(xcon));
-                    contrast_name = sprintf('%s-%s', unique(T.name(strcmp(T.(condition{c}), ucond{ic}))), baseline);
+                    contrast_name = sprintf('%s-%s', ucond{ic}, baseline);
                     SPM.xCon(ic) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon', SPM.xX.xKXs);
 %                     idx = idx +1;
                 end
