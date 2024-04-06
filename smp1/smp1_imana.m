@@ -1068,6 +1068,7 @@ function varargout = smp1_imana(what,varargin)
 
             % t contrast for each condition type
             for c=condition
+                c = char(c);
                 ucond = unique(T.(c));
                 ucond(strcmp(ucond, 'rest')) = [];
                 idx = 1;
