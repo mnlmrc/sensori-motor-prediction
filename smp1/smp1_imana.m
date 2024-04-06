@@ -1051,7 +1051,7 @@ function varargout = smp1_imana(what,varargin)
             end
 
             if isempty(condition)
-                error('GLM:T_contrast -> ''level'' must be passed to this function.')
+                error('GLM:T_contrast -> ''condition'' must be passed to this function.')
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
