@@ -42,6 +42,7 @@ function varargout = smp1_imana(what,varargin)
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
     glmEstDir       = 'glm1';
+    wbDir   = fullfile(baseDir,'surfaceWB');
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
     
     %% subject info
@@ -1123,7 +1124,6 @@ function varargout = smp1_imana(what,varargin)
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
-            wbDir   = fullfile(baseDir,'surfaceWB');
             fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id);
 
             % dircheck(outDir);
@@ -1132,10 +1132,11 @@ function varargout = smp1_imana(what,varargin)
         case 'SURF:vol2surf'
 
             sn   = []; % subject list
+            filename = [];
             res  = 32;          % resolution of the atlas. options are: 32, 164
             % hemi = [1, 2];      % list of hemispheres
            
-            vararginoptions(varargin, {'sn'});
+            vararginoptions(varargin, {'sn', 'filename'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
@@ -1151,11 +1152,11 @@ function varargout = smp1_imana(what,varargin)
 
             c1 = hemLpial.vertices;
             c2 = hemLwhite.vertices;
-            V = spm_vol('/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/smp1/anatomicals/subj100/subj100_anatomical.nii');
+            V = spm_vol(fullfile(baseDir, 'glm1', subj_id, filename));
 
             [G, D] = surf_vol2surf(c1,c2,V.fname,'anatomicalStruct','CortexLeft');
             
-            save(G, fullfile(baseDir, wbDir, subj_id, subj_id, 'test.label.gii'))
+            save(G, fullfile(baseDir, wbDir, subj_id, subj_id, 'test.func.gii'))
     
     end
 
