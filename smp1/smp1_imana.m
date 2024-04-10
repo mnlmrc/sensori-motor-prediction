@@ -1124,7 +1124,7 @@ function varargout = smp1_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
             wbDir   = fullfile(baseDir,'surfaceWB');
-            fsDir = fullfile(baseDire, 'surfaceFreesurfer', subj_id);
+            fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id);
 
             % dircheck(outDir);
             surf_resliceFS2WB(subj_id, fsDir, wbDir, 'resolution', sprintf('%dk', res))
