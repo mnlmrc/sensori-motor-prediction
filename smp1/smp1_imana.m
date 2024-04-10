@@ -1104,10 +1104,10 @@ function varargout = smp1_imana(what,varargin)
             end
 
             xcon = zeros(size(SPM.xX.X,2), 1);
-            for ic = 1:length(xcon)
-                if xcn == 1
+            for ic = 1:length(xcon) - max(T.BN)
+                if xcn(ic) == 1
                     xcon(ic) = 1;
-                elseif xbs == 1
+                elseif xbs(ic) == 1
                     xcon(ic) = -1;
                 end
             end
