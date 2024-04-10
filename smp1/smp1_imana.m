@@ -42,8 +42,6 @@ function varargout = smp1_imana(what,varargin)
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
     glmEstDir       = 'glm1';
-    wbDir   = 'surfaceWB';
-    fsDir = 'surfaceFreesurfer';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
     
     %% subject info
@@ -939,20 +937,15 @@ function varargout = smp1_imana(what,varargin)
         case 'GLM:visualize_design_matrix'
             
             sn = [];
-            sess  = [];
-            vararginoptions(varargin,{'sn', 'sess'})
+            vararginoptions(varargin,{'sn'})
 
             if isempty(sn)
                 error('GLM:visualize_design_matrix -> ''sn'' must be passed to this function.')
             end
 
-            if isempty(sess)
-                error('GLM:visualize_design_matrix -> ''sess'' must be passed to this function.')
-            end
-
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
-            SPM = load(fullfile(baseDir,glmEstDir,subj_id,sprintf('sess%d',sess), 'SPM.mat'));
+            SPM = load(fullfile(baseDir,glmEstDir,subj_id, 'SPM.mat'));
 
             X = SPM.SPM.xX.X; % Assuming 'X' is the field holding the design matrix
 
@@ -1040,7 +1033,7 @@ function varargout = smp1_imana(what,varargin)
             condition          = [];
             baseline       = 'rest';         % contrast will be calculated against base (available options: 'rest')
 
-            vararginoptions(varargin, {'sn', 'glm', 'condition', 'baseline'})
+            vararginoptions(varargin, {'sn', 'glm', 'level', 'contrast'})
 
             if isempty(sn)
                 error('GLM:T_contrast -> ''sn'' must be passed to this function.')
@@ -1051,7 +1044,11 @@ function varargout = smp1_imana(what,varargin)
             end
 
             if isempty(condition)
-                error('GLM:T_contrast -> ''condition'' must be passed to this function.')
+                error('GLM:T_contrast -> ''level'' must be passed to this function.')
+            end
+
+            if isempty(condition)
+                error('GLM:T_contrast -> ''contrast'' must be passed to this function.')
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
@@ -1125,6 +1122,9 @@ function varargout = smp1_imana(what,varargin)
             vararginoptions(varargin, {'sn'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            wbDir   = fullfile(baseDir,'surfaceWB');
+            fsDir = fullfile(baseDire, 'surfaceFreesurfer', subj_id);
 
             % dircheck(outDir);
             surf_resliceFS2WB(subj_id, fsDir, wbDir, 'resolution', sprintf('%dk', res))
