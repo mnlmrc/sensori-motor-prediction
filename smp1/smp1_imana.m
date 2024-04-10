@@ -929,6 +929,21 @@ function varargout = smp1_imana(what,varargin)
                 J.cvi =  'fast';
                 
             end
+
+            TT.cue0 = TT.cue == '0%';
+            TT.cue25 = TT.cue == '25%';
+            TT.cue50 = TT.cue == '50%';
+            TT.cue75 = TT.cue == '75%';
+            TT.cue100 = TT.cue == '100%';
+
+            TT.index = TT.stimFinger == 'index';
+            TT.ring = TT.stimFinger == 'ring';
+
+            TT.plan = TT.epoch == 'plan';
+            TT.exec = TT.epoch == 'exec';
+           
+            TT.go = TT.instr == 'go';
+            TT.nogo = TT.instr == 'nogo';
             
             dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
             spm_rwls_run_fmri_spec(J);
@@ -1031,7 +1046,7 @@ function varargout = smp1_imana(what,varargin)
 
             sn             = [];    % subjects list
             glm            = [];              % glm number
-            condition          = [];
+            condition      = [];
             baseline       = 'rest';         % contrast will be calculated against base (available options: 'rest')
 
             vararginoptions(varargin, {'sn', 'glm', 'level', 'contrast'})
@@ -1071,14 +1086,14 @@ function varargout = smp1_imana(what,varargin)
                 ucond(strcmp(ucond, 'rest')) = [];
 %                 idx = 1;
                 for ic = 1:length(ucond)
-                    xcon = zeros(1, size(SPM.xX.X,2));
+                    xcon = zeros(size(SPM.xX.X,2), 1);
                     idx_c = find(strcmp(T.(condition{c}), ucond{ic}));
                     idx_b = find(strcmp(T.name, baseline));
                     xcon(:, idx_c) = 1;
                     xcon(:, idx_b) = -1; 
                     xcon = xcon/abs(sum(xcon));
                     contrast_name = sprintf('%s-%s', ucond{ic}, baseline);
-                    SPM.xCon(ic) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon', SPM.xX.xKXs);
+                    SPM.xCon(ic) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
 %                     idx = idx +1;
                 end
             end
