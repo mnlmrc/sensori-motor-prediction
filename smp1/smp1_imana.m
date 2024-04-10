@@ -930,20 +930,20 @@ function varargout = smp1_imana(what,varargin)
                 
             end
 
-            TT.cue0 = TT.cue == '0%';
-            TT.cue25 = TT.cue == '25%';
-            TT.cue50 = TT.cue == '50%';
-            TT.cue75 = TT.cue == '75%';
-            TT.cue100 = TT.cue == '100%';
-
-            TT.index = TT.stimFinger == 'index';
-            TT.ring = TT.stimFinger == 'ring';
-
-            TT.plan = TT.epoch == 'plan';
-            TT.exec = TT.epoch == 'exec';
-           
-            TT.go = TT.instr == 'go';
-            TT.nogo = TT.instr == 'nogo';
+            TT.cue0 = strcmp(TT.cue, '0%');
+            TT.cue25 = strcmp(TT.cue, '25%');
+            TT.cue50 = strcmp(TT.cue, '50%');
+            TT.cue75 = strcmp(TT.cue, '75%');
+            TT.cue100 = strcmp(TT.cue, '100%');
+            
+            TT.index = strcmp(TT.stimFinger, 'index');
+            TT.ring = strcmp(TT.stimFinger, 'ring');
+            
+            TT.plan = strcmp(TT.epoch, 'plan');
+            TT.exec = strcmp(TT.epoch, 'exec');
+            
+            TT.go = strcmp(TT.instr, 'go');
+            TT.nogo = strcmp(TT.instr, 'nogo');
             
             dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
             spm_rwls_run_fmri_spec(J);
@@ -1046,10 +1046,10 @@ function varargout = smp1_imana(what,varargin)
 
             sn             = [];    % subjects list
             glm            = [];              % glm number
-            condition      = [];
-            baseline       = 'rest';         % contrast will be calculated against base (available options: 'rest')
+            condition      = '';
+            baseline       = '';         % contrast will be calculated against base (available options: 'rest')
 
-            vararginoptions(varargin, {'sn', 'glm', 'level', 'contrast'})
+            vararginoptions(varargin, {'sn', 'glm', 'condition', 'baseline'})
 
             if isempty(sn)
                 error('GLM:T_contrast -> ''sn'' must be passed to this function.')
@@ -1060,11 +1060,11 @@ function varargout = smp1_imana(what,varargin)
             end
 
             if isempty(condition)
-                error('GLM:T_contrast -> ''level'' must be passed to this function.')
+                error('GLM:T_contrast -> ''condition'' must be passed to this function.')
             end
 
             if isempty(condition)
-                error('GLM:T_contrast -> ''contrast'' must be passed to this function.')
+                error('GLM:T_contrast -> ''baseline'' must be passed to this function.')
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
@@ -1078,26 +1078,44 @@ function varargout = smp1_imana(what,varargin)
 
             SPM  = rmfield(SPM,'xCon');
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
-
-            % t contrast for each condition type
-            for c=1:length(condition)
-%                 c = char(c);
-                ucond = unique(T.(condition{c}));
-                ucond(strcmp(ucond, 'rest')) = [];
-%                 idx = 1;
-                for ic = 1:length(ucond)
-                    xcon = zeros(size(SPM.xX.X,2), 1);
-                    idx_c = find(strcmp(T.(condition{c}), ucond{ic}));
-                    idx_b = find(strcmp(T.name, baseline));
-                    xcon(:, idx_c) = 1;
-                    xcon(:, idx_b) = -1; 
-                    xcon = xcon/abs(sum(xcon));
-                    contrast_name = sprintf('%s-%s', ucond{ic}, baseline);
-                    SPM.xCon(ic) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-%                     idx = idx +1;
+            
+            xcn = zeros(length(T.name));
+            contrast1 = '';
+            for cn=1:length(condition)             
+                if cn > 1
+                    xcn = xcn .* T.(condition(cn));
+                    contrast1 = [contrast1 '∩' condition(cn)];
+                else
+                    xcn = T.(condition(cn));
+                    contrast1 = [contrast1 condition(cn)];
                 end
             end
-            
+
+            xbs = zeros(length(T.name));
+            contrast2 = '';
+            for bs=1:length(baseline)
+                if cn > 1
+                    xbs = xbs .* T.(baseline(bs));
+                    contrast2 = [contrast2 '∩' baseline(bs)];
+                else
+                    xbs = T.(baseline(bs));
+                    contrast2 = [contrast2 baseline(bs)];
+                end
+            end
+
+            xcon = zeros(size(SPM.xX.X,2), 1);
+            for ic = 1:length(xcon)
+                if xcn == 1
+                    xcon(ic) = 1;
+                elseif xbs == 1
+                    xcon(ic) = -1;
+                end
+            end
+
+            xcon = xcon/abs(sum(xcon));
+            contrast_name = sprintf('%s-%s', contrast1, contrast2);
+            SPM.xCon(ic) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+
             SPM = spm_contrasts(SPM,1:length(SPM.xCon));
             save('SPM.mat', 'SPM','-v7.3');
 %             SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
