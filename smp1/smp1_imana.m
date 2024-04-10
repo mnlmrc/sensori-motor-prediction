@@ -42,7 +42,7 @@ function varargout = smp1_imana(what,varargin)
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
     glmEstDir       = 'glm1';
-    wbDir   = fullfile(baseDir,'surfaceWB');
+    wbDir   = 'surfaceWB';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
     
     %% subject info
@@ -1127,7 +1127,7 @@ function varargout = smp1_imana(what,varargin)
             fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id);
 
             % dircheck(outDir);
-            surf_resliceFS2WB(subj_id, fsDir, wbDir, 'resolution', sprintf('%dk', res))
+            surf_resliceFS2WB(subj_id, fsDir, fullfile(baseDir, wbDir), 'resolution', sprintf('%dk', res))
 
         case 'SURF:vol2surf'
 
