@@ -1214,10 +1214,10 @@ function varargout = smp1_imana(what,varargin)
                 filename = ['spmT_' id '.func.gii'];
             end
 
-            A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
-
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
+            A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
+            
             G = surf_makeFuncGifti(A.cdata, 'anatomicalStruct');
 
             save(G, fullfile(baseDir, suitDir, subj_id, filename));
