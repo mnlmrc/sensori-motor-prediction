@@ -13,12 +13,14 @@ function varargout = smp1_imana(what,varargin)
         addpath("/Users/mnlmrc/Documents/MATLAB/spm12/")
         addpath("/Users/mnlmrc/Documents/GitHub/rwls/")
         addpath("/Users/mnlmrc/Documents/GitHub/surfing/surfing/")
+        addpath("/Users/mnlmrc/Documents/GitHub/suit/")
     elseif isfolder(cbsPath)
         addpath([cbsPath 'GitHub/spmj_tools/'])
         addpath([cbsPath 'GitHub/dataframe/util/'])
         addpath([cbsPath 'GitHub/surfAnalysis/'])
         addpath([cbsPath 'MATLAB/spm12/'])
         addpath([cbsPath 'GitHub/rwls/'])
+        addpath([cbsPath 'GitHub/suit/'])
         addpath([cbsPath 'GitHub/surfing/surfing/'])
     end
 
@@ -1163,7 +1165,7 @@ function varargout = smp1_imana(what,varargin)
             fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id);
 
             % dircheck(outDir);
-            surf_resliceFS2WB(subj_id, fsDir, fullfile(baseDir, wbDir), 'resolution', sprintf('%dk', res))
+            surf_resliceFS2WB(subj_id, fsDir, fullfile(baseDir, wbDir), 'resolution', sprintf('%dk', res), 'surf_files', ".flat")
 
         case 'SURF:vol2surf'
 
@@ -1200,15 +1202,16 @@ function varargout = smp1_imana(what,varargin)
             
             save(G, fullfile(baseDir, wbDir, subj_id, subj_id, [filename '.func.gii']))
 
-        case 'SUIT:map2flat' % Creates flatmaps
+        case 'SUIT:flatmap' % Creates flatmaps
 
             sn   = []; % subject list
             filename = [];
             type = 'con';
             id = [];
+            surf = 'inflated';
             % hemi = [1, 2];      % list of hemispheres
            
-            vararginoptions(varargin, {'sn', 'type', 'id', 'res'});
+            vararginoptions(varargin, {'sn', 'type', 'id', 'surf'});
 
             if strcmp(type, 'con')
                 filename = ['spmT_' id '.func.gii'];
@@ -1216,11 +1219,13 @@ function varargout = smp1_imana(what,varargin)
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
-            A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
-            
-            G = surf_makeFuncGifti(A.cdata, 'anatomicalStruct', 'CortexLeft');
+            surf = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.' surf '.32k.surf.gii']);
+            underlay = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.area.32k.shape.gii']);
 
-            save(G, fullfile(baseDir, suitDir, subj_id, filename));
+            A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
+%             A = gifti(underlay);
+            
+            suit_plotflatmap(A.cdata, 'alpha', .6, 'border', [], 'threshold', 0)
     
     end
 
