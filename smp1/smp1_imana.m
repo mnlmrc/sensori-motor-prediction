@@ -1218,7 +1218,7 @@ function varargout = smp1_imana(what,varargin)
 
             A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
             
-            G = surf_makeFuncGifti(A.cdata, 'anatomicalStruct');
+            G = surf_makeFuncGifti(A.cdata, 'anatomicalStruct', 'CortexLeft');
 
             save(G, fullfile(baseDir, suitDir, subj_id, filename));
     
