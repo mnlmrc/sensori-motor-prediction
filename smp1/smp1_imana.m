@@ -1080,14 +1080,13 @@ function varargout = smp1_imana(what,varargin)
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             
             xcn = zeros(length(T.name));
-            contrast1 = '';
             for cn=1:length(condition)             
                 if cn > 1
                     xcn = xcn .* T.(condition(cn));
                     contrast1 = [contrast1 '∩' condition(cn)];
                 else
                     xcn = T.(condition(cn));
-                    contrast1 = [contrast1 condition(cn)];
+                    contrast1 = condition(cn);
                 end
             end
 
@@ -1099,7 +1098,7 @@ function varargout = smp1_imana(what,varargin)
                     contrast2 = [contrast2 '∩' baseline(bs)];
                 else
                     xbs = T.(baseline(bs));
-                    contrast2 = [contrast2 baseline(bs)];
+                    contrast2 = baseline(bs);
                 end
             end
 
@@ -1114,8 +1113,11 @@ function varargout = smp1_imana(what,varargin)
 
             xcon = xcon/abs(sum(xcon));
             contrast_name = sprintf('%s-%s', contrast1, contrast2);
-            SPM.xCon(ic) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-
+            if isfield(SPM, 'xCon')
+                SPM.xCon(end+1) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+            else
+                SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+            end
             SPM = spm_contrasts(SPM,1:length(SPM.xCon));
             save('SPM.mat', 'SPM','-v7.3');
 %             SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
