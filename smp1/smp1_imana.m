@@ -1083,7 +1083,7 @@ function varargout = smp1_imana(what,varargin)
             for cn=1:length(condition)             
                 if cn > 1
                     xcn = xcn .* T.(condition(cn));
-                    contrast1 = [contrast1 '∩' condition(cn)];
+                    contrast1 = [contrast1 '&' condition(cn)];
                 else
                     xcn = T.(condition(cn));
                     contrast1 = condition(cn);
@@ -1095,7 +1095,7 @@ function varargout = smp1_imana(what,varargin)
             for bs=1:length(baseline)
                 if cn > 1
                     xbs = xbs .* T.(baseline(bs));
-                    contrast2 = [contrast2 '∩' baseline(bs)];
+                    contrast2 = [contrast2 '&' baseline(bs)];
                 else
                     xbs = T.(baseline(bs));
                     contrast2 = baseline(bs);
@@ -1169,9 +1169,15 @@ function varargout = smp1_imana(what,varargin)
             sn   = []; % subject list
             filename = [];
             res  = 32;          % resolution of the atlas. options are: 32, 164
+            type = 'con';
+            id = [];
             % hemi = [1, 2];      % list of hemispheres
            
-            vararginoptions(varargin, {'sn', 'filename'});
+            vararginoptions(varargin, {'sn', 'type', 'id', 'res'});
+
+            if strcmp(type, 'con')
+                filename = ['spmT_' id];
+            end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
@@ -1187,11 +1193,15 @@ function varargout = smp1_imana(what,varargin)
 
             c1 = hemLpial.vertices;
             c2 = hemLwhite.vertices;
-            V = spm_vol(fullfile(baseDir, 'glm1', subj_id, filename));
+            V = spm_vol(fullfile(baseDir, 'glm1', subj_id, [filename '.nii']));
 
             [G, D] = surf_vol2surf(c1,c2,V.fname,'anatomicalStruct','CortexLeft');
             
-            save(G, fullfile(baseDir, wbDir, subj_id, subj_id, 'test.func.gii'))
+            save(G, fullfile(baseDir, wbDir, subj_id, subj_id, [filename '.func.gii']))
+
+        case 'SUIT:map2flat' % Creates flatmaps
+
+            G = surf_makeFuncGifti(data, 'anatomicalStruct');
     
     end
 
