@@ -42,6 +42,7 @@ function varargout = smp1_imana(what,varargin)
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
     glmEstDir       = 'glm1';
+    suitDir = 'suit';
     wbDir   = 'surfaceWB';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
     
@@ -1201,7 +1202,25 @@ function varargout = smp1_imana(what,varargin)
 
         case 'SUIT:map2flat' % Creates flatmaps
 
-            G = surf_makeFuncGifti(data, 'anatomicalStruct');
+            sn   = []; % subject list
+            filename = [];
+            type = 'con';
+            id = [];
+            % hemi = [1, 2];      % list of hemispheres
+           
+            vararginoptions(varargin, {'sn', 'type', 'id', 'res'});
+
+            if strcmp(type, 'con')
+                filename = ['spmT_' id '.func.gii'];
+            end
+
+            A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            G = surf_makeFuncGifti(A.cdata, 'anatomicalStruct');
+
+            save(G, fullfile(baseDir, suitDir, subj_id, filename));
     
     end
 
