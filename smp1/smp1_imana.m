@@ -1135,7 +1135,7 @@ function varargout = smp1_imana(what,varargin)
             % rename contrast images and spmT images
             conName = {'con','spmT'};
             for n = 1:numel(conName)
-                oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx);
+                oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx));
                 newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
                 movefile(oldName, newName);
             end % conditions (n, conName: con and spmT)
