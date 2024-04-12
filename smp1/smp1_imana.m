@@ -1079,7 +1079,7 @@ function varargout = smp1_imana(what,varargin)
             % load the SPM.mat file
             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
 
-            SPM  = rmfield(SPM,'xCon');
+%             SPM  = rmfield(SPM,'xCon');
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             
             xcn = zeros(length(T.name));
