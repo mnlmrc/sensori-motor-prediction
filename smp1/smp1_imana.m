@@ -1118,7 +1118,7 @@ function varargout = smp1_imana(what,varargin)
             contrast_name = sprintf('%s-%s', contrast1, contrast2);
             if ~isfield(SPM, 'xCon')
                 SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-            elseif sum(strcpm(contrast_name, {SPM.xCon.name})) > 0
+            elseif sum(strcmp(contrast_name, {SPM.xCon.name})) > 0
                 idx = find(strcmp(contrast_name, {SPM.xCon.name}));
                 SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
             else
