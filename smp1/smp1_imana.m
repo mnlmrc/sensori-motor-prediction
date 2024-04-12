@@ -1118,11 +1118,14 @@ function varargout = smp1_imana(what,varargin)
             contrast_name = sprintf('%s-%s', contrast1, contrast2);
             if ~isfield(SPM, 'xCon')
                 SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+                cname_idx = 1;
             elseif sum(strcmp(contrast_name, {SPM.xCon.name})) > 0
                 idx = find(strcmp(contrast_name, {SPM.xCon.name}));
                 SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+                cname_idx = idx;
             else
                 SPM.xCon(end+1) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+                cname_idx = length(SPM.xCon);
             end
             SPM = spm_contrasts(SPM,1:length(SPM.xCon));
             save('SPM.mat', 'SPM','-v7.3');
@@ -1132,8 +1135,8 @@ function varargout = smp1_imana(what,varargin)
             % rename contrast images and spmT images
             conName = {'con','spmT'};
             for n = 1:numel(conName)
-                oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},i));
-                newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(i).name));
+                oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx);
+                newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
                 movefile(oldName, newName);
             end % conditions (n, conName: con and spmT)
 
