@@ -1191,7 +1191,7 @@ function varargout = smp1_imana(what,varargin)
             fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id);
 
             % dircheck(outDir);
-            surf_resliceFS2WB(subj_id, fsDir, fullfile(baseDir, wbDir), 'resolution', sprintf('%dk', res), 'surf_files', ".flat")
+            surf_resliceFS2WB(subj_id, fsDir, fullfile(baseDir, wbDir), 'resolution', sprintf('%dk', res))
 
         case 'SURF:vol2surf'
 
@@ -1211,22 +1211,67 @@ function varargout = smp1_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
             hemLpial = fullfile(baseDir, wbDir, subj_id, subj_id, [subj_id '.L.pial.32k.surf.gii']);
-            % hemRpial = fullfile(baseDir, wbDir, [subj_id '.R.pial.32k.surf.gii']);
+            hemRpial = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.R.pial.32k.surf.gii']);
             hemLwhite = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.white.32k.surf.gii']);
-            % hemRwhite = fullfile(baseDir, wbDir, [subj_id '.R.white.32k.surf.gii']);
+            hemRwhite = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.R.white.32k.surf.gii']);
             
             hemLpial = gifti(hemLpial);
-            % hemRpial = gifti(hemRpial);
+            hemRpial = gifti(hemRpial);
             hemLwhite = gifti(hemLwhite);
-            % hemRwhite = gifti(hemRwhite);
+            hemRwhite = gifti(hemRwhite);
 
-            c1 = hemLpial.vertices;
-            c2 = hemLwhite.vertices;
+            c1L = hemLpial.vertices;
+            c2L = hemLwhite.vertices;
             V = spm_vol(fullfile(baseDir, 'glm1', subj_id, [filename '.nii']));
 
-            [G, D] = surf_vol2surf(c1,c2,V.fname,'anatomicalStruct','CortexLeft');
+            GL = surf_vol2surf(c1L,c2L,V.fname,'anatomicalStruct','CortexLeft');
+
+            save(GL, fullfile(baseDir, wbDir, subj_id, subj_id, [filename 'L.func.gii']))
+
+            c1R = hemRpial.vertices;
+            c2R = hemRwhite.vertices;
+
+            GR = surf_vol2surf(c1R,c2R,V.fname,'anatomicalStruct','CortexRight');
+            save(GR, fullfile(baseDir, wbDir, subj_id, subj_id, [filename 'R.func.gii']))
+
+        case 'SURF:resample_labelFS2WB'
+
+            subj_id = 'subj100';
+            atlas_dir = [];
+            resolution = '32k';
+
+            vararginoptions(varargin, {'sn', 'resolution'});
+ 
+            if isempty(atlas_dir)
+                repro_dir=fileparts(which('surf_label2label'));
+                atlas_dir = fullfile(repro_dir,'standard_mesh');
+            end
+
+            fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id);
             
-            save(G, fullfile(baseDir, wbDir, subj_id, subj_id, [filename '.func.gii']))
+            out_dir = fullfile(wbDir, subj_id, subj_id);
+            
+%             cd(fullfile(subject_dir,subj_id)); 
+            
+            hem = {'lh', 'rh'};
+            Hem = {'L', 'R'};
+            
+            for h = 1:length(hem)
+            
+                reg_sphere = [fsDir 'source/' hem{h} '.sphere.reg.surf.gii'];
+                label = [fsDir 'label/' hem{h} '.aparc.annot'];
+                surf = [fsDir 'surf/' hem{h} '.pial'];
+                out_fs = [fsDir 'label/' hem{h} '.label.gii'];
+                source_annot = [fsDir 'label/' hem{h} '.label.gii'];
+                out_name = fullfile(out_dir,[subj_id '.' Hem{h} '.' resolution '.label.gii']); 
+                atlas_name = fullfile(atlas_dir,'resample_fsaverage',['fs_LR-deformed_to-fsaverage.' Hem{h} '.sphere.' resolution '_fs_LR.surf.gii']);
+            
+                system(['mris_convert --annot' hem{h} label surf out_fs]);
+            
+                system(['wb_command -label-resample ' source_annot ' ' reg_sphere ' ' atlas_name ' BARYCENTRIC ' out_name]);
+            
+            end
+            
 
         case 'SUIT:flatmap' % Creates flatmaps
 
