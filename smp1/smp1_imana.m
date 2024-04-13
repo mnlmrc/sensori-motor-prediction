@@ -1289,12 +1289,15 @@ function varargout = smp1_imana(what,varargin)
            
             vararginoptions(varargin, {'sn', 'type', 'id', 'surf'});
 
-            if strcmp(type, 'con')
-                filename = ['spmT_' id '.func.gii'];
-            end
+            
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
-
+            
+            if strcmp(type, 'con')
+%                 filename = ['spmT_' id '.func.gii'];
+                filenames = dir(fullfile(baseDir, glmEstDir, subj_id, ['spmT_*.nii']))
+            end
+            
             surf = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.' surf '.32k.surf.gii']);
             underlay = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.area.32k.shape.gii']);
 
