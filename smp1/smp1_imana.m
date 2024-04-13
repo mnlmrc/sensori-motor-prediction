@@ -1207,10 +1207,16 @@ function varargout = smp1_imana(what,varargin)
             vararginoptions(varargin, {'sn', 'type'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
-
+            
+            V = {};
+            cols = {};
             if strcmp(type, 'con')
 %                 filename = ['spmT_' id '.func.gii'];
-                V = dir(fullfile(baseDir, glmEstDir, subj_id, 'spmT_*.nii'));
+                files = dir(fullfile(baseDir, glmEstDir, subj_id, 'spmT_*.nii'));
+                for f = 1:length(files)
+                    V{f} = fullfile(files(f).folder, files(f).name);
+                    cols{f} = files(f).name;
+                end
             end
 
             hemLpial = fullfile(baseDir, wbDir, subj_id, subj_id, [subj_id '.L.pial.32k.surf.gii']);
@@ -1229,12 +1235,12 @@ function varargout = smp1_imana(what,varargin)
             c2R = hemRwhite.vertices;
 
             GL = surf_vol2surf(c1L,c2L,V,'anatomicalStruct','CortexLeft');
-            GL = surf_makeFuncGifti(GL,'anatomicalStruct', 'CortexLeft', 'columnNames', V);
+            GL = surf_makeFuncGifti(GL.cdata,'anatomicalStruct', 'CortexLeft', 'columnNames', cols);
     
             save(GL, fullfile(baseDir, wbDir, subj_id, subj_id, [type '.L.func.gii']))
     
             GR = surf_vol2surf(c1R,c2R,V,'anatomicalStruct','CortexRight');
-            GR = surf_makeFuncGifti(GR,'anatomicalStruct', 'CortexRight', 'columnNames', V);
+            GR = surf_makeFuncGifti(GR.cdata,'anatomicalStruct', 'CortexRight', 'columnNames', cols);
 
             save(GR, fullfile(baseDir, wbDir, subj_id, subj_id, [type '.R.func.gii']))
             
