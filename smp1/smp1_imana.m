@@ -1085,23 +1085,23 @@ function varargout = smp1_imana(what,varargin)
             xcn = zeros(length(T.name));
             for cn=1:length(condition)             
                 if cn > 1
-                    xcn = xcn .* T.(condition(cn));
-                    contrast1 = [contrast1 '&' condition(cn)];
+                    xcn = xcn .* T.(condition{cn});
+                    contrast1 = [contrast1 '&' condition{cn}];
                 else
-                    xcn = T.(condition(cn));
-                    contrast1 = condition(cn);
+                    xcn = T.(condition{cn});
+                    contrast1 = condition{cn};
                 end
             end
 
             xbs = zeros(length(T.name));
             contrast2 = '';
             for bs=1:length(baseline)
-                if cn > 1
-                    xbs = xbs .* T.(baseline(bs));
-                    contrast2 = [contrast2 '&' baseline(bs)];
+                if bs > 1
+                    xbs = xbs .* T.(baseline{bs});
+                    contrast2 = [contrast2 '&' baseline{bs}];
                 else
-                    xbs = T.(baseline(bs));
-                    contrast2 = baseline(bs);
+                    xbs = T.(baseline{bs});
+                    contrast2 = baseline{bs};
                 end
             end
 
