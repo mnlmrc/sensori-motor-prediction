@@ -33,15 +33,15 @@ for ntrial = 1:length(exec.BN)
 
     switch exec.cue(ntrial)
         case 39
-            cue = '100%';
+            cue = 'cue100';
         case 21
-            cue = '75%';
+            cue = 'cue75';
         case 44
-            cue = '50%';
+            cue = 'cue50';
         case 12
-            cue = '25%';
+            cue = 'cue25';
         case 93
-            cue = '0%';
+            cue = 'cue0';
     end
 
     switch exec.stimFinger(ntrial)
@@ -71,15 +71,15 @@ for ntrial = 1:length(exec.BN)
 
     switch planGo.cue(ntrial)
         case 39
-            cue = '100%';
+            cue = 'cue100';
         case 21
-            cue = '75%';
+            cue = 'cue75';
         case 44
-            cue = '50%';
+            cue = 'cue50';
         case 12
-            cue = '25%';
+            cue = 'cue25';
         case 93
-            cue = '0%';
+            cue = 'cue0';
     end
 
     switch planGo.stimFinger(ntrial)
@@ -109,15 +109,15 @@ for ntrial = 1:length(planNoGo.BN)
 
     switch planNoGo.cue(ntrial)
         case 39
-            cue = '100%';
+            cue = 'cue100';
         case 21
-            cue = '75%';
+            cue = 'cue75';
         case 44
-            cue = '50%';
+            cue = 'cue50';
         case 12
-            cue = '25%';
+            cue = 'cue25';
         case 93
-            cue = '0%';
+            cue = 'cue0';
     end
     
     planNoGo.eventtype{ntrial, 1} = [cue '_plan_nogo'];

@@ -933,11 +933,11 @@ function varargout = smp1_imana(what,varargin)
                 
             end
 
-            T.cue0 = strcmp(T.cue, '0%');
-            T.cue25 = strcmp(T.cue, '25%');
-            T.cue50 = strcmp(T.cue, '50%');
-            T.cue75 = strcmp(T.cue, '75%');
-            T.cue100 = strcmp(T.cue, '100%');
+            T.('0%') = strcmp(T.cue, '0%');
+            T.('25%') = strcmp(T.cue, '25%');
+            T.('50%') = strcmp(T.cue, '50%');
+            T.('75%') = strcmp(T.cue, '75%');
+            T.('100%') = strcmp(T.cue, '100%');
             
             T.index = strcmp(T.stimFinger, 'index');
             T.ring = strcmp(T.stimFinger, 'ring');
@@ -1094,7 +1094,11 @@ function varargout = smp1_imana(what,varargin)
             xcn = zeros(length(T.name));
             for cn=1:length(condition)             
                 if cn > 1
-                    xcn = xcn .* T.(condition{cn});
+                    if sum(xcn .* T.(condition{cn})) == 0
+                        xcn = xcn + T.(condition{cn});
+                    else
+                        xcn = xcn .* T.(condition{cn});
+                    end
                     contrast1 = [contrast1 '&' condition{cn}];
                 else
                     xcn = T.(condition{cn});
@@ -1106,7 +1110,11 @@ function varargout = smp1_imana(what,varargin)
             contrast2 = '';
             for bs=1:length(baseline)
                 if bs > 1
-                    xbs = xbs .* T.(baseline{bs});
+                    if sum(xbs .* T.(condition{bs})) == 0
+                        xbs = xbs + T.(condition{bs});
+                    else
+                        xbs = xbs .* T.(baseline{bs});
+                    end
                     contrast2 = [contrast2 '&' baseline{bs}];
                 else
                     xbs = T.(baseline{bs});
@@ -1148,7 +1156,11 @@ function varargout = smp1_imana(what,varargin)
                 newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
                 movefile(oldName, newName);
             end % conditions (n, conName: con and spmT)
-
+            
+            figure
+            plot(xcon)
+            xticks(1:length(xcon))
+            xticklabels(SPM.xX.name)
         
         case 'SURF:reconall' % Freesurfer reconall routine
             % Calls recon-all, which performs, all of the
