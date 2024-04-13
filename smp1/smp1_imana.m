@@ -1282,6 +1282,8 @@ function varargout = smp1_imana(what,varargin)
                 system(['wb_command -label-resample ' source_annot ' ' reg_sphere ' ' atlas_name ' BARYCENTRIC ' out_name]);
             
             end
+
+            A = load(outfile);
             
 
         case 'SUIT:flatmap' % Creates flatmaps
