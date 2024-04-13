@@ -1204,13 +1204,14 @@ function varargout = smp1_imana(what,varargin)
             id = [];
             % hemi = [1, 2];      % list of hemispheres
            
-            vararginoptions(varargin, {'sn', 'type', 'id', 'res'});
-
-            if strcmp(type, 'con')
-                filename = ['spmT_' id];
-            end
+            vararginoptions(varargin, {'sn', 'type'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            if strcmp(type, 'con')
+%                 filename = ['spmT_' id '.func.gii'];
+                V = dir(fullfile(baseDir, glmEstDir, subj_id, 'spmT_*.nii'));
+            end
 
             hemLpial = fullfile(baseDir, wbDir, subj_id, subj_id, [subj_id '.L.pial.32k.surf.gii']);
             hemRpial = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.R.pial.32k.surf.gii']);
@@ -1224,20 +1225,19 @@ function varargout = smp1_imana(what,varargin)
 
             c1L = hemLpial.vertices;
             c2L = hemLwhite.vertices;
-            V = spm_vol(fullfile(baseDir, 'glm1', subj_id, [filename '.nii']));
-
-            GL = surf_vol2surf(c1L,c2L,V.fname,'anatomicalStruct','CortexLeft');
-            GL = surf_makeFuncGifti(GL,'anatomicalStruct', 'CortexLeft');
-
-            save(GL, fullfile(baseDir, wbDir, subj_id, subj_id, [filename 'L.func.gii']))
-
             c1R = hemRpial.vertices;
             c2R = hemRwhite.vertices;
 
-            GR = surf_vol2surf(c1R,c2R,V.fname,'anatomicalStruct','CortexRight');
-            GR = surf_makeFuncGifti(GR,'anatomicalStruct', 'CortexRight');
+            GL = surf_vol2surf(c1L,c2L,V,'anatomicalStruct','CortexLeft');
+            GL = surf_makeFuncGifti(GL,'anatomicalStruct', 'CortexLeft', 'columnNames', V);
+    
+            save(GL, fullfile(baseDir, wbDir, subj_id, subj_id, [type '.L.func.gii']))
+    
+            GR = surf_vol2surf(c1R,c2R,V,'anatomicalStruct','CortexRight');
+            GR = surf_makeFuncGifti(GR,'anatomicalStruct', 'CortexRight', 'columnNames', V);
 
-            save(GR, fullfile(baseDir, wbDir, subj_id, subj_id, [filename 'R.func.gii']))
+            save(GR, fullfile(baseDir, wbDir, subj_id, subj_id, [type '.R.func.gii']))
+            
 
         case 'SURF:resample_labelFS2WB'
 
@@ -1289,14 +1289,7 @@ function varargout = smp1_imana(what,varargin)
            
             vararginoptions(varargin, {'sn', 'type', 'id', 'surf'});
 
-            
-
             subj_id = pinfo.subj_id{pinfo.sn==sn};
-            
-            if strcmp(type, 'con')
-%                 filename = ['spmT_' id '.func.gii'];
-                filenames = dir(fullfile(baseDir, glmEstDir, subj_id, ['spmT_*.nii']))
-            end
             
             surf = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.' surf '.32k.surf.gii']);
             underlay = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.area.32k.shape.gii']);
