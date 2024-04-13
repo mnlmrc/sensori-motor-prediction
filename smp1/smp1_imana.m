@@ -933,20 +933,20 @@ function varargout = smp1_imana(what,varargin)
                 
             end
 
-            TT.cue0 = strcmp(TT.cue, '0%');
-            TT.cue25 = strcmp(TT.cue, '25%');
-            TT.cue50 = strcmp(TT.cue, '50%');
-            TT.cue75 = strcmp(TT.cue, '75%');
-            TT.cue100 = strcmp(TT.cue, '100%');
+            T.cue0 = strcmp(T.cue, '0%');
+            T.cue25 = strcmp(T.cue, '25%');
+            T.cue50 = strcmp(T.cue, '50%');
+            T.cue75 = strcmp(T.cue, '75%');
+            T.cue100 = strcmp(T.cue, '100%');
             
-            TT.index = strcmp(TT.stimFinger, 'index');
-            TT.ring = strcmp(TT.stimFinger, 'ring');
+            T.index = strcmp(T.stimFinger, 'index');
+            T.ring = strcmp(T.stimFinger, 'ring');
             
-            TT.plan = strcmp(TT.epoch, 'plan');
-            TT.exec = strcmp(TT.epoch, 'exec');
+            T.plan = strcmp(T.epoch, 'plan');
+            T.exec = strcmp(T.epoch, 'exec');
             
-            TT.go = strcmp(TT.instr, 'go');
-            TT.nogo = strcmp(TT.instr, 'nogo');
+            T.go = strcmp(T.instr, 'go');
+            T.nogo = strcmp(T.instr, 'nogo');
             
             dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
             spm_rwls_run_fmri_spec(J);
@@ -956,6 +956,8 @@ function varargout = smp1_imana(what,varargin)
         case 'GLM:check_regressor'
             sn = [];
             vararginoptions(varargin,{'sn'})
+
+
 
             
 
