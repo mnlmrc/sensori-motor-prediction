@@ -1258,11 +1258,11 @@ function varargout = smp1_imana(what,varargin)
             
             for h = 1:length(hem)
             
-                reg_sphere = [fsDir 'source/' hem{h} '.sphere.reg.surf.gii'];
-                label = [fsDir 'label/' hem{h} '.aparc.annot'];
-                surf = [fsDir 'surf/' hem{h} '.pial'];
-                out_fs = [fsDir 'label/' hem{h} '.label.gii'];
-                source_annot = [fsDir 'label/' hem{h} '.label.gii'];
+                reg_sphere = [fsDir '/source/' hem{h} '.sphere.reg.surf.gii'];
+                label = [fsDir '/label/' hem{h} '.aparc.annot'];
+                surf = [fsDir '/surf/' hem{h} '.pial'];
+                out_fs = [fsDir '/label/' hem{h} '.label.gii'];
+                source_annot = [fsDir '/label/' hem{h} '.label.gii'];
                 out_name = fullfile(out_dir,[subj_id '.' Hem{h} '.' resolution '.label.gii']); 
                 atlas_name = fullfile(atlas_dir,'resample_fsaverage',['fs_LR-deformed_to-fsaverage.' Hem{h} '.sphere.' resolution '_fs_LR.surf.gii']);
             
