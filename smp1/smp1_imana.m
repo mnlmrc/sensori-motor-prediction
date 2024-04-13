@@ -1225,6 +1225,7 @@ function varargout = smp1_imana(what,varargin)
             V = spm_vol(fullfile(baseDir, 'glm1', subj_id, [filename '.nii']));
 
             GL = surf_vol2surf(c1L,c2L,V.fname,'anatomicalStruct','CortexLeft');
+            GL = surf_makeFuncGifti(GL,'anatomicalStruct', 'CortexLeft');
 
             save(GL, fullfile(baseDir, wbDir, subj_id, subj_id, [filename 'L.func.gii']))
 
@@ -1232,6 +1233,8 @@ function varargout = smp1_imana(what,varargin)
             c2R = hemRwhite.vertices;
 
             GR = surf_vol2surf(c1R,c2R,V.fname,'anatomicalStruct','CortexRight');
+            GR = surf_makeFuncGifti(GR,'anatomicalStruct', 'CortexRight');
+
             save(GR, fullfile(baseDir, wbDir, subj_id, subj_id, [filename 'R.func.gii']))
 
         case 'SURF:resample_labelFS2WB'
