@@ -1266,7 +1266,7 @@ function varargout = smp1_imana(what,varargin)
                 out_name = fullfile(out_dir,[subj_id '.' Hem{h} '.' resolution '.label.gii']); 
                 atlas_name = fullfile(atlas_dir,'resample_fsaverage',['fs_LR-deformed_to-fsaverage.' Hem{h} '.sphere.' resolution '_fs_LR.surf.gii']);
             
-                system(['mris_convert --annot' hem{h} label surf out_fs]);
+                system(['mris_convert --annot ' label ' ' surf ' ' out_fs]);
             
                 system(['wb_command -label-resample ' source_annot ' ' reg_sphere ' ' atlas_name ' BARYCENTRIC ' out_name]);
             
