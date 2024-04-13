@@ -7,6 +7,7 @@ function varargout = smp1_imana(what,varargin)
     cbsPath = '/home/ROBARTS/memanue5/Documents/';
     % Directory specification
     if isfolder(localPath)
+        path = localPath;
         addpath("/Users/mnlmrc/Documents/GitHub/spmj_tools/")
         addpath("/Users/mnlmrc/Documents/GitHub/dataframe/util/")
         addpath("/Users/mnlmrc/Documents/GitHub/surfAnalysis/")
@@ -15,6 +16,7 @@ function varargout = smp1_imana(what,varargin)
         addpath("/Users/mnlmrc/Documents/GitHub/surfing/surfing/")
         addpath("/Users/mnlmrc/Documents/GitHub/suit/")
     elseif isfolder(cbsPath)
+        path = cbsPath;
         addpath([cbsPath 'GitHub/spmj_tools/'])
         addpath([cbsPath 'GitHub/dataframe/util/'])
         addpath([cbsPath 'GitHub/surfAnalysis/'])
@@ -1243,13 +1245,13 @@ function varargout = smp1_imana(what,varargin)
             vararginoptions(varargin, {'sn', 'resolution'});
  
             if isempty(atlas_dir)
-                repro_dir=fileparts(which('surf_label2label'));
-                atlas_dir = fullfile(repro_dir,'standard_mesh');
+%                 repro_dir=fileparts(which('surf_label2label'));
+                atlas_dir = [path 'GitHub/surfAnalysis/standard_mesh/'];
             end
 
-            fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id);
+            fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id, subj_id);
             
-            out_dir = fullfile(wbDir, subj_id, subj_id);
+            out_dir = fullfile(baseDir, wbDir, subj_id, subj_id);
             
 %             cd(fullfile(subject_dir,subj_id)); 
             
@@ -1258,7 +1260,7 @@ function varargout = smp1_imana(what,varargin)
             
             for h = 1:length(hem)
             
-                reg_sphere = [fsDir '/source/' hem{h} '.sphere.reg.surf.gii'];
+                reg_sphere = [fsDir '/surf/' hem{h} '.sphere.reg.surf.gii'];
                 label = [fsDir '/label/' hem{h} '.aparc.annot'];
                 surf = [fsDir '/surf/' hem{h} '.pial'];
                 out_fs = [fsDir '/label/' hem{h} '.label.gii'];
