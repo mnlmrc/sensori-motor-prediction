@@ -953,6 +953,13 @@ function varargout = smp1_imana(what,varargin)
             
             % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
 
+        case 'GLM:check_regressor'
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+
+            
+
+
         case 'GLM:visualize_design_matrix'
             
             sn = [];
