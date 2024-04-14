@@ -955,15 +955,6 @@ function varargout = smp1_imana(what,varargin)
             
             % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
 
-        case 'GLM:check_regressor'
-            sn = [];
-            vararginoptions(varargin,{'sn'})
-
-
-
-            
-
-
         case 'GLM:visualize_design_matrix'
             
             sn = [];
@@ -1039,7 +1030,7 @@ function varargout = smp1_imana(what,varargin)
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             
             % load contrasts table
-            contr = readtable(fullfile(glm_dir, 'contr.txt'));
+            contr = readtable(fullfile(baseDir, sprintf('glm%d', glm), 'contr.txt'));
 
             for c = 1:size(contr, 1)
                 condition = split(contr.condition(c), ',');
@@ -1257,7 +1248,7 @@ function varargout = smp1_imana(what,varargin)
             sn   = []; % subject list
             filename = [];
             res  = 32;          % resolution of the atlas. options are: 32, 164
-            type = 'con';
+            type = 'tval';
             id = [];
             % hemi = [1, 2];      % list of hemispheres
            
@@ -1267,13 +1258,15 @@ function varargout = smp1_imana(what,varargin)
             
             V = {};
             cols = {};
-            if strcmp(type, 'con')
+            if strcmp(type, 'tval')
 %                 filename = ['spmT_' id '.func.gii'];
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'spmT_*.nii'));
                 for f = 1:length(files)
                     V{f} = fullfile(files(f).folder, files(f).name);
                     cols{f} = files(f).name;
                 end
+            elseif strcmp(type, 'beta')
+
             end
 
             hemLpial = fullfile(baseDir, wbDir, subj_id, subj_id, [subj_id '.L.pial.32k.surf.gii']);
@@ -1294,12 +1287,12 @@ function varargout = smp1_imana(what,varargin)
             GL = surf_vol2surf(c1L,c2L,V,'anatomicalStruct','CortexLeft');
             GL = surf_makeFuncGifti(GL.cdata,'anatomicalStruct', 'CortexLeft', 'columnNames', cols);
     
-            save(GL, fullfile(baseDir, wbDir, subj_id, subj_id, [type '.L.func.gii']))
+            save(GL, fullfile(baseDir, wbDir, subj_id, subj_id, type, [type '.L.func.gii']))
     
             GR = surf_vol2surf(c1R,c2R,V,'anatomicalStruct','CortexRight');
             GR = surf_makeFuncGifti(GR.cdata,'anatomicalStruct', 'CortexRight', 'columnNames', cols);
 
-            save(GR, fullfile(baseDir, wbDir, subj_id, subj_id, [type '.R.func.gii']))
+            save(GR, fullfile(baseDir, wbDir, subj_id, subj_id, type, [type '.R.func.gii']))
             
 
         case 'SURF:resample_labelFS2WB'
