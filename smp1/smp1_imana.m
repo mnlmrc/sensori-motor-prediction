@@ -1038,7 +1038,9 @@ function varargout = smp1_imana(what,varargin)
             % SPM  = rmfield(SPM,'xCon');
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             
-            contr = readtable(fullfile(glm_dir, 'contr.txt'));
+            % load contrasts table
+            contr = readtable(fullfile(glm_dir, 'contr.txt'), 'TreatAsMissing', 'NA');
+
             for c = 1:size(contr, 1)
                 condition = contr.condition(c);
                 baseline = contr.baseline(c);
