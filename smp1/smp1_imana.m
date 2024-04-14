@@ -1086,15 +1086,22 @@ function varargout = smp1_imana(what,varargin)
                 end
                 
                 % Calculate the total positive sum and negative sum
-                positiveSum = sum(xcon(xcon > 0));
-                negativeSum = sum(xcon(xcon < 0));
+                totalPositive = sum(xcon(xcon > 0));
+                totalNegative = sum(xcon(xcon < 0));
+                totalSum = totalPositive + abs(totalNegative);
                 
-                % Apply scaling factors to positive and negative elements
-                xcon(xcon > 0) = xcon(xcon > 0) * abs(negativeSum) / positiveSum;
-                xcon(xcon < 0) = xcon(xcon < 0) * abs(positiveSum) / negativeSum;
+                % Calculate adjustment factors for both positive and negative elements
+                scaleFactorPositive = (totalSum / 2) / totalPositive;
+                scaleFactorNegative = (totalSum / 2) / abs(totalNegative);
+                
+                % Apply scaling factors to both positive and negative elements
+                xcon(xcon > 0) = xcon(xcon > 0) * scaleFactorPositive;
+                xcon(xcon < 0) = xcon(xcon < 0) * scaleFactorNegative;
 
-                if sum(xcon) ~= 0
+                if abs(sum(xcon)) > 1e-10
                     warning(['sum of weight contrast vector is not zero: ' sprintf('%f', sum(xcon))])
+                else
+                    fprintf('sum of weights: %f', sum(xcon))
                 end
 
                 contrast_name = sprintf('%s-%s', contrast1, contrast2);
