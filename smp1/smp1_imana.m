@@ -1042,8 +1042,8 @@ function varargout = smp1_imana(what,varargin)
             contr = readtable(fullfile(glm_dir, 'contr.txt'));
 
             for c = 1:size(contr, 1)
-                condition = contr.condition(c);
-                baseline = contr.baseline(c);
+                condition = split(contr.condition(c), ',');
+                baseline = split(contr.baseline(c), ',');
 
                 fprintf('%s: %s vs. %s\n', subj_id, char(condition), char(baseline))
 
