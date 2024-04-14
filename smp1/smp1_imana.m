@@ -1039,7 +1039,7 @@ function varargout = smp1_imana(what,varargin)
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             
             contr = readtable(fullfile(glm_dir, 'contr.txt'));
-            for c = 1:length(contr)
+            for c = 1:size(contr, 1)
                 condition = contr.condition(c);
                 baseline = contr.baseline(c);
 
