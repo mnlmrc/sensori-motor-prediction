@@ -1040,6 +1040,7 @@ function varargout = smp1_imana(what,varargin)
             
             % load contrasts table
             contr = readtable(fullfile(glm_dir, 'contr.txt'), 'TreatAsMissing', 'NA');
+            contr.baseline(ismissing(contr.baseline)) = {[]};
 
             for c = 1:size(contr, 1)
                 condition = contr.condition(c);
