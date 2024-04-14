@@ -1080,6 +1080,10 @@ function varargout = smp1_imana(what,varargin)
                         xcon(ic) = -1;
                     end
                 end
+
+                if strcmp(baseline, '')
+                    xcon(end-length(SPM.nscan):end) = -1;
+                end
                 
                 % Apply scaling factors to positive and negative elements
                 xcon(xcon > 0) = xcon(xcon > 0) * abs(sum(xcon(xcon < 0))) / sum(xcon(xcon > 0));
