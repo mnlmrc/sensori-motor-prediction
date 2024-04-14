@@ -1093,6 +1093,10 @@ function varargout = smp1_imana(what,varargin)
                 xcon(xcon > 0) = xcon(xcon > 0) * abs(negativeSum) / positiveSum;
                 xcon(xcon < 0) = xcon(xcon < 0) * abs(positiveSum) / negativeSum;
 
+                if sum(xcon) ~= 0
+                    warning(['sum of weight contrast vector is not zero: ' sprintf('%f', sum(xcon))])
+                end
+
                 contrast_name = sprintf('%s-%s', contrast1, contrast2);
                 if ~isfield(SPM, 'xCon')
                     SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
