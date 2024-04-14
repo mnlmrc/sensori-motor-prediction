@@ -1250,8 +1250,9 @@ function varargout = smp1_imana(what,varargin)
             subj_id = 'subj100';
             atlas_dir = [];
             resolution = '32k';
+            atlas = 'aparc';
 
-            vararginoptions(varargin, {'sn', 'resolution'});
+            vararginoptions(varargin, {'sn', 'resolution', 'atlas'});
  
             if isempty(atlas_dir)
 %                 repro_dir=fileparts(which('surf_label2label'));
@@ -1266,11 +1267,12 @@ function varargout = smp1_imana(what,varargin)
             
             hem = {'lh', 'rh'};
             Hem = {'L', 'R'};
+            aStruct = {'CortexLeft', 'CortexRight'};
             
             for h = 1:length(hem)
             
                 reg_sphere = [fsDir '/surf/' hem{h} '.sphere.reg.surf.gii'];
-                label = [fsDir '/label/' hem{h} '.aparc.annot'];
+                label = [fsDir '/label/' hem{h} '.' atlas '.annot'];
                 surf = [fsDir '/surf/' hem{h} '.pial'];
                 out_fs = [fsDir '/label/' hem{h} '.label.gii'];
                 source_annot = [fsDir '/label/' hem{h} '.label.gii'];
@@ -1280,11 +1282,15 @@ function varargout = smp1_imana(what,varargin)
                 system(['mris_convert --annot ' label ' ' surf ' ' out_fs]);
             
                 system(['wb_command -label-resample ' source_annot ' ' reg_sphere ' ' atlas_name ' BARYCENTRIC ' out_name]);
+
+                A = load(out_name);
+                cdata = A.cdata;
+                name = A.labels.name;
+                rgba = A.labels.rgba;
+                G = surf_makeFuncGifti(data, 'anatomicalStruct', aStruct{h},'columnNames', atlas, 'labelNames', name, 'labelRGBA');
+                save(G, out_name)
             
             end
-
-            A = load(outfile);
-            
 
         case 'SUIT:flatmap' % Creates flatmaps
 
