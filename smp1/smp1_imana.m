@@ -1080,8 +1080,11 @@ function varargout = smp1_imana(what,varargin)
                         xcon(ic) = -1;
                     end
                 end
-    
-                xcon = xcon/sum(abs(xcon));
+                
+                % Apply scaling factors to positive and negative elements
+                xcon(xcon > 0) = xcon(xcon > 0) * abs(sum(xcon(xcon < 0))) / sum(xcon(xcon > 0));
+                xcon(xcon < 0) = xcon(xcon < 0) * abs(sum(xcon(xcon > 0))) / sum(xcon(xcon < 0));
+                
                 contrast_name = sprintf('%s-%s', contrast1, contrast2);
                 if ~isfield(SPM, 'xCon')
                     SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
