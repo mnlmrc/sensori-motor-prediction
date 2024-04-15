@@ -1294,10 +1294,10 @@ function varargout = smp1_imana(what,varargin)
                 end
             end
 
-            hemLpial = fullfile(baseDir, wbDir, subj_id, subj_id, [subj_id '.L.pial.32k.surf.gii']);
-            hemRpial = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.R.pial.32k.surf.gii']);
-            hemLwhite = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.white.32k.surf.gii']);
-            hemRwhite = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.R.white.32k.surf.gii']);
+            hemLpial = fullfile(baseDir, wbDir, subj_id,  [subj_id '.L.pial.32k.surf.gii']);
+            hemRpial = fullfile(baseDir, wbDir, subj_id, [subj_id '.R.pial.32k.surf.gii']);
+            hemLwhite = fullfile(baseDir, wbDir, subj_id, [subj_id '.L.white.32k.surf.gii']);
+            hemRwhite = fullfile(baseDir, wbDir, subj_id, [subj_id '.R.white.32k.surf.gii']);
             
             hemLpial = gifti(hemLpial);
             hemRpial = gifti(hemRpial);
@@ -1312,12 +1312,12 @@ function varargout = smp1_imana(what,varargin)
             GL = surf_vol2surf(c1L,c2L,V,'anatomicalStruct','CortexLeft');
             GL = surf_makeFuncGifti(GL.cdata,'anatomicalStruct', 'CortexLeft', 'columnNames', cols);
     
-            save(GL, fullfile(baseDir, wbDir, subj_id, subj_id, type, [type '.L.func.gii']))
+            save(GL, fullfile(baseDir, wbDir, subj_id,  type, [type '.L.func.gii']))
     
             GR = surf_vol2surf(c1R,c2R,V,'anatomicalStruct','CortexRight');
             GR = surf_makeFuncGifti(GR.cdata,'anatomicalStruct', 'CortexRight', 'columnNames', cols);
 
-            save(GR, fullfile(baseDir, wbDir, subj_id, subj_id, type, [type '.R.func.gii']))
+            save(GR, fullfile(baseDir, wbDir, subj_id,  type, [type '.R.func.gii']))
             
 
         case 'SURF:resample_labelFS2WB'
