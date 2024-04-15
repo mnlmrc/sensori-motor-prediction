@@ -1030,7 +1030,7 @@ function varargout = smp1_imana(what,varargin)
             if replace_xCon
                 SPM  = rmfield(SPM,'xCon');
             end
-            
+
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             
             % load contrasts table
@@ -1051,7 +1051,7 @@ function varargout = smp1_imana(what,varargin)
                         else
                             xcn = xcn .* T.(condition{cn});
                         end
-                        contrast1 = [contrast1 '&' condition{cn}];
+                        contrast1 = [contrast1 '_' condition{cn}];
                     else
                         xcn = T.(condition{cn});
                         contrast1 = condition{cn};
@@ -1067,7 +1067,7 @@ function varargout = smp1_imana(what,varargin)
                         else
                             xbs = xbs .* T.(baseline{bs});
                         end
-                        contrast2 = [contrast2 '&' baseline{bs}];
+                        contrast2 = [contrast2 '_' baseline{bs}];
                     else
                         if ~strcmp(baseline{bs}, '')
                             xbs = T.(baseline{bs});
