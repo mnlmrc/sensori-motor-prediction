@@ -950,6 +950,8 @@ function varargout = smp1_imana(what,varargin)
             T.go = strcmp(T.instr, 'go');
             T.nogo = strcmp(T.instr, 'nogo');
             
+            T.rest = strcmp(T.name, 'rest');
+            
             dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
             spm_rwls_run_fmri_spec(J);
             
