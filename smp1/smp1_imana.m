@@ -1127,7 +1127,7 @@ function varargout = smp1_imana(what,varargin)
 
         case 'GLM:PSCs'
 
-
+            
              
         case 'GLM:T_contrast'    % make T contrasts for each condition
             %%% Calculating contrast images.
