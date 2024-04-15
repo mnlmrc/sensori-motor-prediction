@@ -935,11 +935,11 @@ function varargout = smp1_imana(what,varargin)
                 
             end
 
-            T.('0%') = strcmp(T.cue, '0%');
-            T.('25%') = strcmp(T.cue, '25%');
-            T.('50%') = strcmp(T.cue, '50%');
-            T.('75%') = strcmp(T.cue, '75%');
-            T.('100%') = strcmp(T.cue, '100%');
+            T.cue0 = strcmp(T.cue, '0%');
+            T.cue25 = strcmp(T.cue, '25%');
+            T.cue50 = strcmp(T.cue, '50%');
+            T.cue75 = strcmp(T.cue, '75%');
+            T.cue100 = strcmp(T.cue, '100%');
             
             T.index = strcmp(T.stimFinger, 'index');
             T.ring = strcmp(T.stimFinger, 'ring');
