@@ -1129,6 +1129,62 @@ function varargout = smp1_imana(what,varargin)
 
         case 'GLM:PSCs'
 
+            sn             = [];    % subjects list
+            glm            = [];    % glm number
+
+            vararginoptions(varargin, {'sn', 'glm'})
+
+            if isempty(sn)
+                error('GLM:T_contrast -> ''sn'' must be passed to this function.')
+            end
+
+            if isempty(glm)
+                error('GLM:T_contrast -> ''glm'' must be passed to this function.')
+            end
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};            
+            glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
+
+            % load the SPM.mat file
+            SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
+
+            psc = readtable(fullfile(baseDir, sprintf('glm%d', glm), 'psc.txt'));
+            contr = {SPM.xCon.name};
+
+            intercept = {};
+            for k = 1:SPM.nscan
+                intercept{end+1} = fullfile(glm_dir, sprintf('beta_%d.nii', 220+k));  
+            end
+            
+            for c = 1:size(psc, 1)
+
+                p = [psc.condition(c) '-'];
+                nRegr = SPM.xCon(find(strcmp({SPM.xCon.name}, p))).c > 0;
+
+                P = fullfile(glm_dir, ['con_' p '.nii']);
+                P = [P, intercept];
+
+                formula = sprintf('100.*(i1 ./ %f) ./ ((i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11) ./ 10)', nRegr);
+
+                A = [];
+                A.input = P;
+                A.output = ['psc_' p];
+                A.outdir = {glm_dir};
+                A.expression = formula;
+                A.var = struct('name', {}, 'value', {});
+                A.options.dmtx = 0;
+                A.options.mask = 0;
+                A.options.interp = 1;
+                A.options.dtype = 4;               
+    
+                matlabbatch{1}.spm.util.imcalc=A;
+                spm_jobman('run', matlabbatch);
+            end
+
+
+            
+            
+
             
              
         case 'GLM:T_contrast'    % make T contrasts for each condition
