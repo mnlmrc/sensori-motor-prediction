@@ -1120,6 +1120,10 @@ function varargout = smp1_imana(what,varargin)
                 end % conditions (n, conName: con and spmT)
 
             end
+
+        case 'GLM:PSCs'
+
+
              
         case 'GLM:T_contrast'    % make T contrasts for each condition
             %%% Calculating contrast images.
@@ -1278,7 +1282,12 @@ function varargout = smp1_imana(what,varargin)
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'beta')
-
+            elseif strcmp(type, 'psc')
+                files = dir(fullfile(baseDir, glmEstDir, subj_id, 'psc_*.nii'));
+                for f = 1:length(files)
+                    V{f} = fullfile(files(f).folder, files(f).name);
+                    cols{f} = files(f).name;
+                end
             end
 
             hemLpial = fullfile(baseDir, wbDir, subj_id, subj_id, [subj_id '.L.pial.32k.surf.gii']);
