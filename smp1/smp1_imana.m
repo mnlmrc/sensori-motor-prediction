@@ -1006,8 +1006,9 @@ function varargout = smp1_imana(what,varargin)
 
             sn             = [];    % subjects list
             glm            = [];              % glm number
+            replace_xCon   = true;
 
-            vararginoptions(varargin, {'sn', 'glm', 'condition', 'baseline'})
+            vararginoptions(varargin, {'sn', 'glm', 'condition', 'baseline', 'replace_xCon'})
 
             if isempty(sn)
                 error('GLM:T_contrasts -> ''sn'' must be passed to this function.')
@@ -1026,7 +1027,10 @@ function varargout = smp1_imana(what,varargin)
             % load the SPM.mat file
             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
 
-            % SPM  = rmfield(SPM,'xCon');
+            if replace_xCon
+                SPM  = rmfield(SPM,'xCon');
+            end
+            
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             
             % load contrasts table
