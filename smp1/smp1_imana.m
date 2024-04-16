@@ -1148,30 +1148,73 @@ function varargout = smp1_imana(what,varargin)
             % load the SPM.mat file
             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
 
-            psc = readtable(fullfile(baseDir, sprintf('glm%d', glm), 'psc.txt'));
-            contr = {SPM.xCon.name};
+%             psc = readtable(fullfile(baseDir, sprintf('glm%d', glm), 'psc.txt'));
+%             contr = {SPM.xCon.name};
+% 
+%             intercept = {};
+%             for k = 1:SPM.nscan
+%                 intercept{end+1} = fullfile(glm_dir, sprintf('beta_%d.nii', 220+k));  
+%             end
+%             
+%             for c = 1:size(psc, 1)
+% 
+%                 p = [psc.condition(c) '-'];
+%                 nRegr = SPM.xCon(find(strcmp({SPM.xCon.name}, p))).c > 0;
+% 
+%                 P = fullfile(glm_dir, ['con_' p '.nii']);
+%                 P = [P, intercept];
+% 
+%                 imean = sprintf('(i1 ./ %f)', nRegr);
+%                 cmean = '((i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11) ./ 10)';
+% 
+%                 formula = sprintf('100 .* (%s - %s) ./ %s', imean, cmean, cmean);
+% 
+%                 A = [];
+%                 A.input = P;
+%                 A.output = ['psc_' p];
+%                 A.outdir = {glm_dir};
+%                 A.expression = formula;
+%                 A.var = struct('name', {}, 'value', {});
+%                 A.options.dmtx = 0;
+%                 A.options.mask = 0;
+%                 A.options.interp = 1;
+%                 A.options.dtype = 4;               
+%     
+%                 matlabbatch{1}.spm.util.imcalc=A;
+%                 spm_jobman('run', matlabbatch);
+%             end
 
-            intercept = {};
-            for k = 1:SPM.nscan
-                intercept{end+1} = fullfile(glm_dir, sprintf('beta_%d.nii', 220+k));  
+            P={};
+            numB=length(SPM.xX.iB);     % Partitions - runs
+            for p=SPM.xX.iB
+                P{end+1,1}=fullfile(estdesign_folder, ...
+                    sprintf('beta_%4.4d.nii',p));  % get the intercepts and use them to calculate the baseline (mean images)
             end
-            
-            for c = 1:size(psc, 1)
 
-                p = [psc.condition(c) '-'];
-                nRegr = SPM.xCon(find(strcmp({SPM.xCon.name}, p))).c > 0;
+            % Create string with formula
+            con_div_intercepts = '';
+            for r=1:numB
+                if r == numB
+                    con_div_intercepts = sprintf('i%d./((%si%d)/%d)', ...
+                        r+1, con_div_intercepts, r, numB);
+                else
+                    con_div_intercepts = sprintf('%si%d+', ...
+                        con_div_intercepts, r);
+                end
+            end
 
-                P = fullfile(glm_dir, ['con_' p '.nii']);
-                P = [P, intercept];
+            for con=1:length(t_con_name)  % all contrasts
 
-                imean = sprintf('(i1 ./ %f)', nRegr);
-                cmean = '((i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11) ./ 10)';
+                P{numB+1,1}=fullfile(estdesign_folder, ...
+                    sprintf('con_%04d.nii', con));
+                outname=fullfile(estdesign_folder, ...
+                    sprintf('psc_%04d.nii', con));
 
-                formula = sprintf('100 .* (%s - %s) ./ %s', imean, cmean, cmean);
-
+                formula=sprintf('100.*%f.*%s', h, con_div_intercepts);
+                    
                 A = [];
-                A.input = P;
-                A.output = ['psc_' p];
+                A.input = ;
+                A.output = ;
                 A.outdir = {glm_dir};
                 A.expression = formula;
                 A.var = struct('name', {}, 'value', {});
@@ -1182,7 +1225,11 @@ function varargout = smp1_imana(what,varargin)
     
                 matlabbatch{1}.spm.util.imcalc=A;
                 spm_jobman('run', matlabbatch);
+
+
             end
+
+            
              
         case 'GLM:T_contrast'    % make T contrasts for each condition
             %%% Calculating contrast images.
