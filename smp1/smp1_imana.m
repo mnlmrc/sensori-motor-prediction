@@ -1165,7 +1165,10 @@ function varargout = smp1_imana(what,varargin)
                 P = fullfile(glm_dir, ['con_' p '.nii']);
                 P = [P, intercept];
 
-                formula = sprintf('100.*(i1 ./ %f) ./ ((i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11) ./ 10)', nRegr);
+                imean = sprintf('(i1 ./ %f)', nRegr);
+                cmean = '((i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11) ./ 10)';
+
+                formula = sprintf('100 .* (%s - %s) ./ %s', imean, cmean, cmean);
 
                 A = [];
                 A.input = P';
@@ -1181,12 +1184,6 @@ function varargout = smp1_imana(what,varargin)
                 matlabbatch{1}.spm.util.imcalc=A;
                 spm_jobman('run', matlabbatch);
             end
-
-
-            
-            
-
-            
              
         case 'GLM:T_contrast'    % make T contrasts for each condition
             %%% Calculating contrast images.
