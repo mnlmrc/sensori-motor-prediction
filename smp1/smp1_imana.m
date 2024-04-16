@@ -1485,26 +1485,31 @@ function varargout = smp1_imana(what,varargin)
             
             end
 
-        case 'SUIT:flatmap' % Creates flatmaps
+        case 'PLOT:regional_activity' % Creates flatmaps
 
             sn   = []; % subject list
-            filename = [];
-            type = 'con';
-            id = [];
-            surf = 'inflated';
-            % hemi = [1, 2];      % list of hemispheres
+            type = 'psc';
+            
            
-            vararginoptions(varargin, {'sn', 'type', 'id', 'surf'});
+            vararginoptions(varargin, {'sn', 'type'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
+            actDir = fullfile(baseDir, wbDir, subj_id, type);
+            files = dir(fullfile(actDir, [type '*']));
+
+            labelL = gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.L.32k.label.gii', subj_id)));
+            labelR = gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.R.32k.label.gii', subj_id)));
+
             
-            surf = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.' surf '.32k.surf.gii']);
-            underlay = fullfile(baseDir, wbDir, subj_id, subj_id,[subj_id '.L.area.32k.shape.gii']);
+
+            for f=length(files)
+                
+            end
 
             A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
 %             A = gifti(underlay);
             
-            suit_plotflatmap(A.cdata, 'alpha', .6, 'border', [], 'threshold', 0)
+
     
     end
 
