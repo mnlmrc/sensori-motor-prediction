@@ -1497,13 +1497,17 @@ function varargout = smp1_imana(what,varargin)
             actDir = fullfile(baseDir, wbDir, subj_id, type);
             files = dir(fullfile(actDir, [type '*']));
 
-            labelL = gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.L.32k.label.gii', subj_id)));
-            labelR = gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.R.32k.label.gii', subj_id)));
+            label = {gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.L.32k.label.gii', subj_id))), ...
+                gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.R.32k.label.gii', subj_id)))};
 
             
 
             for f=length(files)
-                
+                for h = 1:2
+                    for k=label{h}.label.key
+                        area = 
+                    end
+                end
             end
 
             A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
