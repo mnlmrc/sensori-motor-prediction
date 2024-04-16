@@ -1036,11 +1036,13 @@ function varargout = smp1_imana(what,varargin)
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             
             % load contrasts table
-            contr = readtable(fullfile(baseDir, sprintf('glm%d', glm), 'contr.txt'));
+            contr = dload(fullfile(baseDir, sprintf('glm%d', glm), 'contr.tsv'));
 
-            for c = 1:size(contr, 1)
+            for c = 1:length(contr.condition)
                 condition = split(contr.condition(c), ',');
                 baseline = split(contr.baseline(c), ',');
+                
+                if strcmp(baseline, 'NA') baseline = {}; end
 
                 fprintf('%s: %s vs. %s\n', subj_id, char(contr.condition(c)), char(contr.baseline(c)))
 
