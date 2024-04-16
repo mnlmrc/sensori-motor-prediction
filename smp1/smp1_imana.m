@@ -3,7 +3,7 @@ function varargout = smp1_imana(what,varargin)
     % Rename this function to <experiment_name>_imana.m 
     % Don't forget to add path the required tools!
     
-    localPath = "/Users/mnlmrc/Documents/";
+    localPath = '/Users/mnlmrc/Documents/';
     cbsPath = '/home/ROBARTS/memanue5/Documents/';
     % Directory specification
     if isfolder(localPath)
@@ -1499,18 +1499,37 @@ function varargout = smp1_imana(what,varargin)
 
             label = {gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.L.32k.label.gii', subj_id))), ...
                 gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.R.32k.label.gii', subj_id)))};
+            
+            Hem = {'L', 'R'};
+
+            figure
 
             
+            for h = 1:length(Hem)
 
-            for f=length(files)
-                for h = 1:2
-                    for k=label{h}.label.key
-                        area = 
+                D = gifti(fullfile(actDir, sprintf('%s.%s.func.gii', type, Hem{h})));
+                data = D.cdata;
+
+                for f=1:size(data, 2)
+
+                    for k=1:length(label{h}.labels.key)
+                        key = label{h}.labels.key(k);
+                        name = label{h}.labels.name{k};
+                        act(k) = mean(data(label{h}.cdata==key, f));
                     end
+                                        
+                    subplot(1, 2, h)
+                    plot(act)
+                    xticks(1:length(label{h}.labels.name))
+                    xticklabels(label{h}.labels.name)
+                    xtickangle(70)
+                    hold on
                 end
             end
 
-            A = gifti(fullfile(baseDir, wbDir, subj_id, subj_id, filename));
+            
+
+   
 %             A = gifti(underlay);
             
 
