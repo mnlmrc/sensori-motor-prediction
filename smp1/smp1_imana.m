@@ -1129,7 +1129,7 @@ function varargout = smp1_imana(what,varargin)
 
             end
 
-        case 'GLM:PSCs'
+        case 'GLM:calc_PSC'
 
             sn             = [];    % subjects list
             glm            = [];    % glm number
@@ -1185,13 +1185,17 @@ function varargout = smp1_imana(what,varargin)
 %                 matlabbatch{1}.spm.util.imcalc=A;
 %                 spm_jobman('run', matlabbatch);
 %             end
+            X=(SPM.xX.X(:,SPM.xX.iC)); % Design matrix - raw
 
             P={};
             numB=length(SPM.xX.iB);     % Partitions - runs
             for p=SPM.xX.iB
-                P{end+1,1}=fullfile(estdesign_folder, ...
+                P{end+1,1}=fullfile(baseDir, glmEstDir,subj_id, ...
                     sprintf('beta_%4.4d.nii',p));  % get the intercepts and use them to calculate the baseline (mean images)
             end
+            
+            t_con_name = extractfield(SPM.xCon, 'name');
+            t_con_name = t_con_name(endsWith(t_con_name, '-'));
 
             % Create string with formula
             con_div_intercepts = '';
@@ -1206,13 +1210,24 @@ function varargout = smp1_imana(what,varargin)
             end
 
             for con=1:length(t_con_name)  % all contrasts
+                
+%                 maxX=[];
+%                 maxX=max(X);
+%                 if con < length(t_con_name)                      
+%                     maxX(step:step:end)=[]; % remove 'decision' peaks
+%                     h=min(maxX);
+%                 else
+%                     decision_max=[];
+%                     decision_max=maxX(step:step:end);
+%                     h=min(decision_max);
+%                 end
 
-                P{numB+1,1}=fullfile(estdesign_folder, ...
-                    sprintf('con_%04d.nii', con));
-                outname=fullfile(estdesign_folder, ...
-                    sprintf('psc_%04d.nii', con));
+                P{numB+1,1}=fullfile(baseDir, glmEstDir, subj_id, ...
+                    sprintf('con_%s.nii', t_con_name{con}));
+                outname=fullfile(baseDir, glmEstDir, subj_id, ...
+                    sprintf('psc_%s.nii', t_con_name{con}));
 
-                formula=sprintf('100.*%f.*%s', h, con_div_intercepts);
+                formula=sprintf('100.*%s', con_div_intercepts);
                     
                 A = [];
                 A.input = P;
