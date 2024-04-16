@@ -1148,18 +1148,19 @@ function varargout = smp1_imana(what,varargin)
             % load the SPM.mat file
             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
 
-            psc = readtable(fullfile(baseDir, sprintf('glm%d', glm), 'psc.txt'));
+            psc = dload(fullfile(baseDir, sprintf('glm%d', glm), 'psc.txt'));
             contr = {SPM.xCon.name};
 
-            intercept = {};
-            for k = 1:SPM.nscan
-                intercept{end+1} = fullfile(glm_dir, sprintf('beta_%d.nii', 220+k));  
+            intercept = {}; P = {};
+            for k = 1:length(SPM.nscan)
+                intercept{end+1} = fullfile(glm_dir, sprintf('beta_0%d.nii', 220+k));  
             end
             
-            for c = 1:size(psc, 1)
+            for c = 1:length(psc.condition)
 
-                p = [psc.condition(c) '-'];
-                nRegr = SPM.xCon(find(strcmp({SPM.xCon.name}, p))).c > 0;
+                p = [psc.condition{c} '-'];
+                fprintf(p);
+                nRegr = sum(SPM.xCon(find(strcmp({SPM.xCon.name}, p))).c > 0);
 
                 P = fullfile(glm_dir, ['con_' p '.nii']);
                 P = [P, intercept];
@@ -1167,7 +1168,7 @@ function varargout = smp1_imana(what,varargin)
                 formula = sprintf('100.*(i1 ./ %f) ./ ((i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11) ./ 10)', nRegr);
 
                 A = [];
-                A.input = P;
+                A.input = P';
                 A.output = ['psc_' p];
                 A.outdir = {glm_dir};
                 A.expression = formula;
