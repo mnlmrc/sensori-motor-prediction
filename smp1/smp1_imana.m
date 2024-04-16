@@ -1215,8 +1215,8 @@ function varargout = smp1_imana(what,varargin)
                 formula=sprintf('100.*%f.*%s', h, con_div_intercepts);
                     
                 A = [];
-                A.input = ;
-                A.output = ;
+                A.input = P;
+                A.output = outname;
                 A.outdir = {glm_dir};
                 A.expression = formula;
                 A.var = struct('name', {}, 'value', {});
@@ -1224,10 +1224,9 @@ function varargout = smp1_imana(what,varargin)
                 A.options.mask = 0;
                 A.options.interp = 1;
                 A.options.dtype = 4;               
-    
+
                 matlabbatch{1}.spm.util.imcalc=A;
                 spm_jobman('run', matlabbatch);
-
 
             end
 
