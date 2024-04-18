@@ -11,7 +11,7 @@ def make_dirs(experiment=None, folder=None, participant_id=None):
     :return:
     """
 
-    directory = os.path.join(base_dir, experiment, folder, f"subj{participant_id}")
+    directory = os.path.join(baseDir, experiment, folder, f"subj{participant_id}")
 
     # if datatype is not None and participant_id.isdigit():
     #     directory = os.path.join(base_dir, experiment, folder, f"subj{participant_id}")
@@ -35,11 +35,11 @@ def make_dirs(experiment=None, folder=None, participant_id=None):
 #     print(base_dir)
 
 
-base_dir = "/Volumes/MotorControl/data/SensoriMotorPrediction/"
-if not Path(base_dir).exists():
+baseDir = "/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/"
+wbDir = "surfaceWB"
+if not Path(baseDir).exists():
     print("Switch to local directory")
-    base_dir = ('/Users/mnlmrc/Library/CloudStorage/'
-                'GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction')
+    baseDir = ('/Users/mnlmrc/Library/CloudStorage/'
+               'GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction')
     # base_dir = '/content/drive/My Drive/UWO/SensoriMotorPrediction'
-print("Base directory:", base_dir)
-
+print("Base directory:", baseDir)

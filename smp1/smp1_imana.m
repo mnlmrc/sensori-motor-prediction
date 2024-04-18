@@ -1485,55 +1485,7 @@ function varargout = smp1_imana(what,varargin)
             
             end
 
-        case 'PLOT:regional_activity' % Creates flatmaps
-
-            sn   = []; % subject list
-            type = 'psc';
-            
-           
-            vararginoptions(varargin, {'sn', 'type'});
-
-            subj_id = pinfo.subj_id{pinfo.sn==sn};
-            actDir = fullfile(baseDir, wbDir, subj_id, type);
-            files = dir(fullfile(actDir, [type '*']));
-
-            label = {gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.L.32k.label.gii', subj_id))), ...
-                gifti(fullfile(baseDir, wbDir, subj_id, sprintf('%s.R.32k.label.gii', subj_id)))};
-            
-            Hem = {'L', 'R'};
-
-            figure
-
-            
-            for h = 1:length(Hem)
-
-                D = gifti(fullfile(actDir, sprintf('%s.%s.func.gii', type, Hem{h})));
-                data = D.cdata;
-
-                for f=1:size(data, 2)
-
-                    for k=1:length(label{h}.labels.key)
-                        key = label{h}.labels.key(k);
-                        name = label{h}.labels.name{k};
-                        act(k) = mean(data(label{h}.cdata==key, f));
-                    end
-                                        
-                    subplot(1, 2, h)
-                    plot(act)
-                    xticks(1:length(label{h}.labels.name))
-                    xticklabels(label{h}.labels.name)
-                    xtickangle(70)
-                    hold on
-                end
-            end
-
-            
-
-   
-%             A = gifti(underlay);
-            
-
-    
+        
     end
 
 
