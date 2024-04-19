@@ -1440,12 +1440,14 @@ function varargout = smp1_imana(what,varargin)
 
         case 'SURF:resample_labelFS2WB'
 
-            subj_id = 'subj100';
+            subj_id = '';
             atlas_dir = [];
             resolution = '32k';
             atlas = 'aparc';
 
             vararginoptions(varargin, {'sn', 'resolution', 'atlas'});
+            
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
  
             if isempty(atlas_dir)
 %                 repro_dir=fileparts(which('surf_label2label'));
@@ -1454,7 +1456,7 @@ function varargout = smp1_imana(what,varargin)
 
             fsDir = fullfile(baseDir, 'surfaceFreesurfer', subj_id, subj_id);
             
-            out_dir = fullfile(baseDir, wbDir, subj_id, subj_id);
+            out_dir = fullfile(baseDir, wbDir, subj_id);
             
 %             cd(fullfile(subject_dir,subj_id)); 
             
@@ -1476,11 +1478,13 @@ function varargout = smp1_imana(what,varargin)
             
                 system(['wb_command -label-resample ' source_annot ' ' reg_sphere ' ' atlas_name ' BARYCENTRIC ' out_name]);
 
-                A = load(out_name);
+                A = gifti(out_name);
                 cdata = A.cdata;
+                keys = A.labels.key;
                 name = A.labels.name;
+                
                 rgba = A.labels.rgba;
-                G = surf_makeFuncGifti(data, 'anatomicalStruct', aStruct{h},'columnNames', atlas, 'labelNames', name, 'labelRGBA');
+                G = surf_makeLabelGifti(cdata, 'anatomicalStruct', aStruct{h},'columnNames', {atlas}, 'labelNames', name, 'labelRGBA', rgba, 'keys', keys);
                 save(G, out_name)
             
             end
