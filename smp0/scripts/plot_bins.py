@@ -3,17 +3,14 @@ import sys
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
-
-from PcmPy.util import est_G_crossval, G_to_dist
 
 import numpy as np
 
 from smp0.globals import base_dir
-from smp0.stat import pairwise, rm_anova
+from smp0.stat import rm_anova
 from smp0.utils import sort_cues, f_str_latex
-from smp0.visual import make_colors
+from visual import make_colors
 
 
 if __name__ == "__main__":

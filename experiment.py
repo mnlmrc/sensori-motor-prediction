@@ -1,5 +1,5 @@
 import numpy as np
-from PcmPy import indicator
+# from PcmPy import indicator
 
 from fetch import load_participants, load_dat, load_npy
 from utils import remap_chordID, detect_response_latency
@@ -113,10 +113,10 @@ class Info:
 
 class Param:
 
-    def __init__(self, folder=None, fsample=500, prestim=1, poststim=2):
+    def __init__(self, fsample=500, prestim=1, poststim=2):
         self.fsample = fsample
-        self.fsample = self._fsample[folder]
-        self.folder = folder
+        # self.fsample = self._fsample[folder]
+        # self.folder = folder
         self.prestim = prestim
         self.poststim = poststim
 

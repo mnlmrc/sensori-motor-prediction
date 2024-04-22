@@ -11,7 +11,7 @@ from smp0.globals import base_dir
 from smp0.fetch import load_npy
 from smp0.stat import Anova3D, rm_anova, pairwise
 from smp0.utils import bin_traces, split_column_df
-from smp0.visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
+from visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants3D, list_participants2D
 
 if __name__ == "__main__":

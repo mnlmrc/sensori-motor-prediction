@@ -45,7 +45,7 @@ def detect_state_change(states, planState=3):
     idx = np.zeros(len(states)).astype(int)
     for st, state in enumerate(states):
         try:
-            idx[st] = np.where(state > 3)[0][0]
+            idx[st] = np.where(state > planState)[0][0]
         except:
             idx[st] = -1
 

@@ -3,7 +3,7 @@ import argparse
 import matplotlib
 
 from smp0.depreciated.depreciated import Force
-from smp0.visual import plot_response_force_by_probability
+from visual import plot_response_force_by_probability
 
 # import sys
 # from pathlib import Path

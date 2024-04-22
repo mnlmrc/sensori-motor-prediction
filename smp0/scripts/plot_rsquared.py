@@ -4,7 +4,7 @@ import pandas as pd
 
 from smp0.globals import base_dir
 from smp0.sinergies import nnmf
-from smp0.visual import make_colors
+from visual import make_colors
 import seaborn as sns
 import matplotlib.pyplot as plt
 

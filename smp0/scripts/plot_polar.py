@@ -7,7 +7,7 @@ import pandas as pd
 from smp0.globals import base_dir
 from smp0.sinergies import nnmf, sort_sinergies
 from smp0.utils import sort_cues, f_str_latex
-from smp0.visual import make_colors
+from visual import make_colors
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines

@@ -13,7 +13,7 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 
 from smp0.stat import pairwise, rm_anova
-from smp0.visual import make_colors
+from visual import make_colors
 
 if __name__ == "__main__":
     datatype = sys.argv[1]

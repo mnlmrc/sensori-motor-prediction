@@ -39,6 +39,7 @@ baseDir = "/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/"
 wbDir = "surfaceWB"
 glmDir = "glm"
 behavDir = "behavioural"
+trainDir = "training"
 if not Path(baseDir).exists():
     print("Switch to local directory")
     baseDir = ('/Users/mnlmrc/Library/CloudStorage/'

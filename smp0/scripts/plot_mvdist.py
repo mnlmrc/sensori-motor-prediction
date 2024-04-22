@@ -5,7 +5,7 @@ import pandas as pd
 
 from smp0.globals import base_dir
 from smp0.utils import sort_cues
-from smp0.visual import make_colors, classicalMDS
+from visual import make_colors, classicalMDS
 from PcmPy.util import est_G_crossval, G_to_dist, indicator
 
 import matplotlib.pyplot as plt

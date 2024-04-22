@@ -1,12 +1,7 @@
-import matplotlib
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
 import numpy as np
-from PcmPy import indicator
 
-from .experiment import Param
-from .workflow import av_within_participant
 
 # from smp0.utils import detect_response_latency
 

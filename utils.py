@@ -1,4 +1,4 @@
-from PcmPy import indicator
+# from PcmPy import indicator
 from scipy.signal import firwin, filtfilt
 
 
@@ -68,34 +68,34 @@ def av_within_participant(Y, Z, cond_name=None):
         return M, SD, cond_name
 
 
-def av_across_participants(channels, data):
-    ch_dict = {ch: [] for ch in channels}
-    N = len(data)
-
-    for p_data in data:
-        Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
-        M, _ = av_within_participant(p_data.measurements, Z)
-
-        for ch in channels:
-            if ch in p_data.channel_descriptors['channels']:
-                ch_index = p_data.channel_descriptors['channels'].index(ch)
-                ch_dict[ch].append(M[:, ch_index])
-
-    av, sd, sem = {}, {}, {}
-    for ch in channels:
-        ch_data = np.array(ch_dict[ch])
-        ch_dict[ch] = ch_data
-
-        if ch_data.ndim == 3:
-            av[ch] = np.mean(ch_data, axis=0)
-            sd[ch] = np.std(ch_data, axis=0)
-            sem[ch] = (sd[ch] / np.sqrt(N))
-        else:
-            av[ch] = np.mean(ch_data, axis=0)
-            sd[ch] = np.std(ch_data, axis=0)
-            sem[ch] = (sd[ch] / np.sqrt(N))
-
-    return av, sd, sem, ch_dict
+# def av_across_participants(channels, data):
+#     ch_dict = {ch: [] for ch in channels}
+#     N = len(data)
+#
+#     for p_data in data:
+#         Z = indicator(p_data.obs_descriptors['cond_vec']).astype(bool)
+#         M, _ = av_within_participant(p_data.measurements, Z)
+#
+#         for ch in channels:
+#             if ch in p_data.channel_descriptors['channels']:
+#                 ch_index = p_data.channel_descriptors['channels'].index(ch)
+#                 ch_dict[ch].append(M[:, ch_index])
+#
+#     av, sd, sem = {}, {}, {}
+#     for ch in channels:
+#         ch_data = np.array(ch_dict[ch])
+#         ch_dict[ch] = ch_data
+#
+#         if ch_data.ndim == 3:
+#             av[ch] = np.mean(ch_data, axis=0)
+#             sd[ch] = np.std(ch_data, axis=0)
+#             sem[ch] = (sd[ch] / np.sqrt(N))
+#         else:
+#             av[ch] = np.mean(ch_data, axis=0)
+#             sd[ch] = np.std(ch_data, axis=0)
+#             sem[ch] = (sd[ch] / np.sqrt(N))
+#
+#     return av, sd, sem, ch_dict
 
 
 def split_column_df(df, new_cols, old_col):

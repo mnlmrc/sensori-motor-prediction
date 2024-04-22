@@ -8,7 +8,7 @@ from experiment import Info, Clamped, Param
 from fetch import load_npy
 from globals import base_dir
 from smp0.utils import bin_traces, av_across_participants, f_str_latex
-from smp0.visual import make_colors
+from visual import make_colors
 from smp0.workflow import list_participants3D
 
 if __name__ == "__main__":
