@@ -6,12 +6,14 @@ import nibabel as nb
 # import nitools as nt
 import os
 import matplotlib.pyplot as plt
+import globals as gl
 
 import surfAnalysisPy as surf
 
 if __name__ == "__main__":
     subj_id = sys.argv[1]
     typ = sys.argv[2]
+    experiment = 'smp1'
 
     dataL = f'/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/smp1/surfaceWB/{subj_id}/{typ}/{typ}.L.func.gii'
     dataR = f'/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/smp1/surfaceWB/{subj_id}/{typ}/{typ}.R.func.gii'
@@ -22,7 +24,7 @@ if __name__ == "__main__":
 
     cscale = {
         'tval': [-2.5, 2.5],
-        'psc': [-1, 1]
+        'psc': [-2, 2]
     }
 
     DL = nb.load(dataL)
@@ -53,5 +55,8 @@ if __name__ == "__main__":
         plt.title('Right hemisphere')
 
         plt.subplots_adjust(bottom=0, left=0, wspace=0, hspace=0, right=1)
+
+        plt.savefig(os.path.join(gl.baseDir, experiment, 'figures', subj_id, f"{DL.darrays[im].metadata['Name']}".rstrip('.nii') + '.png'))
+
 
 

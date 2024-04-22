@@ -2,29 +2,29 @@ import os
 from pathlib import Path
 
 
-def make_dirs(experiment=None, folder=None, participant_id=None):
-    """
-
-    :param experiment: experiment code (e.g., smp0, smp1, ...)
-    :param folder: folder that contains data (e.g., behavioural, training, emg, ...)
-    :param participant_id: participant identifier
-    :return:
-    """
-
-    directory = os.path.join(baseDir, experiment, folder, f"subj{participant_id}")
-
-    # if datatype is not None and participant_id.isdigit():
-    #     directory = os.path.join(base_dir, experiment, folder, f"subj{participant_id}")
-    # elif datatype is not None and not participant_id.isdigit():
-    #     directory = os.path.join(base_dir, experiment, folder, f"{participant_id}")
-    # elif datatype is None and participant_id.isdigit():
-    #     directory = os.path.join(base_dir, experiment, folder, f"subj{participant_id}")
-    # elif datatype is None and not participant_id.isdigit():
-    #     directory = os.path.join(base_dir, experiment, folder, f"{participant_id}")
-    # else:
-    #     directory = None
-
-    return directory
+# def make_dirs(experiment=None, folder=None, participant_id=None):
+#     """
+#
+#     :param experiment: experiment code (e.g., smp0, smp1, ...)
+#     :param folder: folder that contains data (e.g., behavioural, training, emg, ...)
+#     :param participant_id: participant identifier
+#     :return:
+#     """
+#
+#     directory = os.path.join(baseDir, experiment, folder, f"subj{participant_id}")
+#
+#     # if datatype is not None and participant_id.isdigit():
+#     #     directory = os.path.join(base_dir, experiment, folder, f"subj{participant_id}")
+#     # elif datatype is not None and not participant_id.isdigit():
+#     #     directory = os.path.join(base_dir, experiment, folder, f"{participant_id}")
+#     # elif datatype is None and participant_id.isdigit():
+#     #     directory = os.path.join(base_dir, experiment, folder, f"subj{participant_id}")
+#     # elif datatype is None and not participant_id.isdigit():
+#     #     directory = os.path.join(base_dir, experiment, folder, f"{participant_id}")
+#     # else:
+#     #     directory = None
+#
+#     return directory
 
 
 # base_dir = '/Users/mnlmrc/Library/CloudStorage/GoogleDrive-mnlmrc@unife.it/My Drive/UWO/SensoriMotorPrediction'
@@ -37,6 +37,8 @@ def make_dirs(experiment=None, folder=None, participant_id=None):
 
 baseDir = "/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/"
 wbDir = "surfaceWB"
+glmDir = "glm"
+behavDir = "behavioural"
 if not Path(baseDir).exists():
     print("Switch to local directory")
     baseDir = ('/Users/mnlmrc/Library/CloudStorage/'

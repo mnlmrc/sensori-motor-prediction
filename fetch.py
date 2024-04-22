@@ -145,17 +145,15 @@ def load_delsys(experiment=None, participant_id=None, block=None, muscle_names=N
     return df_out
 
 
-def load_mov(experiment=None, folder=None, participant_id=None, block=None):
+def load_mov(filename):
     """
     load .mov file of one block
 
     :return:
     """
-    fname = f"{experiment}_{participant_id}_{'{:02d}'.format(int(block))}.mov"
-    filepath = os.path.join(gl.make_dirs(experiment, folder, participant_id), fname)
 
     try:
-        with open(filepath, 'rt') as fid:
+        with open(filename, 'rt') as fid:
             trial = 0
             A = []
             for line in fid:
@@ -177,13 +175,13 @@ def load_mov(experiment=None, folder=None, participant_id=None, block=None):
                         A.append([data])
 
             # Convert all sublists to numpy arrays
-            rawForce = [np.array(trial_data)[:, 4:9] for trial_data in A]
-            # vizForce = [np.array(trial_data)[:, 9:] for trial_data in A]
-            state = [np.array(trial_data)[:, 1] for trial_data in A]
+            mov = [np.array(trial_data) for trial_data in A]
+            # # vizForce = [np.array(trial_data)[:, 9:] for trial_data in A]
+            # state = [np.array(trial_data) for trial_data in A]
 
     except IOError as e:
-        raise IOError(f"Could not open {filepath}") from e
+        raise IOError(f"Could not open {filename}") from e
 
-    return rawForce, state
+    return mov
 
 
