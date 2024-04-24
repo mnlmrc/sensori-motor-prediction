@@ -1404,6 +1404,7 @@ function varargout = smp1_imana(what,varargin)
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'beta')
+                
             elseif strcmp(type, 'psc')
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'psc_*.nii'));
                 for f = 1:length(files)

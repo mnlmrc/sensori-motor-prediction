@@ -40,6 +40,7 @@ wbDir = "surfaceWB"
 glmDir = "glm"
 behavDir = "behavioural"
 trainDir = "training"
+imagingDir = "imaging_data"
 if not Path(baseDir).exists():
     print("Switch to local directory")
     baseDir = ('/Users/mnlmrc/Library/CloudStorage/'
