@@ -1350,21 +1350,21 @@ function varargout = smp1_imana(what,varargin)
                 movefile(oldName, newName);
             end % conditions (n, conName: con and spmT)
         
-        case 'SURF:reconall' % Freesurfer reconall routine
-            % Calls recon-all, which performs, all of the
-            % FreeSurfer cortical reconstruction process
-            
-            sn   = subj_id; % subject list
-            
-            vararginoptions(varargin, {'sn'});
-            
-            % Parent dir of anatomical images    
-            for s = sn
-                fprintf('- recon-all %s\n', subj_str{s});
-                            % Get the directory of subjects anatomical;
-                freesurfer_reconall(fs_dir, subj_str{s}, ...
-                          fullfile(anatomical_dir, subj_str{s}, 'anatomical.nii'));
-            end % s (sn)
+        % case 'SURF:reconall' % Freesurfer reconall routine
+        %     % Calls recon-all, which performs, all of the
+        %     % FreeSurfer cortical reconstruction process
+        % 
+        %     sn   = subj_id; % subject list
+        % 
+        %     vararginoptions(varargin, {'sn'});
+        % 
+        %     % Parent dir of anatomical images    
+        %     for s = sn
+        %         fprintf('- recon-all %s\n', subj_str{s});
+        %                     % Get the directory of subjects anatomical;
+        %         freesurfer_reconall(fs_dir, subj_str{s}, ...
+        %                   fullfile(anatomical_dir, subj_str{s}, 'anatomical.nii'));
+        %     end % s (sn)
             
         case 'SURF:fs2wb'          % Resampling subject from freesurfer fsaverage to fs_LR
             
@@ -1400,14 +1400,21 @@ function varargout = smp1_imana(what,varargin)
 %                 filename = ['spmT_' id '.func.gii'];
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'spmT_*.nii'));
                 for f = 1:length(files)
+                    fprintf([files(f).name '\n'])
                     V{f} = fullfile(files(f).folder, files(f).name);
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'beta')
-                
+                files = dir(fullfile(baseDir, glmEstDir, subj_id, 'beta_*.nii'));
+                for f = 1:length(files)
+                    fprintf([files(f).name '\n'])
+                    V{f} = fullfile(files(f).folder, files(f).name);
+                    cols{f} = files(f).name;
+                end
             elseif strcmp(type, 'psc')
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'psc_*.nii'));
                 for f = 1:length(files)
+                    fprintf([files(f).name '\n'])
                     V{f} = fullfile(files(f).folder, files(f).name);
                     cols{f} = files(f).name;
                 end
