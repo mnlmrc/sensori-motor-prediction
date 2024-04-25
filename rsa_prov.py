@@ -35,7 +35,7 @@ experiment = 'smp1'
 glm = '1'
 path = os.path.join(gl.baseDir, experiment, gl.glmDir + glm, participant_id)
 
-reginfo = pd.read_csv(f'{path}/{participant_id}_reginfo.tsv', sep='\t')
+reginfo = pd.read_csv("{}/{}_reginfo.tsv".format(path, participant_id), sep='\t')
 reginfo.drop(reginfo[reginfo['cue'] == 'rest'].index, inplace=True)
 
 cue = reginfo.cue.to_list()
