@@ -1479,7 +1479,7 @@ function varargout = smp1_imana(what,varargin)
                 surf = [fsDir '/surf/' hem{h} '.pial'];
                 out_fs = [fsDir '/label/' hem{h} '.label.gii'];
                 source_annot = [fsDir '/label/' hem{h} '.label.gii'];
-                out_name = fullfile(out_dir,[subj_id '.' Hem{h} '.' resolution '.label.gii']); 
+                out_name = fullfile(out_dir,[subj_id '.' Hem{h} '.' resolution '.' atlas '.label.gii']); 
                 atlas_name = fullfile(atlas_dir,'resample_fsaverage',['fs_LR-deformed_to-fsaverage.' Hem{h} '.sphere.' resolution '_fs_LR.surf.gii']);
             
                 system(['mris_convert --annot ' label ' ' surf ' ' out_fs]);
