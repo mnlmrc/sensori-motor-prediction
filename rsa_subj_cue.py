@@ -64,8 +64,8 @@ if __name__ == "__main__":
         noise = rsa.data.noise.prec_from_unbalanced(dataset, obs_desc='cue', method='shrinkage_diag')
         rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='cue',
                                                     noise=noise))
-        rdm_cv = rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='cue',
-                                             noise=noise, cv_descriptor='run')
+        rdm_cv.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='cue',
+                                             noise=noise, cv_descriptor='run'))
 
     RDMs_eucl = np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0)
     RDMs_maha = np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0)
