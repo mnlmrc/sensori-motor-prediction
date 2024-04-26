@@ -1405,7 +1405,9 @@ function varargout = smp1_imana(what,varargin)
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'beta')
+                SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'beta_*.nii'));
+                files = files(SPM.xX.iC);
                 for f = 1:length(files)
                     fprintf([files(f).name '\n'])
                     V{f} = fullfile(files(f).folder, files(f).name);
