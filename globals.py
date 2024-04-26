@@ -12,6 +12,7 @@ glmDir = "glm"
 behavDir = "behavioural"
 trainDir = "training"
 imagingDir = "imaging_data"
+RDM = "rdm"
 
 # if Path(baseDir).exists():
 #     print("Switch to local directory")
