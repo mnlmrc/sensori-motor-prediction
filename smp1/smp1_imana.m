@@ -1393,6 +1393,8 @@ function varargout = smp1_imana(what,varargin)
             vararginoptions(varargin, {'sn', 'type'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id);
             
             V = {};
             cols = {};
