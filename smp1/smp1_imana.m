@@ -1414,11 +1414,9 @@ function varargout = smp1_imana(what,varargin)
             glm = [];
             % hemi = [1, 2];      % list of hemispheres
            
-            vararginoptions(varargin, {'sn', 'type', 'glm'});
+            vararginoptions(varargin, {'sn', 'type'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
-
-            glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id);
             
             V = {};
             cols = {};
@@ -1431,7 +1429,7 @@ function varargout = smp1_imana(what,varargin)
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'beta')
-                SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
+                SPM = load(fullfile(baseDir, glmEstDir, 'SPM.mat')); SPM=SPM.SPM;
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'beta_*.nii'));
                 files = files(SPM.xX.iC);
                 for f = 1:length(files)
