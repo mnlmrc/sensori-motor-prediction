@@ -1388,9 +1388,10 @@ function varargout = smp1_imana(what,varargin)
             res  = 32;          % resolution of the atlas. options are: 32, 164
             type = 'tval';
             id = [];
+            glm = [];
             % hemi = [1, 2];      % list of hemispheres
            
-            vararginoptions(varargin, {'sn', 'type'});
+            vararginoptions(varargin, {'sn', 'type', 'glm'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
