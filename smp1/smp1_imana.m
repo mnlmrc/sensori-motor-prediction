@@ -1445,6 +1445,7 @@ function varargout = smp1_imana(what,varargin)
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'con')
+                type = 'cont'; % you cannot create a folder name 'con' for operating system reasons
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'con_*.nii'));
                 for f = 1:length(files)
                     fprintf([files(f).name '\n'])
