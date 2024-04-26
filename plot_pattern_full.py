@@ -10,7 +10,7 @@ import globals as gl
 # Initialize subject list and type
 subj_id = 'subj100'
 experiment = 'smp1'
-type = 'psc'
+type = 'cont'
 
 actDir = os.path.join(gl.baseDir, experiment, gl.wbDir, subj_id, type)
 
