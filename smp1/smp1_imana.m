@@ -1129,6 +1129,29 @@ function varargout = smp1_imana(what,varargin)
 
             end
 
+        % case 'GLM:contrasts'
+        % 
+        %     sn             = [];    % subjects list
+        %     glm            = [];    % glm number
+        % 
+        %     vararginoptions(varargin, {'sn', 'glm'})
+        % 
+        %     if isempty(sn)
+        %         error('GLM:T_contrast -> ''sn'' must be passed to this function.')
+        %     end
+        % 
+        %     if isempty(glm)
+        %         error('GLM:T_contrast -> ''glm'' must be passed to this function.')
+        %     end
+        % 
+        %     subj_id = pinfo.subj_id{pinfo.sn==sn};            
+        %     glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
+        % 
+        %     % load the SPM.mat file
+        %     SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
+
+
+
         case 'GLM:calc_PSC'
 
             sn             = [];    % subjects list
@@ -1418,6 +1441,13 @@ function varargout = smp1_imana(what,varargin)
                 end
             elseif strcmp(type, 'psc')
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'psc_*.nii'));
+                for f = 1:length(files)
+                    fprintf([files(f).name '\n'])
+                    V{f} = fullfile(files(f).folder, files(f).name);
+                    cols{f} = files(f).name;
+                end
+            elseif strcmp(type, 'con')
+                files = dir(fullfile(baseDir, glmEstDir, subj_id, 'con_*.nii'));
                 for f = 1:length(files)
                     fprintf([files(f).name '\n'])
                     V{f} = fullfile(files(f).folder, files(f).name);
