@@ -47,10 +47,11 @@ if __name__ == "__main__":
     rdm_maha = list()
     rdm_cv = list()
     for r, roi in enumerate(rois):
-        print(f'processing {roi}...')
 
         key = label_df.key[label_df.label.to_list().index(roi)]
-        data = np.array([b.data[keys == r] for b in B.darrays])
+        print(f'processing {roi}, {(keys == key).sum()} vertices...')
+
+        data = np.array([b.data[keys == key] for b in B.darrays])
 
         dataset = rsa.data.Dataset(
             data,
@@ -65,7 +66,7 @@ if __name__ == "__main__":
         rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='cue',
                                                     noise=noise))
         rdm_cv.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='cue',
-                                             noise=noise, cv_descriptor='run'))
+                                                  noise=noise, cv_descriptor='run'))
 
     RDMs_eucl = np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0)
     RDMs_maha = np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0)
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         'experiment': experiment,
         'participant': participant_id,
         'rdm_descriptors': dict(roi=tuple(rois)),
-        'pattern_descriptors': {'cue': np.unique(cue)}
+        'pattern_descriptors': {'cue': list(np.unique(cue))}
     })
 
     np.savez(os.path.join(pathRDM, f'RDMs.eucl.{atlas}.{Hem}.npz'),
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     np.savez(os.path.join(pathRDM, f'RDMs.maha.{atlas}.{Hem}.npz'),
              data_array=RDMs_maha, descriptor=descr, allow_pickle=False
              )
-    np.savez(os.path.join(pathRDM, f'RDMs.eucl.{atlas}.{Hem}.npz'),
+    np.savez(os.path.join(pathRDM, f'RDMs.cv.{atlas}.{Hem}.npz'),
              data_array=RDMs_cv, descriptor=descr, allow_pickle=False
              )
 
