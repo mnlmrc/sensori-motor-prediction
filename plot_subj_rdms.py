@@ -3,14 +3,9 @@ import os
 import json
 
 import matplotlib.pyplot as plt
-import pandas as pd
-from scipy.stats import ttest_1samp
 import numpy as np
 import globals as gl
 import rsatoolbox as rsa
-
-import seaborn as sns
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
@@ -48,33 +43,22 @@ if __name__ == "__main__":
 
     RDMs.subset_pattern('cue', ['0%', '25%', '50%', '75%', '100%'])
     RDMs.n_cond = 5
+    index = [0, 2, 3, 4, 1]
+    RDMs.reorder(index)
 
-    rois = RDMs.rdm_descriptors['roi']
+    # visualize
+    fig, axs, oth = rsa.vis.show_rdm(
+                    RDMs,
+                    show_colorbar=None,
+                    rdm_descriptor='roi',
+                    pattern_descriptor='cue',
+                    n_row=1,
+                    figsize=(15, 5),
+                    vmin=0, vmax=.06)
 
-    dist = RDMs.dissimilarities
-    dist_df = pd.DataFrame(dist.T, columns=rois)
-
-    # # check significance
-    # t_stats, p_values = ttest_1samp(dist, popmean=0, axis=1)
-
-    fig, axs = plt.subplots(figsize=(4, 5))
-
-    sns.boxplot(data=dist_df, ax=axs, color='gray')
-    axs.plot(dist_df.mean(), color='k', marker='o')
-
-    # axs.bar(rois, mdist)
-    axs.set_ylabel('multivariate distance (a.u.)')
-    axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
-
-    # # Adding asterisks for significant results
-    # significance_level = 0.05
-    # for idx, p in enumerate(p_values):
-    #     if p < significance_level:
-    #         axs.text(idx, mdist[idx], '*', ha='center', va='bottom', color='k', fontsize=12)
-
-    fig.subplots_adjust(left=.20, bottom=.25)
-
-    axs.set_title(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}')
+    # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
+    fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}')
+    # fig.tight_layout()
 
     plt.show()
 

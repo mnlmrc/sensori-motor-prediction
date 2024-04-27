@@ -67,7 +67,7 @@ planGo.stimFinger = D.stimFinger(go);
 planGo.Onset = D.startTimeReal(go) + D.baselineWait(go);
 planGo.Duration = D.planTime(go);
 
-for ntrial = 1:length(exec.BN)
+for ntrial = 1:length(planGo.BN)
 
     switch planGo.cue(ntrial)
         case 39
@@ -122,7 +122,7 @@ for ntrial = 1:length(planNoGo.BN)
     
     planNoGo.eventtype{ntrial, 1} = [cue '_plan_nogo'];
     planNoGo.cue_id{ntrial, 1} = cue;
-    planNoGo.stimFinger_id{ntrial, 1} = stimFinger;
+    planNoGo.stimFinger_id{ntrial, 1} = 'none';
     planNoGo.epoch{ntrial, 1} = 'plan';
     planNoGo.instruction{ntrial, 1} = 'nogo';
     
