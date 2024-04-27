@@ -7,3 +7,4 @@ smp1/.DS_Store
 .idea
 .idea
 /venv/
+*.asv
