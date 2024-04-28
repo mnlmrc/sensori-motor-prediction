@@ -1250,7 +1250,7 @@ function varargout = smp1_imana(what,varargin)
                 outname=fullfile(baseDir, glmEstDir, subj_id, ...
                     sprintf('psc_%s.nii', t_con_name{con}));
 
-                formula=sprintf('100.*%s', con_div_intercepts);
+                formula=sprintf('100.*%f.*%s', h, con_div_intercepts);
                     
                 A = [];
                 A.input = P;
