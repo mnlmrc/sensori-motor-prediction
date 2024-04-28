@@ -25,7 +25,7 @@ if __name__ == "__main__":
     cscale = {
         'tval': [-2.5, 2.5],
         'psc': [-2, 2],
-        'cont': [-1, 2]
+        'cont': [-3, 3]
     }
 
     DL = nb.load(dataL)
