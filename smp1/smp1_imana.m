@@ -1232,8 +1232,9 @@ function varargout = smp1_imana(what,varargin)
                 end
             end
 
+            maxX = max(X);
             for con=1:length(t_con_name)  % all contrasts
-                
+                h = min(maxX());
 %                 maxX=[];
 %                 maxX=max(X);
 %                 if con < length(t_con_name)                      
