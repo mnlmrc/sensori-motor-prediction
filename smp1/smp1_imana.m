@@ -26,6 +26,7 @@ function varargout = smp1_imana(what,varargin)
         addpath([path 'GitHub/suit/'])
         addpath([path 'GitHub/surfing/surfing/'])
         addpath([path 'GitHub/rsatoolbox_matlab/'])
+        addpath('/home/ROBARTS/memanue5/MATLAB Add-Ons/Collections/Toolbox Fast Marching')
     end
 
     % Define the data base directory 
@@ -1553,7 +1554,7 @@ function varargout = smp1_imana(what,varargin)
             S = rsa.readSurf(white, pial);  S = [S{:}];
             
             L = rsa.defineSearchlight_surface(S, Mask, 'sphere', [rad vox]);
-            save(fullfile(anatomicalDir, sprintf('s%02d',sn), sprintf('s%02d_searchlight_%d.mat',sn,vox)),'-struct','L');
+            save(fullfile(anatomicalDir, subj_id, sprintf('s%02d_searchlight_%d.mat',subj_id,vox)),'-struct','L');
             varargout={L};
 
         
