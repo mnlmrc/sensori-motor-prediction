@@ -17,7 +17,7 @@ import seaborn as sns
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
     parser.add_argument('--participant_id', default='subj101', help='Participant ID')
-    parser.add_argument('--atlas', default='aparc', help='Atlas name')
+    parser.add_argument('--atlas', default='BA_exvivo', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
     parser.add_argument('--epoch', default='plan', help='Selected epoch')
@@ -85,6 +85,7 @@ if __name__ == "__main__":
     # axs.bar(rois, mdist)
     axs.set_ylabel('activity (a.u.)')
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
+    axs.set_ylim([-2.5, 2.5])
 
     # # Adding asterisks for significant results
     # significance_level = 0.05

@@ -12,7 +12,7 @@ import globals as gl
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
     parser.add_argument('--participant_id', default='subj100', help='Participant ID')
-    parser.add_argument('--atlas', default='aparc', help='Atlas name')
+    parser.add_argument('--atlas', default='BA_exvivo', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')

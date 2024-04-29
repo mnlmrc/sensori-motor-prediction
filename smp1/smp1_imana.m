@@ -15,6 +15,7 @@ function varargout = smp1_imana(what,varargin)
         addpath([path 'GitHub/rwls/'])
         addpath([path 'GitHub/surfing/surfing/'])
         addpath([path 'GitHub/suit/'])
+        addpath([path 'GitHub/rsatoolbox_matlab/'])
     elseif isfolder(cbsPath)
         path = cbsPath;
         addpath([path 'GitHub/spmj_tools/'])
@@ -1462,12 +1463,12 @@ function varargout = smp1_imana(what,varargin)
             c1R = hemRpial.vertices;
             c2R = hemRwhite.vertices;
 
-            GL = surf_vol2surf(c1L,c2L,V,'anatomicalStruct','CortexLeft');
+            GL = surf_vol2surf(c1L,c2L,V,'anatomicalStruct','CortexLeft', 'exclude_thres', 0.9, 'faces', hemLpial.faces);
             GL = surf_makeFuncGifti(GL.cdata,'anatomicalStruct', 'CortexLeft', 'columnNames', cols);
     
             save(GL, fullfile(baseDir, wbDir, subj_id,  type, [type '.L.func.gii']))
     
-            GR = surf_vol2surf(c1R,c2R,V,'anatomicalStruct','CortexRight');
+            GR = surf_vol2surf(c1R,c2R,V,'anatomicalStruct','CortexRight', 'exclude_thres', 0.9, 'faces', hemRpial.faces);
             GR = surf_makeFuncGifti(GR.cdata,'anatomicalStruct', 'CortexRight', 'columnNames', cols);
 
             save(GR, fullfile(baseDir, wbDir, subj_id,  type, [type '.R.func.gii']))
@@ -1523,6 +1524,36 @@ function varargout = smp1_imana(what,varargin)
                 save(G, out_name)
             
             end
+
+
+        case 'SEARCH:define' % defines searchlights for 120 voxels in gray matter surface
+            glm=[];
+            sn=[];
+            rad=12;
+            vox=100;
+            res='32';
+            vararginoptions(varargin,{'sn','glm','rad','vox','surf'});
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+            
+            mask = fullfile(baseDir, glmEstDir, subj_id, 'mask.nii');
+            Vmask = spm_vol(mask);
+            Vmask.data = spm_read_vols(Vmask);
+            Mask = rsa.readMask(Vmask);
+            
+            % directory for pial and white
+            surfDir = fullfile(baseDir, wbDir,subj_id);  
+
+            white = {fullfile(surfDir, sprintf('%s.L.white.%sk.surf.gii', subj_id, res)),...
+                fullfile(surfDir, sprintf('%s.R.white.%sk.surf.gii', subj_id, res))};
+            pial = {fullfile(surfDir, sprintf('%s.L.pial.%sk.surf.gii', subj_id, res)),...
+                fullfile(surfDir, sprintf('%s.R.pial.%sk.surf.gii', subj_id, res))};
+            
+            S = rsa.readSurf(white, pial);  S = [S{:}];
+            
+            L = rsa.defineSearchlight_surface(S, Mask, 'sphere', [rad vox]);
+            save(fullfile(anatomicalDir, sprintf('s%02d',sn), sprintf('s%02d_searchlight_%d.mat',sn,vox)),'-struct','L');
+            varargout={L};
 
         
     end
