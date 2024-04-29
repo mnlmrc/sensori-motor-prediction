@@ -25,6 +25,7 @@ function varargout = smp1_imana(what,varargin)
         addpath([path 'GitHub/rwls/'])
         addpath([path 'GitHub/suit/'])
         addpath([path 'GitHub/surfing/surfing/'])
+        addpath([path 'GitHub/rsatoolbox_matlab/'])
     end
 
     % Define the data base directory 
