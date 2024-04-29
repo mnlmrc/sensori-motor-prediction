@@ -16,6 +16,7 @@ function varargout = smp1_imana(what,varargin)
         addpath([path 'GitHub/surfing/surfing/'])
         addpath([path 'GitHub/suit/'])
         addpath([path 'GitHub/rsatoolbox_matlab/'])
+        addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
     elseif isfolder(cbsPath)
         path = cbsPath;
         addpath([path 'GitHub/spmj_tools/'])
