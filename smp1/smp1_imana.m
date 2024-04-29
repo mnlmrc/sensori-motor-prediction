@@ -1234,17 +1234,9 @@ function varargout = smp1_imana(what,varargin)
 
             maxX = max(X);
             for con=1:length(t_con_name)  % all contrasts
-                h = min(maxX());
-%                 maxX=[];
-%                 maxX=max(X);
-%                 if con < length(t_con_name)                      
-%                     maxX(step:step:end)=[]; % remove 'decision' peaks
-%                     h=min(maxX);
-%                 else
-%                     decision_max=[];
-%                     decision_max=maxX(step:step:end);
-%                     h=min(decision_max);
-%                 end
+                idx = find(strcmp({SPM.xCon.name}, t_con_name(1)));
+                c = SPM.xCon(idx).c(SPM.xX.iC);
+                h = min(maxX(c>0));
 
                 P{numB+1,1}=fullfile(baseDir, glmEstDir, subj_id, ...
                     sprintf('con_%s.nii', t_con_name{con}));
