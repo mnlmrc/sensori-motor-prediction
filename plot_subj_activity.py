@@ -16,12 +16,15 @@ import seaborn as sns
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
+<<<<<<< Updated upstream:plot_subj_activity.py
     parser.add_argument('--participant_id', default='subj101', help='Participant ID')
     parser.add_argument('--atlas', default='BA_exvivo', help='Atlas name')
+=======
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--atlas', default='aparc', help='Atlas name')
+>>>>>>> Stashed changes:plot_subj_activities.py
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
-    parser.add_argument('--epoch', default='plan', help='Selected epoch')
-    parser.add_argument('--instr', default='nogo', help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -29,12 +32,10 @@ if __name__ == "__main__":
     atlas = args.atlas
     Hem = args.Hem
     glm = args.glm
-    sel_epoch = args.epoch
-    sel_instr = args.instr
 
     experiment = 'smp1'
 
-    path = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id, 'cont')
+    path = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id, 'psc')
     pathSurf = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id)
 
     rois = {'BA_exvivo': ['BA1_exvivo',
@@ -57,10 +58,10 @@ if __name__ == "__main__":
     mapping_dict = dict(zip(label_df['key'], label_df['label']))
     labels = keys.replace(mapping_dict)
 
-    B = nb.load(os.path.join(path, f'cont.{Hem}.func.gii'))
+    B = nb.load(os.path.join(path, f'psc.{Hem}.func.gii'))
     col = [con.metadata['Name'] for con in B.darrays]
-    idx_exec = col.index('con_exec-.nii')
-    idx_plan_nogo = col.index('con_plan_nogo-.nii')
+    idx_exec = col.index('psc_exec-.nii')
+    idx_plan_nogo = col.index('psc_plan_nogo-.nii')
 
     exec = B.darrays[idx_exec].data
     plan_nogo = B.darrays[idx_plan_nogo].data
@@ -80,7 +81,7 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplots(figsize=(4, 5))
 
-    sns.barplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch')
+    sns.boxplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch')
 
     # axs.bar(rois, mdist)
     axs.set_ylabel('activity (a.u.)')
@@ -95,6 +96,6 @@ if __name__ == "__main__":
 
     fig.subplots_adjust(left=.20, bottom=.25)
 
-    axs.set_title(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}')
+    axs.set_title(f'{participant_id}\nactivity')
 
     plt.show()
