@@ -16,13 +16,8 @@ import seaborn as sns
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-<<<<<<< Updated upstream:plot_subj_activity.py
     parser.add_argument('--participant_id', default='subj101', help='Participant ID')
     parser.add_argument('--atlas', default='BA_exvivo', help='Atlas name')
-=======
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
-    parser.add_argument('--atlas', default='aparc', help='Atlas name')
->>>>>>> Stashed changes:plot_subj_activities.py
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
 
