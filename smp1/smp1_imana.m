@@ -1555,7 +1555,7 @@ function varargout = smp1_imana(what,varargin)
             S = rsa.readSurf(white, pial);  S = [S{:}];
             
             L = rsa.defineSearchlight_surface(S, Mask, 'sphere', [rad vox]);
-            save(fullfile(anatomicalDir, subj_id, sprintf('s%02d_searchlight_%d.mat',subj_id,vox)),'-struct','L');
+            save(fullfile(baseDir, anatomicalDir, subj_id, sprintf('%s_searchlight_%d.mat',subj_id,vox)),'-struct','L');
             varargout={L};
 
         
