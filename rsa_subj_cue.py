@@ -10,15 +10,15 @@ import rsatoolbox as rsa
 import globals as gl
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser = argparse.ArgumentParser(description="Input parameters")
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
-    parser.add_argument('--Hem', default='L', help='Hemisphere')
-    parser.add_argument('--glm', default='1', help='GLM model')
+    parser.add_argument('--Hem', default='L', help='Hemisphere (L/R)')
+    parser.add_argument('--glm', default='1', help='GLM model (e.g., 1, 2, ...)')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
-    parser.add_argument('--epoch', default='exec', help='Selected epoch')
-    parser.add_argument('--stimFinger', default='ring', help='Selected stimulated finger')
-    parser.add_argument('--instr', default='go', help='Selected instruction')
+    parser.add_argument('--epoch', nargs='+', default=['exec', 'plan'], help='Selected epoch')
+    parser.add_argument('--stimFinger', nargs='+',default=['index', 'ring'], help='Selected stimulated finger')
+    parser.add_argument('--instr', nargs='+', default=['go', 'nogo'], help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -116,9 +116,21 @@ if __name__ == "__main__":
         'pattern_descriptors': dict(cue=list(rdm_cv[0].pattern_descriptors['cue']))
     })
 
-    np.savez(os.path.join(pathRDM, f'RDMs.eucl.{atlas}.{Hem}.{sel_epoch}.{sel_instr}.{sel_stimFinger}.npz'),
+    # build filename
+    filename = f'{atlas}.{Hem}'
+
+    if len(sel_epoch) == 1:
+        filename += f'.{sel_epoch[0]}'
+
+    if len(sel_instr) == 1:
+        filename += f'.{sel_instr[0]}'
+
+    if len(sel_stimFinger) == 1:
+        filename += f'.{sel_stimFinger[0]}'
+
+    np.savez(os.path.join(pathRDM, f'RDMs.eucl.{filename}.npz'),
              data_array=RDMs_eucl, descriptor=descr, allow_pickle=False)
-    np.savez(os.path.join(pathRDM, f'RDMs.maha.{atlas}.{Hem}.{sel_epoch}.{sel_instr}.{sel_stimFinger}.npz'),
+    np.savez(os.path.join(pathRDM, f'RDMs.maha.{filename}.npz'),
              data_array=RDMs_maha, descriptor=descr, allow_pickle=False)
-    np.savez(os.path.join(pathRDM, f'RDMs.cv.{atlas}.{Hem}.{sel_epoch}.{sel_instr}.{sel_stimFinger}.npz'),
+    np.savez(os.path.join(pathRDM, f'RDMs.cv.{filename}.npz'),
              data_array=RDMs_cv, descriptor=descr, allow_pickle=False)

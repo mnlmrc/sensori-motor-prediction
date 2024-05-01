@@ -19,9 +19,9 @@ if __name__ == "__main__":
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
     parser.add_argument('--dist', default='cv', help='Selected cue')
-    parser.add_argument('--epoch', default='plan', help='Selected epoch')
-    parser.add_argument('--stimFinger', default='none', help='Selected stimulated finger')
-    parser.add_argument('--instr', default='nogo', help='Selected instruction')
+    parser.add_argument('--epoch', nargs='+', default=['exec', 'plan'], help='Selected epoch')
+    parser.add_argument('--stimFinger', nargs='+', default=['index', 'ring', 'none'], help='Selected stimulated finger')
+    parser.add_argument('--instr', nargs='+', default=['go', 'nogo'], help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -38,7 +38,18 @@ if __name__ == "__main__":
 
     path = os.path.join(gl.baseDir, experiment, gl.RDM, participant_id)
 
-    npz = np.load(os.path.join(path, f'RDMs.{dist}.{atlas}.{Hem}.{sel_epoch}.{sel_instr}.{sel_stimFinger}.npz'))
+    # build filename
+    filename = f'{dist}.{atlas}.{Hem}'
+    if len(sel_epoch) == 1:
+        filename += f'.{sel_epoch[0]}'
+
+    if len(sel_instr) == 1:
+        filename += f'.{sel_instr[0]}'
+
+    if len(sel_stimFinger) == 1:
+        filename += f'.{sel_stimFinger[0]}'
+
+    npz = np.load(os.path.join(path, f'RDMs.{filename}.npz'))
     mat = npz['data_array']
     descr = json.loads(npz['descriptor'].item())
 
@@ -46,8 +57,8 @@ if __name__ == "__main__":
                         rdm_descriptors=descr['rdm_descriptors'],
                         pattern_descriptors=descr['pattern_descriptors'])
 
-    RDMs.subset_pattern('cue', ['0%', '25%', '50%', '75%', '100%'])
-    RDMs.n_cond = 5
+    RDMs = RDMs.subset_pattern('cue', ['0%', '25%', '50%', '75%', '100%'])
+    # RDMs.n_cond = 5
 
     rois = RDMs.rdm_descriptors['roi']
 
@@ -57,7 +68,7 @@ if __name__ == "__main__":
     # # check significance
     # t_stats, p_values = ttest_1samp(dist, popmean=0, axis=1)
 
-    fig, axs = plt.subplots(figsize=(4, 5))
+    fig, axs = plt.subplots(figsize=(5, 5))
 
     sns.boxplot(data=dist_df, ax=axs, color='gray')
     axs.plot(dist_df.mean(), color='k', marker='o')
@@ -72,7 +83,7 @@ if __name__ == "__main__":
     #     if p < significance_level:
     #         axs.text(idx, mdist[idx], '*', ha='center', va='bottom', color='k', fontsize=12)
 
-    fig.subplots_adjust(left=.20, bottom=.25)
+    fig.subplots_adjust(left=.20, bottom=.10)
 
     axs.set_title(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}')
 

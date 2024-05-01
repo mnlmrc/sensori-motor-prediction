@@ -9,14 +9,15 @@ import rsatoolbox as rsa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
-    parser.add_argument('--dist', default='cv', help='Selected cue')
-    parser.add_argument('--epoch', default='exec', help='Selected epoch')
-    parser.add_argument('--stimFinger', default='ring', help='Selected stimulated finger')
-    parser.add_argument('--instr', default='go', help='Selected instruction')
+    parser.add_argument('--dist', default='cv', help='Selected dist')
+    # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
+    parser.add_argument('--epoch', nargs='+', default=['exec', 'plan'], help='Selected epoch')
+    parser.add_argument('--stimFinger', nargs='+', default=['index', 'ring', 'none'], help='Selected stimulated finger')
+    parser.add_argument('--instr', nargs='+', default=['go', 'nogo'], help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -33,7 +34,18 @@ if __name__ == "__main__":
 
     path = os.path.join(gl.baseDir, experiment, gl.RDM, participant_id)
 
-    npz = np.load(os.path.join(path, f'RDMs.{dist}.{atlas}.{Hem}.{sel_epoch}.{sel_instr}.{sel_stimFinger}.npz'))
+    # build filename
+    filename = f'{dist}.{atlas}.{Hem}'
+    if len(sel_epoch) == 1:
+        filename += f'.{sel_epoch[0]}'
+
+    if len(sel_instr) == 1:
+        filename += f'.{sel_instr[0]}'
+
+    if len(sel_stimFinger) == 1:
+        filename += f'.{sel_stimFinger[0]}'
+
+    npz = np.load(os.path.join(path, f'RDMs.{filename}.npz'))
     mat = npz['data_array']
     descr = json.loads(npz['descriptor'].item())
 
@@ -41,16 +53,14 @@ if __name__ == "__main__":
                         rdm_descriptors=descr['rdm_descriptors'],
                         pattern_descriptors=descr['pattern_descriptors'])
 
-    # RDMs = RDMs.subset_pattern('cue', ['0%', '25%', '50%', '75%', '100%'])
-    # RDMs.n_cond = 5
-    if sel_stimFinger is 'none':
-        index = [0, 2, 3, 4, 1]
-    elif sel_stimFinger is 'index':
+    if sel_stimFinger == ['index']:
         index = [1, 2, 3, 0]
-    elif sel_stimFinger is 'ring':
+    elif sel_stimFinger == ['ring']:
         index = [0, 1, 2, 3]
+    else:
+        index = [0, 2, 3, 4, 1]
     RDMs.reorder(index)
-    print(RDMs.pattern_descriptors['cue'])
+    # print(RDMs.pattern_descriptors['cue'])
 
     # visualize
     fig, axs, oth = rsa.vis.show_rdm(
@@ -60,11 +70,13 @@ if __name__ == "__main__":
                     pattern_descriptor='cue',
                     n_row=1,
                     figsize=(15, 5),
-                    vmin=0, vmax=.5)
+                    vmin=0, vmax=RDMs.get_matrices().max())
 
     # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
     fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}')
     # fig.tight_layout()
 
-    # plt.show()
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'RDMs.{filename}.png'))
+
+    plt.show()
 

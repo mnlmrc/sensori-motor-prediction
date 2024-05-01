@@ -13,10 +13,9 @@ import rsatoolbox as rsa
 
 import seaborn as sns
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
@@ -84,13 +83,13 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplots(figsize=(4, 5))
 
-    sns.barplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch',
-                order=rois)
+    sns.boxplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch',
+                   order=rois)
 
     # axs.bar(rois, mdist)
     axs.set_ylabel('activity (a.u.)')
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
-    axs.set_ylim([-1, 1])
+    # axs.set_ylim([-1, 1])
 
     # # Adding asterisks for significant results
     # significance_level = 0.05
