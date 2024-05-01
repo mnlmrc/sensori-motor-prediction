@@ -68,14 +68,20 @@ if __name__ == "__main__":
     # # check significance
     # t_stats, p_values = ttest_1samp(dist, popmean=0, axis=1)
 
-    fig, axs = plt.subplots(figsize=(5, 5))
+    fig, axs = plt.subplots(figsize=(7, 5))
 
-    sns.boxplot(data=dist_df, ax=axs, color='gray')
+    sns.boxplot(data=dist_df, ax=axs, color='gray', width=.5)
     axs.plot(dist_df.mean(), color='k', marker='o')
 
     # axs.bar(rois, mdist)
     axs.set_ylabel('multivariate distance (a.u.)')
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
+
+    axs.set_ylim([0.001, .5])
+
+    axs.set_title(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}\n')
+
+    axs.set_yscale('log')
 
     # # Adding asterisks for significant results
     # significance_level = 0.05
@@ -83,9 +89,9 @@ if __name__ == "__main__":
     #     if p < significance_level:
     #         axs.text(idx, mdist[idx], '*', ha='center', va='bottom', color='k', fontsize=12)
 
-    fig.subplots_adjust(left=.20, bottom=.10)
+    fig.subplots_adjust(left=.3, bottom=.10, right=.7, top=.85)
 
-    axs.set_title(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}')
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'dist.{filename}.png'))
 
     plt.show()
 
