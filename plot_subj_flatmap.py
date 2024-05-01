@@ -13,12 +13,12 @@ import surfAnalysisPy as surf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Input parameters")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--glm', default='1', help='GLM model (e.g., 1, 2, ...)')
     parser.add_argument('--measure', default='psc', help='Measurement (e.g., psc, tval, ...)')
     parser.add_argument('--epoch', default='exec', help='Selected epoch')
-    parser.add_argument('--stimFinger', nargs='+', default=[], help='Selected stimulated finger')
-    parser.add_argument('--instr', nargs='+', default=[], help='Selected instruction')
+    parser.add_argument('--stimFinger', nargs='+', default=['all'], help='Selected stimulated finger')
+    parser.add_argument('--instr', nargs='+', default=['nogo', 'go'], help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -51,8 +51,8 @@ if __name__ == "__main__":
 
     # build name
     cond = f'{meas}_{sel_epoch}'
-    if len(sel_instr) > 0:
-        cond += f'_{sel_instr}'
+    if (len(sel_instr) == 1) and sel_epoch is not 'exec':
+        cond += f'_{sel_instr[0]}'
     cond += '-.nii'
 
     im = col.index(cond)
@@ -75,7 +75,12 @@ if __name__ == "__main__":
                           colorbar=False)
         plt.title(title[h])
 
+    if sel_epoch is 'plan':
+        plt.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}')
+    elif sel_epoch is 'exec':
+        plt.suptitle(f"{participant_id}\nepoch:{sel_epoch}, instr:['go'], stimFinger:{sel_stimFinger}")
+
     plt.subplots_adjust(bottom=0, left=0, wspace=0, hspace=0, right=1)
 
-    # plt.savefig(os.path.join(gl.baseDir, experiment, 'figures', subj_id,
-    #                          f"{DL.darrays[im].metadata['Name']}".rstrip('.nii') + '.png'))
+    plt.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id,
+                             f"{cond}".rstrip('.nii') + '.png'))
