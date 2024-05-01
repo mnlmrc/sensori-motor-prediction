@@ -9,14 +9,14 @@ import rsatoolbox as rsa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
-    parser.add_argument('--atlas', default='aparc', help='Atlas name')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
     parser.add_argument('--dist', default='cv', help='Selected cue')
-    parser.add_argument('--epoch', default='plan', help='Selected epoch')
-    parser.add_argument('--stimFinger', default='none', help='Selected stimulated finger')
-    parser.add_argument('--instr', default='nogo', help='Selected instruction')
+    parser.add_argument('--epoch', default='exec', help='Selected epoch')
+    parser.add_argument('--stimFinger', default='ring', help='Selected stimulated finger')
+    parser.add_argument('--instr', default='go', help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -41,10 +41,16 @@ if __name__ == "__main__":
                         rdm_descriptors=descr['rdm_descriptors'],
                         pattern_descriptors=descr['pattern_descriptors'])
 
-    RDMs.subset_pattern('cue', ['0%', '25%', '50%', '75%', '100%'])
-    RDMs.n_cond = 5
-    index = [0, 2, 3, 4, 1]
+    # RDMs = RDMs.subset_pattern('cue', ['0%', '25%', '50%', '75%', '100%'])
+    # RDMs.n_cond = 5
+    if sel_stimFinger is 'none':
+        index = [0, 2, 3, 4, 1]
+    elif sel_stimFinger is 'index':
+        index = [1, 2, 3, 0]
+    elif sel_stimFinger is 'ring':
+        index = [0, 1, 2, 3]
     RDMs.reorder(index)
+    print(RDMs.pattern_descriptors['cue'])
 
     # visualize
     fig, axs, oth = rsa.vis.show_rdm(
@@ -54,11 +60,11 @@ if __name__ == "__main__":
                     pattern_descriptor='cue',
                     n_row=1,
                     figsize=(15, 5),
-                    vmin=0, vmax=.06)
+                    vmin=0, vmax=.5)
 
     # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
     fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}')
     # fig.tight_layout()
 
-    plt.show()
+    # plt.show()
 

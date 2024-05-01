@@ -1529,7 +1529,7 @@ function varargout = smp1_imana(what,varargin)
             end
 
 
-        case 'SEARCH:define' % defines searchlights for 120 voxels in gray matter surface
+        case 'SEARCH:define' 
             glm=[];
             sn=[];
             rad=12;

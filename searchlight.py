@@ -58,7 +58,7 @@ x, y, z = tmp_img.get_fdata().shape
 #     # flattened_data.append(data_array[mask_array])
 #     blocks[i] = im[1].run
 #
-# centers, neighbors = get_volume_searchlight(mask, radius=5, threshold=1)
+centers, neighbors = get_volume_searchlight(mask, radius=12, threshold=1)
 #
 # data_2d = data.reshape([data.shape[0], -1])
 # data_2d = np.nan_to_num(data_2d)

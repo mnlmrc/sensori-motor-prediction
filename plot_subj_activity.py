@@ -17,7 +17,7 @@ import seaborn as sns
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
     parser.add_argument('--participant_id', default='subj101', help='Participant ID')
-    parser.add_argument('--atlas', default='BA_exvivo', help='Atlas name')
+    parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
 
@@ -32,6 +32,7 @@ if __name__ == "__main__":
 
     path = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id, 'psc')
     pathSurf = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id)
+    pathAtlas = os.path.join(gl.baseDir, experiment, 'atlases')
 
     rois = {'BA_exvivo': ['BA1_exvivo',
                           'BA2_exvivo',
@@ -43,12 +44,19 @@ if __name__ == "__main__":
             'aparc': ['precentral',
                       'postcentral',
                       'caudalmiddlefrontal',
-                      'pericalcarine']}
+                      'pericalcarine'],
+            'ROI': ['PMd',
+                    'PMv',
+                    'M1',
+                    'S1',
+                    'SPLa',
+                    'SPLp',
+                    'V1']}
     rois = rois[atlas]
 
-    A = nb.load(os.path.join(pathSurf, f'{participant_id}.{Hem}.32k.{atlas}.label.gii'))
+    A = nb.load(os.path.join(pathAtlas, f'{atlas}.32k.{Hem}.label.gii'))
     keys = pd.Series(A.darrays[0].data)
-    label = [(l.key, l.label) for l in A.labeltable.labels]
+    label = [(l.key, l.label) for l in A.labeltable.labels[1:]]
     label_df = pd.DataFrame(label, columns=['key', 'label'])
     mapping_dict = dict(zip(label_df['key'], label_df['label']))
     labels = keys.replace(mapping_dict)
@@ -76,12 +84,13 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplots(figsize=(4, 5))
 
-    sns.boxplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch')
+    sns.barplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch',
+                order=rois)
 
     # axs.bar(rois, mdist)
     axs.set_ylabel('activity (a.u.)')
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
-    axs.set_ylim([-2.5, 2.5])
+    axs.set_ylim([-1, 1])
 
     # # Adding asterisks for significant results
     # significance_level = 0.05
