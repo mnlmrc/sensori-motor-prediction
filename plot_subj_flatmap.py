@@ -41,11 +41,11 @@ if __name__ == "__main__":
 
     cscale = {
         'tval': [-2.5, 2.5],
-        'psc': [-2, 2],
+        'psc': [-1, 1],
         'cont': [-3, 3]
     }
 
-    D = [nb.load(data[0]), nb.load(data[0])]
+    D = [nb.load(data[0]), nb.load(data[1])]
 
     col = [d.metadata['Name'] for d in D[0].darrays]
 
@@ -61,8 +61,9 @@ if __name__ == "__main__":
 
     surface = ['fs32k_L', 'fs32k_R']
 
+    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+
     for h in range(2):
-        fig, axs = plt.subplots(1, 2, figsize=(12, 5))
         plt.sca(axs[h])
         surf.plot.plotmap(D[h].darrays[im].data, surface[h],
                           underlay=None,
