@@ -69,12 +69,12 @@ if __name__ == "__main__":
                     rdm_descriptor='roi',
                     pattern_descriptor='cue',
                     n_row=1,
-                    figsize=(15, 5),
+                    figsize=(15, 3.5),
                     vmin=0, vmax=RDMs.get_matrices().max())
 
     # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
-    fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}')
-    # fig.tight_layout()
+    fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}, hem:{Hem}')
+    fig.tight_layout()
 
     fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'RDMs.{filename}.png'))
 

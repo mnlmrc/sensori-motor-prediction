@@ -15,7 +15,7 @@ import seaborn as sns
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='1', help='GLM model')
@@ -79,16 +79,20 @@ if __name__ == "__main__":
     )
 
     df = pd.concat([plan_nogo_df, exec_df])
-    df = df[df['labels'].isin(rois)]
+    df = df[df['labels'].isin(rois) & (df['activity'].abs() > .1)]
 
-    fig, axs = plt.subplots(figsize=(4, 5))
+    fig, axs = plt.subplots(figsize=(6, 5))
 
     sns.boxplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch',
                    order=rois)
 
     # axs.bar(rois, mdist)
-    axs.set_ylabel('activity (a.u.)')
+    axs.set_ylabel('% signal change')
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
+    axs.set_xlim((axs.get_xlim()[0], axs.get_xlim()[1]))
+    axs.axhline(0, axs.get_xlim()[0], axs.get_xlim()[1], color='k', lw=.8)
+    axs.set_ylim([-4, 4])
+    axs.legend(loc='lower left')
     # axs.set_ylim([-1, 1])
 
     # # Adding asterisks for significant results
@@ -100,5 +104,7 @@ if __name__ == "__main__":
     fig.subplots_adjust(left=.20, bottom=.25)
 
     axs.set_title(f'{participant_id}\nactivity')
+
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'activity.{atlas}.png'))
 
     plt.show()
