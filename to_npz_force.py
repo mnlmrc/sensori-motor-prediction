@@ -22,9 +22,23 @@ if __name__ == "__main__":
     # WAIT_ITI, // 6
     # ACQUIRE_HRF, // 7
     # END_TRIAL, // 8
-    experiment = sys.argv[1]
-    participant_id = sys.argv[2]
-    session = sys.argv[3]
+    # experiment = sys.argv[1]
+    # participant_id = sys.argv[2]
+    # session = sys.argv[3]
+
+    parser = argparse.ArgumentParser(description="Process some integers.")
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--experiment', default='smp0', help='Atlas name')
+    parser.add_argument('--session', default='behav')
+    # parser.add_argument('--mode', type=str, help='Mode of operation')
+    # parser.add_argument('--host', type=str, help='Host address')
+    # parser.add_argument('--port', type=int, help='Port number')
+
+    args = parser.parse_args()
+
+    participant_id = args.participant_id
+    experiment = args.experiment
+    session = args.session
 
     # extract subject number
     sn = int(''.join([c for c in participant_id if c.isdigit()]))
@@ -41,13 +55,17 @@ if __name__ == "__main__":
     if session == 'scanning':
         blocks = participants[participants.sn == sn].runsSess1.iloc[0].split('.')
         path = os.path.join(gl.baseDir, experiment, gl.behavDir, participant_id)
+        dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
     elif session == 'training':
         blocks = participants[participants.sn == sn].runsTraining.iloc[0].split('.')
         path = os.path.join(gl.baseDir, experiment, gl.trainDir, participant_id)
+        dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
+    elif session == 'behav':
+        blocks = participants[participants.sn == sn].runsTraining.iloc[0].split('.')
+        path = os.path.join(gl.baseDir, experiment, participant_id, 'mov')
+        dat = pd.read_csv(os.path.join(gl.baseDir, experiment, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
     else:
         raise ValueError('Session name not recognized. Allowed session names are "scanning" and "training".')
-
-    dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
 
     force = list()
     trial_info = {
@@ -55,8 +73,14 @@ if __name__ == "__main__":
         'stimFinger': list(),
         'trialLabel': list()
     }
-    columns = ['trialNum', 'state', 'timeReal', 'time', 'TotTime', 'TR', 'TRtime', 'currentSlice',
-               'thumb', 'index', 'middle', 'ring', 'pinkie', 'indexViz', 'ringViz']
+
+    columns = {
+        'smp0': ['trialNum', 'state', 'timeReal', 'time',
+                 'thumb', 'index', 'middle', 'ring', 'pinkie', 'indexViz', 'ringViz'],
+        'smp1': ['trialNum', 'state', 'timeReal', 'time', 'TotTime', 'TR', 'TRtime', 'currentSlice',
+                 'thumb', 'index', 'middle', 'ring', 'pinkie', 'indexViz', 'ringViz']
+    }
+    columns = columns[experiment]
 
     for bl in blocks:
         print(f'processing... {participant_id}, block {bl}')
@@ -99,25 +123,3 @@ if __name__ == "__main__":
     print(f"Saving participant {participant_id}, session {session}...")
     np.savez(os.path.join(path, f'{experiment}_{sn}.npz'),
              data_array=force, descriptor=descr, allow_pickle=False)
-
-    # blocks = sys.argv[4]
-    # blocks = blocks.split(",")
-    # prestim = float(sys.argv[5])
-    # poststim = float(sys.argv[6])
-    # fsample = float(sys.argv[7])
-    #
-    # rawForce, states = merge_blocks_mov(experiment, folder, participant_id, blocks)
-    # idx = detect_state_change(states)
-    # force = force_segment(rawForce, idx, prestim=prestim, poststim=poststim, fsample=fsample)
-    #
-    # descr = json.dumps({
-    #     'experiment': experiment,
-    #     'folder': folder,
-    #     'participant': participant_id,
-    #     'fsample': fsample,
-    #     'prestim': prestim,
-    #     'poststim': poststim
-    # })
-    #
-
-    # print('Force saved!!!')

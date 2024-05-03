@@ -4,9 +4,9 @@ from itertools import product
 import numpy as np
 import pandas as pd
 
-from smp0.globals import base_dir
+from globals import baseDir
 from smp0.sinergies import nnmf, sort_sinergies
-from smp0.utils import sort_cues, f_str_latex
+from utils import sort_cues, f_str_latex
 from visual import make_colors
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     participants = [100, 101, 102, 103, 104,
                     105, 106, 107, 108, 109, 110]
 
-    file_path = base_dir + f"/smp0/datasets/smp0_{datatype}_binned.stat"
+    file_path = baseDir + f"/smp0/datasets/smp0_{datatype}_binned.stat"
     data = pd.read_csv(file_path)
     data = data[data['participant_id'].isin(participants)]
 
@@ -237,4 +237,4 @@ if __name__ == "__main__":
     #                 axs2[c, sF].bar(xAx + offset[sy] * width / 2, y, yerr=yerr, color=color[sy], width=width)
     plt.show()
 
-    fig.savefig(base_dir + '/smp0/figures/smp0_polar_emg.svg')
+    # fig.savefig(baseDir + '/smp0/figures/smp0_polar_emg.svg')

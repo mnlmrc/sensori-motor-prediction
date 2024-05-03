@@ -77,7 +77,7 @@ if __name__ == "__main__":
     axs.set_ylabel('multivariate distance (a.u.)')
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
 
-    axs.set_ylim([0.001, .5])
+    axs.set_ylim([0, .5])
 
     axs.set_title(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}\n')
 

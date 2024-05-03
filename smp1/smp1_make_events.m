@@ -14,7 +14,7 @@ baseDir = (sprintf('%s/',workdir));                                        % Bas
 behavDir = 'behavioural';                                                  % Behavioural directory
 targetDir = 'target';
 session = 'sess1';
-subj_id = 'subj101';
+subj_id = 'subj100';
 glmDir = 'glm1';
 
 D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
@@ -128,58 +128,58 @@ for ntrial = 1:length(planNoGo.BN)
     
 end
 
-%% rest
-rest = [];
-rest.BN = [];
-rest.TN = [];
-rest.cue = [];
-rest.stimFinger = [];
-rest.Onset = [];
-rest.Duration = [];
-rest.eventtype = [];
-rest.cue_id = [];
-rest.stimFinger_id = [];
-rest.epoch = [];
-rest.instruction = [];
-for run = 1:max(D.BN)
-
-    % retrieve trial log
-    TN = D.TN(D.BN == run);
-    startTimeReal = D.startTimeReal(D.BN == run);
-    baselineWait = D.baselineWait(D.BN == run);
-    planTime = D.planTime(D.BN == run);
-    execMaxTime  = D.execMaxTime(D.BN == run);
-    iti = D.iti(D.BN == run);
-    
-    % look target
-    Dt = dload(fullfile(baseDir, targetDir, subj_id, ['smp1_' subj_id(5:end) sprintf('_%02d_scanning.tgt', run)]));
-    startTime = Dt.startTime;
-    startTimeDiff = diff(startTime);
-    idx = find(startTimeDiff > 10000);
-    onset = startTimeReal(idx) + baselineWait(idx) + planTime(idx) + execMaxTime(idx) + iti(idx);
-    
-    % add to rest
-    rest.BN = [rest.BN; run; run; run];
-    rest.TN = [rest.TN; TN(idx)];
-    rest.cue = [rest.cue; NaN; NaN; NaN;];
-    rest.stimFinger = [rest.stimFinger;NaN; NaN; NaN;];
-    rest.Onset = [rest.Onset; onset];
-    rest.Duration = [rest.Duration;12000; 12000; 12000;];
-    rest.eventtype = [rest.eventtype;{'rest'}; {'rest'}; {'rest'}];
-    rest.cue_id = [rest.cue_id;{'rest'}; {'rest'}; {'rest'}];
-    rest.stimFinger_id = [rest.stimFinger_id;{'rest'}; {'rest'}; {'rest'}];
-    rest.epoch = [rest.epoch;{'rest'}; {'rest'}; {'rest'}];
-    rest.instruction = [rest.instruction;{'rest'}; {'rest'}; {'rest'}];
-
-end
+% %% rest
+% rest = [];
+% rest.BN = [];
+% rest.TN = [];
+% rest.cue = [];
+% rest.stimFinger = [];
+% rest.Onset = [];
+% rest.Duration = [];
+% rest.eventtype = [];
+% rest.cue_id = [];
+% rest.stimFinger_id = [];
+% rest.epoch = [];
+% rest.instruction = [];
+% for run = 1:max(D.BN)
+% 
+%     % retrieve trial log
+%     TN = D.TN(D.BN == run);
+%     startTimeReal = D.startTimeReal(D.BN == run);
+%     baselineWait = D.baselineWait(D.BN == run);
+%     planTime = D.planTime(D.BN == run);
+%     execMaxTime  = D.execMaxTime(D.BN == run);
+%     iti = D.iti(D.BN == run);
+% 
+%     % look target
+%     Dt = dload(fullfile(baseDir, targetDir, subj_id, ['smp1_' subj_id(5:end) sprintf('_%02d_scanning.tgt', run)]));
+%     startTime = Dt.startTime;
+%     startTimeDiff = diff(startTime);
+%     idx = find(startTimeDiff > 10000);
+%     onset = startTimeReal(idx) + baselineWait(idx) + planTime(idx) + execMaxTime(idx) + iti(idx);
+% 
+%     % add to rest
+%     rest.BN = [rest.BN; run; run; run];
+%     rest.TN = [rest.TN; TN(idx)];
+%     rest.cue = [rest.cue; NaN; NaN; NaN;];
+%     rest.stimFinger = [rest.stimFinger;NaN; NaN; NaN;];
+%     rest.Onset = [rest.Onset; onset];
+%     rest.Duration = [rest.Duration;12000; 12000; 12000;];
+%     rest.eventtype = [rest.eventtype;{'rest'}; {'rest'}; {'rest'}];
+%     rest.cue_id = [rest.cue_id;{'rest'}; {'rest'}; {'rest'}];
+%     rest.stimFinger_id = [rest.stimFinger_id;{'rest'}; {'rest'}; {'rest'}];
+%     rest.epoch = [rest.epoch;{'rest'}; {'rest'}; {'rest'}];
+%     rest.instruction = [rest.instruction;{'rest'}; {'rest'}; {'rest'}];
+% 
+% end
 
 %% make table
 
 exec = struct2table(exec);
 planGo = struct2table(planGo);
 planNoGo = struct2table(planNoGo);
-rest = struct2table(rest);
-events = [exec; planGo; planNoGo;rest];
+% rest = struct2table(rest);
+events = [exec; planGo; planNoGo];
 
 %% convert to secs
 events.Onset = events.Onset ./ 1000;
