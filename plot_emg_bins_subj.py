@@ -29,6 +29,8 @@ if __name__ == "__main__":
 
     path = os.path.join(gl.baseDir, experiment, participant_id)
 
+    latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'), sep='\t')
+
     emg = np.load(os.path.join(path, 'emg', f'{experiment}_{sn}.npy'))
     dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
 
@@ -41,15 +43,15 @@ if __name__ == "__main__":
 
     # map codes to actual labels
     map_cue = pd.DataFrame([('0%', 93),
-                         ('25%', 12),
-                         ('50%', 44),
-                         ('75%', 21),
-                         ('100%', 39)],
-                        columns=['cue', 'code'])
+                            ('25%', 12),
+                            ('50%', 44),
+                            ('75%', 21),
+                            ('100%', 39)],
+                           columns=['cue', 'code'])
 
     map_stimFinger = pd.DataFrame([('index', 91999),
-                         ('ring', 99919)],
-                        columns=['stimFinger', 'code'])
+                                   ('ring', 99919)],
+                                  columns=['stimFinger', 'code'])
 
     map_cue_dict = dict(zip(map_cue['code'], map_cue['cue']))
     map_stimFinger_dict = dict(zip(map_stimFinger['code'], map_stimFinger['stimFinger']))
@@ -69,7 +71,16 @@ if __name__ == "__main__":
     # compute averages in time windows
     emg_binned = np.zeros((len(win.keys()), emg.shape[0], emg.shape[1]))
     for k, key in enumerate(win.keys()):
-        emg_binned[k] = emg[..., win[key]].mean(axis=-1)
+        emg_binned[k, dat.stimFinger == 91999] = emg[dat.stimFinger == 91999, :,
+                                               win[key][0] + int(latency['index'].iloc[0] * fsample):
+                                               win[key][1] + int(latency['index'].iloc[0] * fsample)
+                                               ].mean(axis=-1)
+        emg_binned[k, dat.stimFinger == 99919] = emg[dat.stimFinger == 99919, :,
+                                               win[key][0] + int(latency['ring'].iloc[0] * fsample):
+                                               win[key][1] + int(latency['ring'].iloc[0] * fsample)
+                                               ].mean(axis=-1)
+
+    emg_binned /= emg_binned[0]
 
     df_emg = pd.DataFrame(data=emg_binned.reshape((-1, emg.shape[1])), columns=channels)
     df_emg['stimFinger'] = stimFinger * len(win.keys())

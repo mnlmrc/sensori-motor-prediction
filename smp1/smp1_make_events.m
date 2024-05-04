@@ -14,7 +14,7 @@ baseDir = (sprintf('%s/',workdir));                                        % Bas
 behavDir = 'behavioural';                                                  % Behavioural directory
 targetDir = 'target';
 session = 'sess1';
-subj_id = 'subj100';
+subj_id = 'subj101';
 glmDir = 'glm1';
 
 D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
