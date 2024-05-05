@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     experiment = 'smp1'
 
-    path = os.path.join(gl.baseDir, experiment, gl.RDM, participant_id)
+    path = os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm, participant_id)
 
     # build filename
     filename = f'{dist}.{atlas}.{Hem}'
@@ -70,7 +70,7 @@ if __name__ == "__main__":
                     pattern_descriptor='cue',
                     n_row=1,
                     figsize=(15, 3.5),
-                    vmin=0, vmax=RDMs.get_matrices().max())
+                    vmin=RDMs.get_matrices().min(), vmax=RDMs.get_matrices().max())
 
     # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
     fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}, hem:{Hem}')

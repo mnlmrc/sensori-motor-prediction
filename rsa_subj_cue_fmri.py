@@ -17,7 +17,7 @@ if __name__ == "__main__":
     parser.add_argument('--glm', default='1', help='GLM model (e.g., 1, 2, ...)')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
     parser.add_argument('--epoch', nargs='+', default=['exec', 'plan'], help='Selected epoch')
-    parser.add_argument('--stimFinger', nargs='+',default=['index', 'ring'], help='Selected stimulated finger')
+    parser.add_argument('--stimFinger', nargs='+',default=['index', 'ring', 'none'], help='Selected stimulated finger')
     parser.add_argument('--instr', nargs='+', default=['go', 'nogo'], help='Selected instruction')
 
     args = parser.parse_args()
@@ -34,21 +34,10 @@ if __name__ == "__main__":
 
     pathGlm = os.path.join(gl.baseDir, experiment, gl.glmDir + glm, participant_id)
     pathAtlas = os.path.join(gl.baseDir, experiment, 'atlases')
-    pathRDM = os.path.join(gl.baseDir, experiment, gl.RDM, participant_id)
-    pathActivity = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id, 'beta')
+    pathRDM = os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm, participant_id)
+    pathSurf = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id)
 
-    rois = {'BA_exvivo': ['BA1_exvivo',
-                          'BA2_exvivo',
-                          'BA3a_exvivo',
-                          'BA3b_exvivo',
-                          'BA4a_exvivo',
-                          'BA4p_exvivo',
-                          'BA6_exvivo'],
-            'aparc': ['precentral',
-                      'postcentral',
-                      'caudalmiddlefrontal',
-                      'pericalcarine'],
-            'ROI': ['PMd',
+    rois = {'ROI': ['PMd',
                     'PMv',
                     'M1',
                     'S1',
@@ -71,7 +60,8 @@ if __name__ == "__main__":
     label = [(l.key, l.label) for l in A.labeltable.labels[1:]]
     label_df = pd.DataFrame(label, columns=['key', 'label'])
 
-    B = nb.load(os.path.join(pathActivity, f'beta.{Hem}.func.gii'))
+    B = nb.load(os.path.join(pathSurf, f'glm{glm}.beta.{Hem}.func.gii'))
+    Res = nb.load(os.path.join(pathSurf, f'glm{glm}.res.{Hem}.func.gii'))
 
     rdm_eucl = list()
     rdm_maha = list()
@@ -81,6 +71,7 @@ if __name__ == "__main__":
         print(f'processing {roi}, {(keys == key).sum()} vertices...')
 
         data = np.array([b.data[(keys == key) & (abs(b.data) > 1e-8)] for b in B.darrays])
+        res = Res.darrays[0].data[(keys == key) & (abs(B.darrays[0].data) > 1e-8)]
 
         dataset = rsa.data.Dataset(
             data,
@@ -95,18 +86,19 @@ if __name__ == "__main__":
         dataset = dataset.subset_obs('epoch', sel_epoch)
         dataset = dataset.subset_obs('instr', sel_instr)
 
-        # euclidean distance
-        rdm_eucl.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='euclidean', descriptor='cue'))
+        # # # euclidean distance
+        # rdm_eucl.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='euclidean', descriptor='cue'))
 
         # mahalanobis
+        prec = np.linalg.inv(np.diag(res)).astype(float)
         noise = rsa.data.noise.prec_from_unbalanced(dataset, obs_desc='cue', method='shrinkage_diag')
-        rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='cue',
-                                                    noise=noise))
+        # rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='cue',
+        #                                             noise=prec))
         rdm_cv.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='cue',
                                                   noise=noise, cv_descriptor='run'))
 
-    RDMs_eucl = np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0)
-    RDMs_maha = np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0)
+    # RDMs_eucl = np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0)
+    # RDMs_maha = np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0)
     RDMs_cv = np.concatenate([rdm.get_matrices() for rdm in rdm_cv], axis=0)
 
     descr = json.dumps({
@@ -128,9 +120,9 @@ if __name__ == "__main__":
     if len(sel_stimFinger) == 1:
         filename += f'.{sel_stimFinger[0]}'
 
-    np.savez(os.path.join(pathRDM, f'RDMs.eucl.{filename}.npz'),
-             data_array=RDMs_eucl, descriptor=descr, allow_pickle=False)
-    np.savez(os.path.join(pathRDM, f'RDMs.maha.{filename}.npz'),
-             data_array=RDMs_maha, descriptor=descr, allow_pickle=False)
+    # np.savez(os.path.join(pathRDM, f'RDMs.eucl.{filename}.npz'),
+    #          data_array=RDMs_eucl, descriptor=descr, allow_pickle=False)
+    # np.savez(os.path.join(pathRDM, f'RDMs.maha.{filename}.npz'),
+    #          data_array=RDMs_maha, descriptor=descr, allow_pickle=False)
     np.savez(os.path.join(pathRDM, f'RDMs.cv.{filename}.npz'),
              data_array=RDMs_cv, descriptor=descr, allow_pickle=False)

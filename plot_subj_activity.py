@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument('--participant_id', default='subj101', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
-    parser.add_argument('--glm', default='1', help='GLM model')
+    parser.add_argument('--glm', default='2', help='GLM model')
 
     args = parser.parse_args()
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     experiment = 'smp1'
 
-    path = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id, 'psc')
+    path = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id)
     pathSurf = os.path.join(gl.baseDir, experiment, gl.wbDir, participant_id)
     pathAtlas = os.path.join(gl.baseDir, experiment, 'atlases')
 
@@ -51,6 +51,7 @@ if __name__ == "__main__":
                     'SPLa',
                     'SPLp',
                     'V1']}
+
     rois = rois[atlas]
 
     A = nb.load(os.path.join(pathAtlas, f'{atlas}.32k.{Hem}.label.gii'))
@@ -60,10 +61,10 @@ if __name__ == "__main__":
     mapping_dict = dict(zip(label_df['key'], label_df['label']))
     labels = keys.replace(mapping_dict)
 
-    B = nb.load(os.path.join(path, f'psc.{Hem}.func.gii'))
+    B = nb.load(os.path.join(path, f'glm{glm}.con.{Hem}.func.gii'))
     col = [con.metadata['Name'] for con in B.darrays]
-    idx_exec = col.index('psc_exec-.nii')
-    idx_plan_nogo = col.index('psc_plan_nogo-.nii')
+    idx_exec = col.index('con_exec-.nii')
+    idx_plan_nogo = col.index('con_plan_nogo-.nii')
 
     exec = B.darrays[idx_exec].data
     plan_nogo = B.darrays[idx_plan_nogo].data
@@ -91,7 +92,7 @@ if __name__ == "__main__":
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
     axs.set_xlim((axs.get_xlim()[0], axs.get_xlim()[1]))
     axs.axhline(0, axs.get_xlim()[0], axs.get_xlim()[1], color='k', lw=.8)
-    axs.set_ylim([-4, 4])
+    axs.set_ylim([-10, 10])
     axs.legend(loc='lower left')
     # axs.set_ylim([-1, 1])
 

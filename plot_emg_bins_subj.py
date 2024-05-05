@@ -120,6 +120,7 @@ if __name__ == "__main__":
                         legend=False, palette=palette, hue_order=['0%', '25%', '50%', '75%', '100%'])
             axs[c, sf].set_xlabel('')
             axs[c, sf].set_ylabel('')
+            axs[c, sf].set_ylim([0, 30])
             axs[c, sf].set_yscale('linear')
 
     # fig.legend(ncol=3, loc='upper left')

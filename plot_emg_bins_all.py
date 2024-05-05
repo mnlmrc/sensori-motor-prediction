@@ -70,7 +70,7 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(len(channels), len(df['stimFinger'].unique()),
                             sharey=True, sharex=True, figsize=(8, 10))
     for sf, stimF in enumerate(['index', 'ring']):
-        subset = df[df['stimFinger'] == stimF]
+        subset = df[(df['stimFinger'] == stimF) & (df['timewin'] != 'Pre')]
         for c, ch in enumerate(channels):
 
             if (c == 0) & (sf == 0):
@@ -80,13 +80,11 @@ if __name__ == "__main__":
             else:
                 axs[c, sf].set_title(ch)
 
-
-
-            sns.barplot(ax=axs[c, sf], data=subset, x='timewin', y=ch, hue='cue',
-                          legend=False, palette=palette, hue_order=['0%', '25%', '50%', '75%', '100%'], log_scale=False)
+            sns.boxplot(ax=axs[c, sf], data=subset, x='timewin', y=ch, hue='cue', order=['SLR', 'LLR', 'Vol'],
+                          legend=False, palette=palette, hue_order=['0%', '25%', '50%', '75%', '100%'], log_scale=True)
             axs[c, sf].set_xlabel('')
             axs[c, sf].set_ylabel('')
-            axs[c, sf].set_ylim([.5, 10])
+            axs[c, sf].set_ylim([.5, 15])
             # axs[c, sf].set_yscale('log')
 
     # fig.legend(ncol=3, loc='upper left')

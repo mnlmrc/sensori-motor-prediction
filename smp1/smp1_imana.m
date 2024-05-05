@@ -49,7 +49,7 @@ function varargout = smp1_imana(what,varargin)
     imagingDir      = 'imaging_data';                                      % Preprocesses functional data
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
-    glmEstDir       = 'glm1';
+    glmEstDir       = 'glm';
     suitDir = 'suit';
     wbDir   = 'surfaceWB';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
@@ -767,6 +767,251 @@ function varargout = smp1_imana(what,varargin)
                 movefile(source,dest);
             end
 
+        case 'GLM:make_events'
+
+            sn = [];
+            glm = [];
+            vararginoptions(varargin,{'sn', 'glm'})
+
+            operation  = sprintf('GLM:make_glm%d', glm);
+
+            smp1_imana(operation, 'sn', sn)
+
+        case 'GLM:make_glm1'
+            
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
+
+            go = strcmp(D.GoNogo, "go");
+            
+            %% execution
+            exec.BN = D.BN(go);
+            exec.TN = D.TN(go);
+            exec.cue = D.cue(go);
+            exec.stimFinger = D.stimFinger(go);
+            exec.Onset = D.startTimeReal(go) + D.baselineWait(go) + D.planTime(go);
+            exec.Duration = D.execMaxTime(go);
+            
+            for ntrial = 1:length(exec.BN)
+            
+                switch exec.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+            
+                switch exec.stimFinger(ntrial)
+                    case 91999
+                        stimFinger = 'index';
+                    case 99919
+                        stimFinger = 'ring';
+                end
+                
+                exec.eventtype{ntrial, 1} = [cue '_' stimFinger '_exec'];
+                exec.cue_id{ntrial, 1} = cue;
+                exec.stimFinger_id{ntrial, 1} = stimFinger;
+                exec.epoch{ntrial, 1} = 'exec';
+                exec.instruction{ntrial, 1} = 'go';
+                
+            end
+            
+            %% plan go
+            planGo.BN = D.BN(go);
+            planGo.TN = D.TN(go);
+            planGo.cue = D.cue(go);
+            planGo.stimFinger = D.stimFinger(go);
+            planGo.Onset = D.startTimeReal(go) + D.baselineWait(go);
+            planGo.Duration = D.planTime(go);
+            
+            for ntrial = 1:length(planGo.BN)
+            
+                switch planGo.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+            
+                switch planGo.stimFinger(ntrial)
+                    case 91999
+                        stimFinger = 'index';
+                    case 99919
+                        stimFinger = 'ring';
+                end
+                
+                planGo.eventtype{ntrial, 1} = [cue '_' stimFinger '_plan_go'];
+                planGo.cue_id{ntrial, 1} = cue;
+                planGo.stimFinger_id{ntrial, 1} = stimFinger;
+                planGo.epoch{ntrial, 1} = 'plan';
+                planGo.instruction{ntrial, 1} = 'go';
+                
+            end
+            
+            %% plan nogo
+            planNoGo.BN = D.BN(~go);
+            planNoGo.TN = D.TN(~go);
+            planNoGo.cue = D.cue(~go);
+            planNoGo.stimFinger = D.stimFinger(~go);
+            planNoGo.Onset = D.startTimeReal(~go) + D.baselineWait(~go);
+            planNoGo.Duration = D.planTime(~go);
+            
+            for ntrial = 1:length(planNoGo.BN)
+            
+                switch planNoGo.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+                
+                planNoGo.eventtype{ntrial, 1} = [cue '_plan_nogo'];
+                planNoGo.cue_id{ntrial, 1} = cue;
+                planNoGo.stimFinger_id{ntrial, 1} = 'none';
+                planNoGo.epoch{ntrial, 1} = 'plan';
+                planNoGo.instruction{ntrial, 1} = 'nogo';
+                
+            end
+            
+            %% make table
+            
+            exec = struct2table(exec);
+            planGo = struct2table(planGo);
+            planNoGo = struct2table(planNoGo);
+            % rest = struct2table(rest);
+            events = [exec; planGo; planNoGo];
+            
+            %% convert to secs
+            events.Onset = events.Onset ./ 1000;
+            events.Duration = events.Duration ./ 1000;
+            
+            %% export
+             output_folder = fullfile(baseDir, behavDir, subj_id);
+             if ~exist(output_folder, "dir")
+                mkdir(output_folder);
+             end
+            writetable(events, fullfile(output_folder,  'glm1_events.tsv'), 'FileType', 'text', 'Delimiter','\t')       
+
+        case 'GLM:make_glm2'
+            
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
+
+            go = strcmp(D.GoNogo, "go");
+            
+            %% execution
+            exec.BN = D.BN(go);
+            exec.TN = D.TN(go);
+            exec.cue = D.cue(go);
+            exec.stimFinger = D.stimFinger(go);
+            exec.Onset = D.startTimeReal(go) + D.baselineWait(go) + D.planTime(go);
+            exec.Duration = D.execMaxTime(go);
+            
+            for ntrial = 1:length(exec.BN)
+            
+                switch exec.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+            
+                switch exec.stimFinger(ntrial)
+                    case 91999
+                        stimFinger = 'index';
+                    case 99919
+                        stimFinger = 'ring';
+                end
+                
+                exec.eventtype{ntrial, 1} = [cue '_' stimFinger '_exec'];
+                exec.cue_id{ntrial, 1} = cue;
+                exec.stimFinger_id{ntrial, 1} = stimFinger;
+                exec.epoch{ntrial, 1} = 'exec';
+                exec.instruction{ntrial, 1} = 'go';
+                
+            end
+            
+            %% plan nogo
+            planNoGo.BN = D.BN(~go);
+            planNoGo.TN = D.TN(~go);
+            planNoGo.cue = D.cue(~go);
+            planNoGo.stimFinger = D.stimFinger(~go);
+            planNoGo.Onset = D.startTimeReal(~go) + D.baselineWait(~go);
+            planNoGo.Duration = D.planTime(~go);
+            
+            for ntrial = 1:length(planNoGo.BN)
+            
+                switch planNoGo.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+                
+                planNoGo.eventtype{ntrial, 1} = [cue '_plan_nogo'];
+                planNoGo.cue_id{ntrial, 1} = cue;
+                planNoGo.stimFinger_id{ntrial, 1} = 'none';
+                planNoGo.epoch{ntrial, 1} = 'plan';
+                planNoGo.instruction{ntrial, 1} = 'nogo';
+                
+            end
+            
+            %% make table
+            
+            exec = struct2table(exec);
+            planNoGo = struct2table(planNoGo);
+            % rest = struct2table(rest);
+            events = [exec; planNoGo];
+            
+            %% convert to secs
+            events.Onset = events.Onset ./ 1000;
+            events.Duration = events.Duration ./ 1000;
+            
+            %% export
+             output_folder = fullfile(baseDir, behavDir, subj_id);
+             if ~exist(output_folder, "dir")
+                mkdir(output_folder);
+             end
+            writetable(events, fullfile(output_folder,  'glm2_events.tsv'), 'FileType', 'text', 'Delimiter','\t')     
+
         case 'GLM:design'
             
             sn = [];
@@ -785,9 +1030,9 @@ function varargout = smp1_imana(what,varargin)
             
             % Load data once, outside of session loop
             % D = dload(fullfile(baseDir,behavDir,subj_id, sprintf('smp1_%d.dat', sn)));
-            
+            events_file = sprintf('glm%d_events.tsv', glm);
 
-            Dd = dload(fullfile(baseDir,behavDir,subj_id, "events.tsv"));
+            Dd = dload(fullfile(baseDir,behavDir,subj_id, events_file));
             regressors = unique(Dd.eventtype);
             nRegr = length(regressors); 
 
@@ -939,11 +1184,11 @@ function varargout = smp1_imana(what,varargin)
                 
             end
 
-            T.cue0 = strcmp(T.cue, '0%');
-            T.cue25 = strcmp(T.cue, '25%');
-            T.cue50 = strcmp(T.cue, '50%');
-            T.cue75 = strcmp(T.cue, '75%');
-            T.cue100 = strcmp(T.cue, '100%');
+            T.cue000 = strcmp(T.cue, 'cue0');
+            T.cue025 = strcmp(T.cue, 'cue25');
+            T.cue050 = strcmp(T.cue, 'cue50');
+            T.cue075 = strcmp(T.cue, 'cue75');
+            T.cue100 = strcmp(T.cue, 'cue100');
             
             T.index = strcmp(T.stimFinger, 'index');
             T.ring = strcmp(T.stimFinger, 'ring');
@@ -1267,124 +1512,124 @@ function varargout = smp1_imana(what,varargin)
 
             
              
-        case 'GLM:T_contrast'    % make T contrasts for each condition
-            %%% Calculating contrast images.
-
-            sn             = [];    % subjects list
-            glm            = [];              % glm number
-            condition      = {};
-            baseline       = {};         % contrast will be calculated against base (available options: 'rest')
-
-            vararginoptions(varargin, {'sn', 'glm', 'condition', 'baseline'})
-
-            if isempty(sn)
-                error('GLM:T_contrast -> ''sn'' must be passed to this function.')
-            end
-
-            if isempty(glm)
-                error('GLM:T_contrast -> ''glm'' must be passed to this function.')
-            end
-
-            if isempty(condition)
-                error('GLM:T_contrast -> ''condition'' must be passed to this function.')
-            end
-
-            if isempty(condition)
-                error('GLM:T_contrast -> ''baseline'' must be passed to this function.')
-            end
-
-            subj_id = pinfo.subj_id{pinfo.sn==sn};
-
-            % get the subject id folder name
-            fprintf('Contrasts for participant %s\n', subj_id)
-            glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
-
-            % load the SPM.mat file
-            SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
-
-            T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
-            
-            xcn = zeros(length(T.name));
-            for cn=1:length(condition)             
-                if cn > 1
-                    if sum(xcn .* T.(condition{cn})) == 0
-                        xcn = xcn + T.(condition{cn});
-                    else
-                        xcn = xcn .* T.(condition{cn});
-                    end
-                    contrast1 = [contrast1 '&' condition{cn}];
-                else
-                    xcn = T.(condition{cn});
-                    contrast1 = condition{cn};
-                end
-            end
-
-            xbs = zeros(length(T.name));
-            contrast2 = '';
-            for bs=1:length(baseline)
-                if bs > 1
-                    if sum(xbs .* T.(condition{bs})) == 0
-                        xbs = xbs + T.(condition{bs});
-                    else
-                        xbs = xbs .* T.(baseline{bs});
-                    end
-                    contrast2 = [contrast2 '&' baseline{bs}];
-                else
-                    xbs = T.(baseline{bs});
-                    contrast2 = baseline{bs};
-                end
-            end
-
-            xcon = zeros(size(SPM.xX.X,2), 1);
-            for ic = 1:length(xcon) - max(T.run)
-                if xcn(ic) == 1
-                    xcon(ic) = 1;
-                elseif xbs(ic) == 1
-                    xcon(ic) = -1;
-                end
-            end
-
-            xcon = xcon/sum(abs(xcon));
-            contrast_name = sprintf('%s-%s', contrast1, contrast2);
-            if ~isfield(SPM, 'xCon')
-                SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-                cname_idx = 1;
-            elseif sum(strcmp(contrast_name, {SPM.xCon.name})) > 0
-                idx = find(strcmp(contrast_name, {SPM.xCon.name}));
-                SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-                cname_idx = idx;
-            else
-                SPM.xCon(end+1) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-                cname_idx = length(SPM.xCon);
-            end
-            SPM = spm_contrasts(SPM,1:length(SPM.xCon));
-            save('SPM.mat', 'SPM','-v7.3');
-%             SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
-%             save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
-
-            % rename contrast images and spmT images
-            conName = {'con','spmT'};
-            for n = 1:numel(conName)
-                oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx));
-                newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
-                movefile(oldName, newName);
-            end % conditions (n, conName: con and spmT)
-        
-        % case 'SURF:reconall' % Freesurfer reconall routine
-        %     % Calls recon-all, which performs, all of the
-        %     % FreeSurfer cortical reconstruction process
-        % 
-        %     sn   = subj_id; % subject list
-        % 
-        %     vararginoptions(varargin, {'sn'});
-        % 
-        %     % Parent dir of anatomical images    
-        %     for s = sn
-        %         fprintf('- recon-all %s\n', subj_str{s});
-        %                     % Get the directory of subjects anatomical;
-        %         freesurfer_reconall(fs_dir, subj_str{s}, ...
-        %                   fullfile(anatomical_dir, subj_str{s}, 'anatomical.nii'));
-        %     end % s (sn)
+%         case 'GLM:T_contrast'    % make T contrasts for each condition
+%             %%% Calculating contrast images.
+% 
+%             sn             = [];    % subjects list
+%             glm            = [];              % glm number
+%             condition      = {};
+%             baseline       = {};         % contrast will be calculated against base (available options: 'rest')
+% 
+%             vararginoptions(varargin, {'sn', 'glm', 'condition', 'baseline'})
+% 
+%             if isempty(sn)
+%                 error('GLM:T_contrast -> ''sn'' must be passed to this function.')
+%             end
+% 
+%             if isempty(glm)
+%                 error('GLM:T_contrast -> ''glm'' must be passed to this function.')
+%             end
+% 
+%             if isempty(condition)
+%                 error('GLM:T_contrast -> ''condition'' must be passed to this function.')
+%             end
+% 
+%             if isempty(condition)
+%                 error('GLM:T_contrast -> ''baseline'' must be passed to this function.')
+%             end
+% 
+%             subj_id = pinfo.subj_id{pinfo.sn==sn};
+% 
+%             % get the subject id folder name
+%             fprintf('Contrasts for participant %s\n', subj_id)
+%             glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
+% 
+%             % load the SPM.mat file
+%             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
+% 
+%             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
+% 
+%             xcn = zeros(length(T.name));
+%             for cn=1:length(condition)             
+%                 if cn > 1
+%                     if sum(xcn .* T.(condition{cn})) == 0
+%                         xcn = xcn + T.(condition{cn});
+%                     else
+%                         xcn = xcn .* T.(condition{cn});
+%                     end
+%                     contrast1 = [contrast1 '&' condition{cn}];
+%                 else
+%                     xcn = T.(condition{cn});
+%                     contrast1 = condition{cn};
+%                 end
+%             end
+% 
+%             xbs = zeros(length(T.name));
+%             contrast2 = '';
+%             for bs=1:length(baseline)
+%                 if bs > 1
+%                     if sum(xbs .* T.(condition{bs})) == 0
+%                         xbs = xbs + T.(condition{bs});
+%                     else
+%                         xbs = xbs .* T.(baseline{bs});
+%                     end
+%                     contrast2 = [contrast2 '&' baseline{bs}];
+%                 else
+%                     xbs = T.(baseline{bs});
+%                     contrast2 = baseline{bs};
+%                 end
+%             end
+% 
+%             xcon = zeros(size(SPM.xX.X,2), 1);
+%             for ic = 1:length(xcon) - max(T.run)
+%                 if xcn(ic) == 1
+%                     xcon(ic) = 1;
+%                 elseif xbs(ic) == 1
+%                     xcon(ic) = -1;
+%                 end
+%             end
+% 
+%             xcon = xcon/sum(abs(xcon));
+%             contrast_name = sprintf('%s-%s', contrast1, contrast2);
+%             if ~isfield(SPM, 'xCon')
+%                 SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+%                 cname_idx = 1;
+%             elseif sum(strcmp(contrast_name, {SPM.xCon.name})) > 0
+%                 idx = find(strcmp(contrast_name, {SPM.xCon.name}));
+%                 SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+%                 cname_idx = idx;
+%             else
+%                 SPM.xCon(end+1) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+%                 cname_idx = length(SPM.xCon);
+%             end
+%             SPM = spm_contrasts(SPM,1:length(SPM.xCon));
+%             save('SPM.mat', 'SPM','-v7.3');
+% %             SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
+% %             save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
+% 
+%             % rename contrast images and spmT images
+%             conName = {'con','spmT'};
+%             for n = 1:numel(conName)
+%                 oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx));
+%                 newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
+%                 movefile(oldName, newName);
+%             end % conditions (n, conName: con and spmT)
+% 
+%         % case 'SURF:reconall' % Freesurfer reconall routine
+%         %     % Calls recon-all, which performs, all of the
+%         %     % FreeSurfer cortical reconstruction process
+%         % 
+%         %     sn   = subj_id; % subject list
+%         % 
+%         %     vararginoptions(varargin, {'sn'});
+%         % 
+%         %     % Parent dir of anatomical images    
+%         %     for s = sn
+%         %         fprintf('- recon-all %s\n', subj_str{s});
+%         %                     % Get the directory of subjects anatomical;
+%         %         freesurfer_reconall(fs_dir, subj_str{s}, ...
+%         %                   fullfile(anatomical_dir, subj_str{s}, 'anatomical.nii'));
+%         %     end % s (sn)
             
         case 'SURF:fs2wb'          % Resampling subject from freesurfer fsaverage to fs_LR
             
@@ -1411,13 +1656,14 @@ function varargout = smp1_imana(what,varargin)
             glm = [];
             % hemi = [1, 2];      % list of hemispheres
            
-            vararginoptions(varargin, {'sn', 'type'});
+            vararginoptions(varargin, {'sn', 'glm', 'type'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
+            glmEstDir = [glmEstDir num2str(glm)];
             
             V = {};
             cols = {};
-            if strcmp(type, 'tval')
+            if strcmp(type, 'spmT')
 %                 filename = ['spmT_' id '.func.gii'];
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'spmT_*.nii'));
                 for f = 1:length(files)
@@ -1442,13 +1688,15 @@ function varargout = smp1_imana(what,varargin)
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'con')
-                type = 'cont'; % you cannot create a folder name 'con' for operating system reasons
                 files = dir(fullfile(baseDir, glmEstDir, subj_id, 'con_*.nii'));
                 for f = 1:length(files)
                     fprintf([files(f).name '\n'])
                     V{f} = fullfile(files(f).folder, files(f).name);
                     cols{f} = files(f).name;
                 end
+            elseif strcmp(type, 'res')
+                V{1} = fullfile(baseDir, glmEstDir, subj_id, 'ResMS.nii');
+                cols{1} = 'ResMS';
             end
 
             hemLpial = fullfile(baseDir, wbDir, subj_id,  [subj_id '.L.pial.32k.surf.gii']);
@@ -1469,12 +1717,12 @@ function varargout = smp1_imana(what,varargin)
             GL = surf_vol2surf(c1L,c2L,V,'anatomicalStruct','CortexLeft', 'exclude_thres', 0.9, 'faces', hemLpial.faces);
             GL = surf_makeFuncGifti(GL.cdata,'anatomicalStruct', 'CortexLeft', 'columnNames', cols);
     
-            save(GL, fullfile(baseDir, wbDir, subj_id,  type, [type '.L.func.gii']))
+            save(GL, fullfile(baseDir, wbDir, subj_id, [glmEstDir '.'                                               type '.L.func.gii']))
     
             GR = surf_vol2surf(c1R,c2R,V,'anatomicalStruct','CortexRight', 'exclude_thres', 0.9, 'faces', hemRpial.faces);
             GR = surf_makeFuncGifti(GR.cdata,'anatomicalStruct', 'CortexRight', 'columnNames', cols);
 
-            save(GR, fullfile(baseDir, wbDir, subj_id,  type, [type '.R.func.gii']))
+            save(GR, fullfile(baseDir, wbDir, subj_id, [glmEstDir '.' type '.R.func.gii']))
             
 
         case 'SURF:resample_labelFS2WB'
