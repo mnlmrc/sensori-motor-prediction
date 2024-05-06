@@ -11,14 +11,14 @@ import globals as gl
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Input parameters")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere (L/R)')
-    parser.add_argument('--glm', default='1', help='GLM model (e.g., 1, 2, ...)')
+    parser.add_argument('--glm', default='2', help='GLM model (e.g., 1, 2, ...)')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
-    parser.add_argument('--epoch', nargs='+', default=['exec', 'plan'], help='Selected epoch')
-    parser.add_argument('--stimFinger', nargs='+',default=['index', 'ring', 'none'], help='Selected stimulated finger')
-    parser.add_argument('--instr', nargs='+', default=['go', 'nogo'], help='Selected instruction')
+    parser.add_argument('--epoch', nargs='+', default=['plan'], help='Selected epoch')
+    parser.add_argument('--stimFinger', nargs='+',default=['none'], help='Selected stimulated finger')
+    parser.add_argument('--instr', nargs='+', default=['nogo'], help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -54,6 +54,15 @@ if __name__ == "__main__":
     epoch = reginfo.epoch.to_list()
     instr = reginfo.instr.to_list()
     run = reginfo.run.to_list()
+
+    cues = pd.DataFrame([('0%', 'cue0'),
+                         ('25%', 'cue25'),
+                         ('50%', 'cue50'),
+                         ('75%', 'cue75'),
+                         ('100%', 'cue100')],
+                        columns=['label', 'instr'])
+    map_dict = dict(zip(cues['instr'], cues['label']))
+    cue = [map_dict.get(item, item) for item in cue]
 
     A = nb.load(os.path.join(pathAtlas, f'{atlas}.32k.{Hem}.label.gii'))
     keys = A.darrays[0].data

@@ -9,15 +9,15 @@ import rsatoolbox as rsa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
-    parser.add_argument('--glm', default='1', help='GLM model')
+    parser.add_argument('--glm', default='2', help='GLM model')
     parser.add_argument('--dist', default='cv', help='Selected dist')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
-    parser.add_argument('--epoch', nargs='+', default=['exec', 'plan'], help='Selected epoch')
-    parser.add_argument('--stimFinger', nargs='+', default=['index', 'ring', 'none'], help='Selected stimulated finger')
-    parser.add_argument('--instr', nargs='+', default=['go', 'nogo'], help='Selected instruction')
+    parser.add_argument('--epoch', nargs='+', default=['plan'], help='Selected epoch')
+    parser.add_argument('--stimFinger', nargs='+', default=['none'], help='Selected stimulated finger')
+    parser.add_argument('--instr', nargs='+', default=['nogo'], help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
                     pattern_descriptor='cue',
                     n_row=1,
                     figsize=(15, 3.5),
-                    vmin=RDMs.get_matrices().min(), vmax=RDMs.get_matrices().max())
+                    vmin=0, vmax=RDMs.get_matrices().max())
 
     # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
     fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}, hem:{Hem}')

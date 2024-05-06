@@ -1012,6 +1012,143 @@ function varargout = smp1_imana(what,varargin)
              end
             writetable(events, fullfile(output_folder,  'glm2_events.tsv'), 'FileType', 'text', 'Delimiter','\t')     
 
+        case 'GLM:make_glm3'
+            
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
+
+            go = strcmp(D.GoNogo, "go");
+            
+            %% execution
+            exec.BN = D.BN(go);
+            exec.TN = D.TN(go);
+            exec.cue = D.cue(go);
+            exec.stimFinger = D.stimFinger(go);
+            exec.Onset = D.startTimeReal(go) + D.baselineWait(go) + D.planTime(go);
+            exec.Duration = zeros(length(exec.BN), 1);
+            
+            for ntrial = 1:length(exec.BN)
+            
+                switch exec.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+            
+                switch exec.stimFinger(ntrial)
+                    case 91999
+                        stimFinger = 'index';
+                    case 99919
+                        stimFinger = 'ring';
+                end
+                
+                exec.eventtype{ntrial, 1} = [cue '_' stimFinger '_exec'];
+                exec.cue_id{ntrial, 1} = cue;
+                exec.stimFinger_id{ntrial, 1} = stimFinger;
+                exec.epoch{ntrial, 1} = 'exec';
+                exec.instruction{ntrial, 1} = 'go';
+                
+            end
+            
+            %% plan go
+            planGo.BN = D.BN(go);
+            planGo.TN = D.TN(go);
+            planGo.cue = D.cue(go);
+            planGo.stimFinger = D.stimFinger(go);
+            planGo.Onset = D.startTimeReal(go) + D.baselineWait(go);
+            planGo.Duration = zeros(length(planGo.BN), 1);
+            
+            for ntrial = 1:length(planGo.BN)
+            
+                switch planGo.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+            
+                switch planGo.stimFinger(ntrial)
+                    case 91999
+                        stimFinger = 'index';
+                    case 99919
+                        stimFinger = 'ring';
+                end
+                
+                planGo.eventtype{ntrial, 1} = [cue '_' stimFinger '_plan_go'];
+                planGo.cue_id{ntrial, 1} = cue;
+                planGo.stimFinger_id{ntrial, 1} = stimFinger;
+                planGo.epoch{ntrial, 1} = 'plan';
+                planGo.instruction{ntrial, 1} = 'go';
+                
+            end
+            
+            %% plan nogo
+            planNoGo.BN = D.BN(~go);
+            planNoGo.TN = D.TN(~go);
+            planNoGo.cue = D.cue(~go);
+            planNoGo.stimFinger = D.stimFinger(~go);
+            planNoGo.Onset = D.startTimeReal(~go) + D.baselineWait(~go);
+            planNoGo.Duration = zeros(length(planNoGo.BN), 1);
+            
+            for ntrial = 1:length(planNoGo.BN)
+            
+                switch planNoGo.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+                
+                planNoGo.eventtype{ntrial, 1} = [cue '_plan_nogo'];
+                planNoGo.cue_id{ntrial, 1} = cue;
+                planNoGo.stimFinger_id{ntrial, 1} = 'none';
+                planNoGo.epoch{ntrial, 1} = 'plan';
+                planNoGo.instruction{ntrial, 1} = 'nogo';
+                
+            end
+            
+            %% make table
+            
+            exec = struct2table(exec);
+            planGo = struct2table(planGo);
+            planNoGo = struct2table(planNoGo);
+            % rest = struct2table(rest);
+            events = [exec; planGo; planNoGo];
+            
+            %% convert to secs
+            events.Onset = events.Onset ./ 1000;
+            events.Duration = events.Duration ./ 1000;
+            
+            %% export
+             output_folder = fullfile(baseDir, behavDir, subj_id);
+             if ~exist(output_folder, "dir")
+                mkdir(output_folder);
+             end
+            writetable(events, fullfile(output_folder,  'glm3_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
+
         case 'GLM:design'
             
             sn = [];
@@ -1399,7 +1536,7 @@ function varargout = smp1_imana(what,varargin)
         %     % load the SPM.mat file
         %     SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
 
-
+        
 
         case 'GLM:calc_PSC'
 
