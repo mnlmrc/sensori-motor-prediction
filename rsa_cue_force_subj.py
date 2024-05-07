@@ -26,21 +26,21 @@ if __name__ == "__main__":
 
     participants = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
 
-    npz = np.load(os.path.join(path, 'emg', f'smp0_{sn}_binned.npz'))
-    emg = npz['data_array'][1:]
-    emg = emg.reshape((emg.shape[1], emg.shape[2], emg.shape[0]))
+    npz = np.load(os.path.join(path, 'mov', f'smp0_{sn}_binned.npz'))
+    force = npz['data_array']
+    force = force.reshape((force.shape[1], force.shape[2], force.shape[0]))
 
     dat = pd.read_csv(os.path.join(path, f'smp0_{sn}.dat'), sep='\t')
-    blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_emg.iloc[0].split('.')]
+    blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_mov.iloc[0].split('.')]
     dat = dat[dat.BN.isin(blocks)]
-    channels = participants[participants['sn'] == sn].channels_emg.iloc[0].split(',')
+    channels = ['thumb', 'index', 'middle', 'ring', 'pinkie']
 
     run = dat.BN.to_list()
 
     cue = dat.chordID.to_list()
     stimFinger = dat.stimFinger.to_list()
     time_point = np.linspace(0, 2, 3)
-    timewin = ['SLR', 'LLR', 'Vol']
+    timewin = ['Pre', 'LLR', 'Vol']
 
     map_cue = pd.DataFrame([('0%', 93),
                             ('25%', 12),
@@ -57,18 +57,8 @@ if __name__ == "__main__":
     map_dict = dict(zip(map_stimFinger['code'], map_stimFinger['label']))
     stimFinger = [map_dict.get(item, item) for item in stimFinger]
 
-    # RDMs = list()
-    # for sf, stimF in enumerate(np.unique(np.array(stimFinger))):
-    # dataset = rsa.data.TemporalDataset(
-    #     emg[stimFinger == stimF],
-    #     channel_descriptors={'channels': channels},
-    #     obs_descriptors={'cue': [cue[i] for i in np.where(stimFinger == stimF)[0]],
-    #                      'run': [run[i] for i in np.where(stimFinger == stimF)[0]]},
-    #     time_descriptors={'time': time_point}
-    # )
-
     dataset = rsa.data.TemporalDataset(
-        emg,
+        force,
         channel_descriptors={'channels': channels},
         obs_descriptors={'stimFinger,cue': [sf + ',' + c for c, sf in zip(cue, stimFinger)], 'run': run, },
         time_descriptors={'time': time_point}
@@ -80,8 +70,9 @@ if __name__ == "__main__":
     for ds in dataset_split:
         ds.measurements = ds.measurements.squeeze()
         noise = rsa.data.noise.prec_from_unbalanced(ds, obs_desc='stimFinger,cue', method='shrinkage_diag')
-        rdms.append(rsa.rdm.calc_rdm_unbalanced(ds, method='crossnobis', descriptor='stimFinger,cue',
-                                                noise=noise, cv_descriptor='run'))
+        # rdms.append(rsa.rdm.calc_rdm_unbalanced(ds, method='crossnobis', descriptor='stimFinger,cue',
+        #                                         noise=noise, cv_descriptor='run'))
+        rdms.append(rsa.rdm.calc_rdm_unbalanced(ds, method='euclidean', descriptor='stimFinger,cue'))
 
     rdms = rsa.rdm.concat(rdms)
     rdms.rdm_descriptors = {'timewin': timewin}
@@ -114,17 +105,19 @@ if __name__ == "__main__":
     cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
     cbar.set_label('cross-validated multivariate distance (a.u.)')
 
+    fig.subplots_adjust(bottom=.4)
+
     # RDMs.append(rdm)
 
     descr = json.dumps({
         'experiment': experiment,
         'participant': participant_id,
-        'pattern_descriptors': cue,
-        'rdm_descriptors': {'timew': ['SLR', 'LLR', 'Vol']}
+        'pattern_descriptors': rdms.pattern_descriptors,
+        'rdm_descriptors': {'timew': ['Pre', 'LLR', 'Vol']}
     })
 
     # RDMs = np.array([RDMs[0].get_matrices(), RDMs[1].get_matrices()])
     RDMs = rdms.get_matrices()
 
-    np.savez(os.path.join(path, 'emg', f'smp0_{sn}_RDMs.npz'),
+    np.savez(os.path.join(path, 'mov', f'smp0_{sn}_RDMs.npz'),
              data_array=RDMs, descriptor=descr, allow_pickle=False)

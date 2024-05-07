@@ -119,7 +119,7 @@ if __name__ == "__main__":
     descr = json.dumps({
         'experiment': experiment,
         'participant': participant_id,
-        'pattern_descriptors': cue,
+        'pattern_descriptors': rdms.pattern_descriptors,
         'rdm_descriptors': {'timew': ['SLR', 'LLR', 'Vol']}
     })
 
