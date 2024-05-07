@@ -16,7 +16,7 @@ if __name__ == "__main__":
                                                    'subj108',
                                                    'subj109',
                                                    'subj110'], help='')
-    parser.add_argument('--method', default='euclidean')
+    parser.add_argument('--method', default='crossnobis')
 
     args = parser.parse_args()
 
@@ -24,8 +24,6 @@ if __name__ == "__main__":
     participants = args.participants
     method = args.method
 
-    os.system('pwd')
-
     for participant in participants:
-        os.system(f'python3 rsa_cue_force_subj.py --participant_id {participant} --method {method}')
+        os.system(f'python3 rsa_cue_emg_subj.py --participant_id {participant} --method {method}')
         # print(result.stdout.decode())

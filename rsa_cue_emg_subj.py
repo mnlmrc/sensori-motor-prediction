@@ -13,11 +13,14 @@ import globals as gl
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Input parameters")
-    parser.add_argument('--participant_id', default='subj110', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--method', default='crossnobis', help='')
 
     args = parser.parse_args()
 
     participant_id = args.participant_id
+    # channels = args.channels
+    method = args.method
 
     experiment = 'smp0'
 
@@ -28,7 +31,7 @@ if __name__ == "__main__":
 
     npz = np.load(os.path.join(path, 'emg', f'smp0_{sn}_binned.npz'))
     emg = npz['data_array'][1:]
-    emg = emg.reshape((emg.shape[1], emg.shape[2], emg.shape[0]))
+    # emg = emg.reshape((emg.shape[1], emg.shape[2], emg.shape[0]))
 
     dat = pd.read_csv(os.path.join(path, f'smp0_{sn}.dat'), sep='\t')
     blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_emg.iloc[0].split('.')]
@@ -57,30 +60,15 @@ if __name__ == "__main__":
     map_dict = dict(zip(map_stimFinger['code'], map_stimFinger['label']))
     stimFinger = [map_dict.get(item, item) for item in stimFinger]
 
-    # RDMs = list()
-    # for sf, stimF in enumerate(np.unique(np.array(stimFinger))):
-    # dataset = rsa.data.TemporalDataset(
-    #     emg[stimFinger == stimF],
-    #     channel_descriptors={'channels': channels},
-    #     obs_descriptors={'cue': [cue[i] for i in np.where(stimFinger == stimF)[0]],
-    #                      'run': [run[i] for i in np.where(stimFinger == stimF)[0]]},
-    #     time_descriptors={'time': time_point}
-    # )
-
-    dataset = rsa.data.TemporalDataset(
-        emg,
-        channel_descriptors={'channels': channels},
-        obs_descriptors={'stimFinger,cue': [sf + ',' + c for c, sf in zip(cue, stimFinger)], 'run': run, },
-        time_descriptors={'time': time_point}
-    )
-
-    dataset_split = dataset.split_time('time')
-
     rdms = list()
-    for ds in dataset_split:
-        ds.measurements = ds.measurements.squeeze()
-        noise = rsa.data.noise.prec_from_unbalanced(ds, obs_desc='stimFinger,cue', method='shrinkage_diag')
-        rdms.append(rsa.rdm.calc_rdm_unbalanced(ds, method='crossnobis', descriptor='stimFinger,cue',
+    for f in range(emg.shape[0]):
+        dataset = rsa.data.Dataset(
+            emg[f],
+            channel_descriptors={'channels': channels},
+            obs_descriptors={'stimFinger,cue': [sf + ',' + c for c, sf in zip(cue, stimFinger)], 'run': run},
+        )
+        noise = rsa.data.noise.prec_from_unbalanced(dataset, obs_desc='stimFinger,cue', method='shrinkage_diag')
+        rdms.append(rsa.rdm.calc_rdm_unbalanced(dataset, method=method, descriptor='stimFinger,cue',
                                                 noise=noise, cv_descriptor='run'))
 
     rdms = rsa.rdm.concat(rdms)
@@ -100,7 +88,8 @@ if __name__ == "__main__":
                                      ax=axs[r],
                                      rdm_descriptor='timewin',
                                      vmin=rdms.get_matrices().min(),
-                                     vmax=rdms.get_matrices().max())
+                                     vmax=rdms.get_matrices().max(),
+                                     cmap='classic')
 
         axs[r].axvline(3.5, color='k', lw=.8)
         axs[r].axhline(3.5, color='k', lw=.8)

@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     stimFinger = dat.stimFinger
     cue = dat.chordID
-    channels = ['thumb', 'index', 'middle', 'ring', 'pinkie']
+    channels_mov = participants[participants['sn'] == sn].channels_mov.iloc[0].split(',')
     # columns = pd.Series(descr['columns'])
 
     map_cue = pd.DataFrame([('0%', 93),
@@ -69,8 +69,8 @@ if __name__ == "__main__":
     prestim = int(1 * fsample)
     poststim = int(2 * fsample)
     win = {'Pre': (prestim - int(.5 * fsample), prestim),
-           'LLR': (prestim + int(.2 * fsample), prestim + int(.5 * fsample)),
-           'Vol': (prestim + int(.5 * fsample), prestim + int(1 * fsample))}
+           'LLR': (prestim + int(.2 * fsample), prestim + int(.4 * fsample)),
+           'Vol': (prestim + int(.4 * fsample), prestim + int(1 * fsample))}
 
     # compute averages in time windows
     force_binned = np.zeros((len(win.keys()), force.shape[0], force.shape[1]))
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     # force_binned /= force_binned[0]
 
-    df_force = pd.DataFrame(data=force_binned.reshape((-1, force.shape[1])), columns=channels)
+    df_force = pd.DataFrame(data=force_binned.reshape((-1, force.shape[1])), columns=channels_mov)
     df_force['stimFinger'] = stimFinger * len(win.keys())
     df_force['cue'] = cue * len(win.keys())
     df_force['timewin'] = np.concatenate([[key] * force.shape[0] for key in win.keys()])
@@ -106,9 +106,9 @@ if __name__ == "__main__":
     colors = make_colors(5)
     palette = {cu: color for cu, color in zip(map_cue['label'], colors)}
 
-    fig, axs = plt.subplots(len(channels), len(np.unique(stimFinger)),
+    fig, axs = plt.subplots(len(channels_mov), len(np.unique(stimFinger)),
                             sharey=True, sharex=True, figsize=(8, 10))
-    for c, ch in enumerate(channels):
+    for c, ch in enumerate(channels_mov):
         for sf, stimF in enumerate(np.unique(stimFinger)):
 
             if (c == 0) & (sf == 0):

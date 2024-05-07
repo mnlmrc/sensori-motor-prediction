@@ -29,9 +29,8 @@ if __name__ == "__main__":
 
     path = os.path.join(gl.baseDir, experiment)
 
-    RDMs_mat = np.zeros((len(participants), 2, 3, 4, 4))
+    RDMs_mat = np.zeros((len(participants), 3, 8, 8))
     for p, participant in enumerate(participants):
-
         sn = int(''.join([c for c in participant if c.isdigit()]))
 
         npz = np.load(os.path.join(path, participant, 'emg', f'smp0_{sn}_RDMs.npz'))
@@ -41,36 +40,48 @@ if __name__ == "__main__":
 
     RDMs_mat_av = RDMs_mat.mean(axis=0)
 
-    stimFinger = ['index', 'ring']
-    cue = {
-        'index': ['25%', '50%', '75%', '100%'],
-        'ring': ['0%', '25%', '50%', '75%']
-    }
+    # stimFinger = ['index', 'ring']
+    # cue = {
+    #     'index': ['25%', '50%', '75%', '100%'],
+    #     'ring': ['0%', '25%', '50%', '75%']
+    # }
     timew = descr['rdm_descriptors']['timew']
 
     vmax = RDMs_mat_av.max()
     vmin = RDMs_mat_av.min()
 
     fig, axs = plt.subplots(2, 3, sharey='row')
-    for sf, stimF in enumerate(stimFinger):
-        for t, time in enumerate(timew):
-            RDMs = rsa.rdm.RDMs(RDMs_mat_av[sf, t].reshape(1, 4, 4),
-                                pattern_descriptors={'cue': cue[stimF]},
-                                rdm_descriptors={'cond': f'{stimF}, {time}'})
-            RDMs.n_rdm = 1
-            RDMs.n_cond = 4
+    # for sf, stimF in enumerate(stimFinger):
+    for t, time in enumerate(timew):
+        RDMs = rsa.rdm.RDMs(RDMs_mat_av[t].reshape(1, 8, 8),
+                            pattern_descriptors=descr['pattern_descriptors'],
+                            rdm_descriptors={'cond': f'{time}'})
+        RDMs.n_rdm = 1
+        RDMs.n_cond = 8
 
-            if stimF is 'index':
-                RDMs.reorder(np.array([1, 2, 3, 0]))
+        # if stimF is 'index':
+        #     RDMs.reorder(np.array([1, 2, 3, 0]))
 
-            rsa.vis.show_rdm_panel(RDMs,
-                                   ax=axs[sf, t],
-                                   vmin=vmin,
-                                   vmax=vmax,
-                                   rdm_descriptor='cond')
+        rsa.vis.show_rdm_panel(RDMs,
+                               ax=axs[0, t],
+                               vmin=vmin,
+                               vmax=vmax,
+                               rdm_descriptor='cond',
+                               cmap='viridis')
 
-            axs[sf, t].set_xticks([0, 1, 2, 3])
-            axs[sf, t].set_xticklabels(cue[stimF])
-            axs[sf, t].set_yticks([0, 1, 2, 3])
-            axs[sf, t].set_yticklabels(cue[stimF])
+        axs[0, t].axvline(3.5, color='k', lw=.8)
+        axs[0, t].axhline(3.5, color='k', lw=.8)
+
+        axs[0, t].set_xticks(np.linspace(0, 7, 8))
+        axs[0, t].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=45, ha='right')
+        axs[0, t].set_yticks(np.linspace(0, 7, 8))
+        axs[0, t].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'])
+
+        rsa.vis.scatter_plot.show_MDS_panel(RDMs,
+                                            axs[1, t],
+                                            pattern_descriptor='stimFinger,cue')
+        axs[1, t].set_xlim([-3, 3])
+        axs[1, t].set_ylim([-3, 3])
+
+    fig.suptitle('RDMs, emg')
 
