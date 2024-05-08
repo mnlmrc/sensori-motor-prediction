@@ -1149,6 +1149,113 @@ function varargout = smp1_imana(what,varargin)
              end
             writetable(events, fullfile(output_folder,  'glm3_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
 
+        case 'GLM:make_glm4'
+            
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
+
+            go = strcmp(D.GoNogo, "go");
+            
+            %% execution
+            exec.BN = D.BN(go);
+            exec.TN = D.TN(go);
+            exec.cue = D.cue(go);
+            exec.stimFinger = D.stimFinger(go);
+            exec.Onset = D.startTimeReal(go) + D.baselineWait(go) + D.planTime(go);
+            exec.Duration = zeros(length(exec.BN), 1);
+            
+            for ntrial = 1:length(exec.BN)
+            
+                switch exec.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+            
+                switch exec.stimFinger(ntrial)
+                    case 91999
+                        stimFinger = 'index';
+                    case 99919
+                        stimFinger = 'ring';
+                end
+                
+                exec.eventtype{ntrial, 1} = [cue '_' stimFinger '_exec'];
+                exec.cue_id{ntrial, 1} = cue;
+                exec.stimFinger_id{ntrial, 1} = stimFinger;
+                exec.epoch{ntrial, 1} = 'exec';
+                exec.instruction{ntrial, 1} = 'go';
+                
+            end
+            
+            %% planning
+            plan.BN = D.BN;
+            plan.TN = D.TN;
+            plan.cue = D.cue;
+            plan.stimFinger = D.stimFinger;
+            plan.Onset = D.startTimeReal + D.baselineWait;
+            plan.Duration = zeros(length(plan.BN), 1);
+            plan.instruction = D.GoNogo;
+            
+            for ntrial = 1:length(plan.BN)
+            
+                switch plan.cue(ntrial)
+                    case 39
+                        cue = 'cue100';
+                    case 21
+                        cue = 'cue75';
+                    case 44
+                        cue = 'cue50';
+                    case 12
+                        cue = 'cue25';
+                    case 93
+                        cue = 'cue0';
+                end
+            
+                switch plan.stimFinger(ntrial)
+                    case 91999
+                        stimFinger = 'index';
+                    case 99919
+                        stimFinger = 'ring';
+                    case 99999
+                        stimFinger = 'none';
+                end
+                
+                plan.eventtype{ntrial, 1} = [cue '_' stimFinger '_plan_go'];
+                plan.cue_id{ntrial, 1} = cue;
+                plan.stimFinger_id{ntrial, 1} = stimFinger;
+                plan.epoch{ntrial, 1} = 'plan';
+                
+            end
+            
+            %% make table
+            
+            exec = struct2table(exec);
+            plan = struct2table(plan);
+            % rest = struct2table(rest);
+            events = [exec; plan];
+            
+            %% convert to secs
+            events.Onset = events.Onset ./ 1000;
+            events.Duration = events.Duration ./ 1000;
+            
+            %% export
+             output_folder = fullfile(baseDir, behavDir, subj_id);
+             if ~exist(output_folder, "dir")
+                mkdir(output_folder);
+             end
+            writetable(events, fullfile(output_folder,  'glm4_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
+
         case 'GLM:design'
             
             sn = [];

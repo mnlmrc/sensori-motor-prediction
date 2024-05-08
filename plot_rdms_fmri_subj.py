@@ -9,15 +9,15 @@ import rsatoolbox as rsa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
-    parser.add_argument('--glm', default='2', help='GLM model')
-    parser.add_argument('--dist', default='cv', help='Selected dist')
+    parser.add_argument('--glm', default='4', help='GLM model')
+    parser.add_argument('--dist', default='eucl', help='Selected dist')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
     parser.add_argument('--epoch', nargs='+', default=['plan'], help='Selected epoch')
     parser.add_argument('--stimFinger', nargs='+', default=['none'], help='Selected stimulated finger')
-    parser.add_argument('--instr', nargs='+', default=['nogo'], help='Selected instruction')
+    parser.add_argument('--instr', nargs='+', default=['nogo', 'go'], help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -53,30 +53,57 @@ if __name__ == "__main__":
                         rdm_descriptors=descr['rdm_descriptors'],
                         pattern_descriptors=descr['pattern_descriptors'])
 
-    if sel_stimFinger == ['index']:
-        index = [1, 2, 3, 0]
-    elif sel_stimFinger == ['ring']:
-        index = [0, 1, 2, 3]
-    else:
+    if sel_instr == ['plan']:
         index = [0, 2, 3, 4, 1]
+    else:
+        index = [1, 2, 3, 0, 4, 5, 6, 7]
+    # if sel_stimFinger == ['index']:
+    #     index = [1, 2, 3, 0]
+    # elif sel_stimFinger == ['ring']:
+    #     index = [0, 1, 2, 3]
+    # else:
+    #     index = [0, 2, 3, 4, 1]
     RDMs.reorder(index)
     # print(RDMs.pattern_descriptors['cue'])
 
     # visualize
-    fig, axs, oth = rsa.vis.show_rdm(
-                    RDMs,
-                    show_colorbar=None,
-                    rdm_descriptor='roi',
-                    pattern_descriptor='cue',
-                    n_row=1,
-                    figsize=(15, 3.5),
-                    vmin=0, vmax=RDMs.get_matrices().max())
+    fig, axs = plt.subplots(1, len(RDMs), figsize=(15, 4))
+    for r, rdm in enumerate(RDMs):
+        cax = rsa.vis.show_rdm_panel(
+            rdm,
+            axs[r],
+            rdm_descriptor='roi',
+            cmap='viridis',
+            vmin=RDMs.get_matrices().min(),
+            vmax=RDMs.get_matrices().max(),
+        )
 
-    # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
-    fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}, hem:{Hem}')
-    fig.tight_layout()
+        axs[r].set_xticks(np.linspace(0,
+                                      len(RDMs.pattern_descriptors['stimFinger,cue']) - 1,
+                                      len(RDMs.pattern_descriptors['stimFinger,cue'])))
+        axs[r].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=45, ha='right')
+        axs[r].set_yticks(axs[r].get_xticks())
+        axs[r].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'])
 
-    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'RDMs.{filename}.png'))
+    cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
+    cbar.set_label('cross-validated multivariate distance (a.u.)')
 
-    plt.show()
+
+
+    # fig, axs, oth = rsa.vis.show_rdm(
+    #                 RDMs,
+    #                 show_colorbar=None,
+    #                 rdm_descriptor='roi',
+    #                 pattern_descriptor='cue',
+    #                 n_row=1,
+    #                 figsize=(15, 3.5),
+    #                 vmin=0, vmax=RDMs.get_matrices().max())
+    #
+    # # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
+    # fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}, hem:{Hem}')
+    # fig.tight_layout()
+    #
+    # fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'RDMs.{filename}.png'))
+    #
+    # plt.show()
 

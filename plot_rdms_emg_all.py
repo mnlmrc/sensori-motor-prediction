@@ -40,48 +40,38 @@ if __name__ == "__main__":
 
     RDMs_mat_av = RDMs_mat.mean(axis=0)
 
-    # stimFinger = ['index', 'ring']
-    # cue = {
-    #     'index': ['25%', '50%', '75%', '100%'],
-    #     'ring': ['0%', '25%', '50%', '75%']
-    # }
     timew = descr['rdm_descriptors']['timew']
 
     vmax = RDMs_mat_av.max()
     vmin = RDMs_mat_av.min()
 
-    fig, axs = plt.subplots(2, 3, sharey='row')
+    fig, axs = plt.subplots(1, 3, sharey='row')
     # for sf, stimF in enumerate(stimFinger):
     for t, time in enumerate(timew):
         RDMs = rsa.rdm.RDMs(RDMs_mat_av[t].reshape(1, 8, 8),
                             pattern_descriptors=descr['pattern_descriptors'],
                             rdm_descriptors={'cond': f'{time}'})
-        RDMs.n_rdm = 1
-        RDMs.n_cond = 8
-
-        # if stimF is 'index':
-        #     RDMs.reorder(np.array([1, 2, 3, 0]))
 
         rsa.vis.show_rdm_panel(RDMs,
-                               ax=axs[0, t],
+                               ax=axs[t],
                                vmin=vmin,
                                vmax=vmax,
                                rdm_descriptor='cond',
                                cmap='viridis')
 
-        axs[0, t].axvline(3.5, color='k', lw=.8)
-        axs[0, t].axhline(3.5, color='k', lw=.8)
+        axs[ t].axvline(3.5, color='k', lw=.8)
+        axs[t].axhline(3.5, color='k', lw=.8)
 
-        axs[0, t].set_xticks(np.linspace(0, 7, 8))
-        axs[0, t].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=45, ha='right')
-        axs[0, t].set_yticks(np.linspace(0, 7, 8))
-        axs[0, t].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'])
+        axs[t].set_xticks(np.linspace(0, 7, 8))
+        axs[t].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=45, ha='right')
+        axs[t].set_yticks(np.linspace(0, 7, 8))
+        axs[t].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'])
 
-        rsa.vis.scatter_plot.show_MDS_panel(RDMs,
-                                            axs[1, t],
-                                            pattern_descriptor='stimFinger,cue')
-        axs[1, t].set_xlim([-3, 3])
-        axs[1, t].set_ylim([-3, 3])
+        # rsa.vis.scatter_plot.show_MDS_panel(RDMs,
+        #                                     axs[1, t],
+        #                                     pattern_descriptor='stimFinger,cue')
+        # axs[1, t].set_xlim([-3, 3])
+        # axs[1, t].set_ylim([-3, 3])
 
     fig.suptitle('RDMs, emg')
 
