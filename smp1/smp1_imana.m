@@ -26,8 +26,8 @@ function varargout = smp1_imana(what,varargin)
         addpath([path 'GitHub/rwls/'])
         addpath([path 'GitHub/suit/'])
         addpath([path 'GitHub/surfing/surfing/'])
+        addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
         addpath([path 'GitHub/rsatoolbox_matlab/'])
-        addpath('/home/ROBARTS/memanue5/MATLAB Add-Ons/Collections/Toolbox Fast Marching')
     end
 
     % Define the data base directory 
