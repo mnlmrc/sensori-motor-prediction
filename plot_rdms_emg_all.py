@@ -45,14 +45,14 @@ if __name__ == "__main__":
     vmax = RDMs_mat_av.max()
     vmin = RDMs_mat_av.min()
 
-    fig, axs = plt.subplots(1, 3, sharey='row')
+    fig, axs = plt.subplots(1, 3, sharey='row', figsize=(15, 6))
     # for sf, stimF in enumerate(stimFinger):
     for t, time in enumerate(timew):
         RDMs = rsa.rdm.RDMs(RDMs_mat_av[t].reshape(1, 8, 8),
                             pattern_descriptors=descr['pattern_descriptors'],
                             rdm_descriptors={'cond': f'{time}'})
 
-        rsa.vis.show_rdm_panel(RDMs,
+        cax = rsa.vis.show_rdm_panel(RDMs,
                                ax=axs[t],
                                vmin=vmin,
                                vmax=vmax,
@@ -73,5 +73,12 @@ if __name__ == "__main__":
         # axs[1, t].set_xlim([-3, 3])
         # axs[1, t].set_ylim([-3, 3])
 
-    fig.suptitle('RDMs, emg')
+    cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
+    cbar.set_label('cross-validated multivariate distance (a.u.)')
+
+    fig.suptitle('Average multivariate distances between EMG patterns for different cues')
+
+    fig.subplots_adjust(bottom=.3)
+
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'RDMs.emg.png'))
 

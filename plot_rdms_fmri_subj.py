@@ -9,15 +9,15 @@ import rsatoolbox as rsa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='4', help='GLM model')
     parser.add_argument('--method', default='cv', help='Selected dist')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
     parser.add_argument('--epoch', nargs='+', default=['exec'], help='Selected epoch')
-    parser.add_argument('--stimFinger', nargs='+', default=[ 'index', 'ring'], help='Selected stimulated finger')
-    parser.add_argument('--instr', nargs='+', default=['go', ], help='Selected instruction')
+    parser.add_argument('--stimFinger', nargs='+', default=['index', 'ring'], help='Selected stimulated finger')
+    parser.add_argument('--instr', nargs='+', default=['go'], help='Selected instruction')
 
     args = parser.parse_args()
 

@@ -15,7 +15,7 @@ import seaborn as sns
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='4', help='GLM model')
@@ -61,17 +61,17 @@ if __name__ == "__main__":
     mapping_dict = dict(zip(label_df['key'], label_df['label']))
     labels = keys.replace(mapping_dict)
 
-    B = nb.load(os.path.join(path, f'glm{glm}.con.{Hem}.func.gii'))
+    B = nb.load(os.path.join(path, f'glm{glm}.spmT.{Hem}.func.gii'))
     col = [con.metadata['Name'] for con in B.darrays]
-    idx_exec = col.index('con_exec-.nii')
-    idx_plan_nogo = col.index('con_plan_nogo-.nii')
+    idx_exec = col.index('spmT_exec-.nii')
+    idx_plan_nogo = col.index('spmT_plan-.nii')
 
     exec = B.darrays[idx_exec].data
     plan_nogo = B.darrays[idx_plan_nogo].data
 
     plan_nogo_df = pd.DataFrame({
         'activity': plan_nogo,
-        'epoch': 'plan_nogo',
+        'epoch': 'plan',
         'labels': labels})
     exec_df = pd.DataFrame({
         'activity': exec,
@@ -84,15 +84,15 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplots(figsize=(6, 5))
 
-    sns.barplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch',
+    sns.boxplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch',
                    order=rois)
 
     # axs.bar(rois, mdist)
-    axs.set_ylabel('% signal change')
+    axs.set_ylabel('tval')
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
     axs.set_xlim((axs.get_xlim()[0], axs.get_xlim()[1]))
     axs.axhline(0, axs.get_xlim()[0], axs.get_xlim()[1], color='k', lw=.8)
-    axs.set_ylim([-40, 40])
+    axs.set_ylim([-20, 20])
     axs.legend(loc='lower left')
     # axs.set_ylim([-1, 1])
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
     fig.subplots_adjust(left=.20, bottom=.25)
 
-    axs.set_title(f'{participant_id}\nactivity')
+    axs.set_title(f'{participant_id}, activity')
 
     fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'activity.{atlas}.png'))
 
