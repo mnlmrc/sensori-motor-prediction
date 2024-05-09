@@ -101,17 +101,17 @@ if __name__ == "__main__":
 
         # mahalanobis
         # prec = np.linalg.inv(np.diag(res)).astype(float)
-        # noise = rsa.data.noise.prec_from_unbalanced(dataset, obs_desc='stimFinger,cue', method='shrinkage_diag')
-        # rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='stimFinger,cue',
-        #                                             noise=prec))
-        # rdm_cv.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='stimFinger,cue',
-        #                                           noise=noise, cv_descriptor='run'))
+        noise = rsa.data.noise.prec_from_unbalanced(dataset, obs_desc='stimFinger,cue', method='shrinkage_diag')
+        rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='stimFinger,cue',
+                                                    noise=noise))
+        rdm_cv.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='stimFinger,cue',
+                                                  noise=noise, cv_descriptor='run'))
 
     rdm_eucl = rsa.rdm.concat(rdm_eucl)  # [rdm.reorder(rdm.pattern_descriptors['stimFinger,cue'].argsort()) for rdm in rdm_eucl]
     rdm_eucl.reorder(rdm_eucl.pattern_descriptors['stimFinger,cue'].argsort())
     RDMs_eucl = np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0)
-    # RDMs_maha = np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0)
-    # RDMs_cv = np.concatenate([rdm.get_matrices() for rdm in rdm_cv], axis=0)
+    RDMs_maha = np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0)
+    RDMs_cv = np.concatenate([rdm.get_matrices() for rdm in rdm_cv], axis=0)
 
     descr = json.dumps({
         'experiment': experiment,
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     np.savez(os.path.join(pathRDM, f'RDMs.eucl.{filename}.npz'),
              data_array=RDMs_eucl, descriptor=descr, allow_pickle=False)
-    # np.savez(os.path.join(pathRDM, f'RDMs.maha.{filename}.npz'),
-    #          data_array=RDMs_maha, descriptor=descr, allow_pickle=False)
-    # np.savez(os.path.join(pathRDM, f'RDMs.cv.{filename}.npz'),
-    #          data_array=RDMs_cv, descriptor=descr, allow_pickle=False)
+    np.savez(os.path.join(pathRDM, f'RDMs.maha.{filename}.npz'),
+             data_array=RDMs_maha, descriptor=descr, allow_pickle=False)
+    np.savez(os.path.join(pathRDM, f'RDMs.cv.{filename}.npz'),
+             data_array=RDMs_cv, descriptor=descr, allow_pickle=False)
