@@ -13,10 +13,10 @@ if __name__ == "__main__":
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='4', help='GLM model')
-    parser.add_argument('--dist', default='eucl', help='Selected dist')
+    parser.add_argument('--dist', default='cv', help='Selected dist')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
     parser.add_argument('--epoch', nargs='+', default=['plan'], help='Selected epoch')
-    parser.add_argument('--stimFinger', nargs='+', default=['none'], help='Selected stimulated finger')
+    parser.add_argument('--stimFinger', nargs='+', default=['none', 'index', 'ring'], help='Selected stimulated finger')
     parser.add_argument('--instr', nargs='+', default=['nogo', 'go'], help='Selected instruction')
 
     args = parser.parse_args()
@@ -53,21 +53,14 @@ if __name__ == "__main__":
                         rdm_descriptors=descr['rdm_descriptors'],
                         pattern_descriptors=descr['pattern_descriptors'])
 
-    if sel_instr == ['plan']:
-        index = [0, 2, 3, 4, 1]
+    if sel_epoch == ['plan']:
+        index = np.array([4, 6, 7, 8, 5, 1, 2, 3, 0, 9, 10, 11, 12])
     else:
-        index = [1, 2, 3, 0, 4, 5, 6, 7]
-    # if sel_stimFinger == ['index']:
-    #     index = [1, 2, 3, 0]
-    # elif sel_stimFinger == ['ring']:
-    #     index = [0, 1, 2, 3]
-    # else:
-    #     index = [0, 2, 3, 4, 1]
+        index = np.array([1, 2, 3, 0, 4, 5, 6, 7])
     RDMs.reorder(index)
-    # print(RDMs.pattern_descriptors['cue'])
 
     # visualize
-    fig, axs = plt.subplots(1, len(RDMs), figsize=(15, 4))
+    fig, axs = plt.subplots(1, len(RDMs), figsize=(15, 4), sharex=True, sharey=True)
     for r, rdm in enumerate(RDMs):
         cax = rsa.vis.show_rdm_panel(
             rdm,
