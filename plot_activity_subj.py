@@ -15,10 +15,10 @@ import seaborn as sns
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
-    parser.add_argument('--glm', default='2', help='GLM model')
+    parser.add_argument('--glm', default='4', help='GLM model')
 
     args = parser.parse_args()
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplots(figsize=(6, 5))
 
-    sns.boxplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch',
+    sns.barplot(data=df, ax=axs, palette=['blue', 'red'], x='labels', y='activity', hue='epoch',
                    order=rois)
 
     # axs.bar(rois, mdist)
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     axs.set_xticklabels(axs.get_xticklabels(), rotation=45, ha='right')  # Correct rotation method
     axs.set_xlim((axs.get_xlim()[0], axs.get_xlim()[1]))
     axs.axhline(0, axs.get_xlim()[0], axs.get_xlim()[1], color='k', lw=.8)
-    axs.set_ylim([-10, 10])
+    axs.set_ylim([-40, 40])
     axs.legend(loc='lower left')
     # axs.set_ylim([-1, 1])
 

@@ -108,10 +108,16 @@ if __name__ == "__main__":
         rdm_cv.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='stimFinger,cue',
                                                   noise=noise, cv_descriptor='run'))
 
-    rdm_eucl = rsa.rdm.concat(rdm_eucl)  # [rdm.reorder(rdm.pattern_descriptors['stimFinger,cue'].argsort()) for rdm in rdm_eucl]
+    rdm_eucl = rsa.rdm.concat(rdm_eucl)
     rdm_eucl.reorder(rdm_eucl.pattern_descriptors['stimFinger,cue'].argsort())
     RDMs_eucl = np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0)
+
+    rdm_maha = rsa.rdm.concat(rdm_maha)
+    rdm_maha.reorder(rdm_maha.pattern_descriptors['stimFinger,cue'].argsort())
     RDMs_maha = np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0)
+
+    rdm_cv = rsa.rdm.concat(rdm_cv)
+    rdm_cv.reorder(rdm_cv.pattern_descriptors['stimFinger,cue'].argsort())
     RDMs_cv = np.concatenate([rdm.get_matrices() for rdm in rdm_cv], axis=0)
 
     descr = json.dumps({

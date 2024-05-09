@@ -13,11 +13,11 @@ if __name__ == "__main__":
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere')
     parser.add_argument('--glm', default='4', help='GLM model')
-    parser.add_argument('--dist', default='cv', help='Selected dist')
+    parser.add_argument('--method', default='cv', help='Selected dist')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
-    parser.add_argument('--epoch', nargs='+', default=['plan'], help='Selected epoch')
-    parser.add_argument('--stimFinger', nargs='+', default=['none', 'index', 'ring'], help='Selected stimulated finger')
-    parser.add_argument('--instr', nargs='+', default=['nogo', 'go'], help='Selected instruction')
+    parser.add_argument('--epoch', nargs='+', default=['exec'], help='Selected epoch')
+    parser.add_argument('--stimFinger', nargs='+', default=[ 'index', 'ring'], help='Selected stimulated finger')
+    parser.add_argument('--instr', nargs='+', default=['go', ], help='Selected instruction')
 
     args = parser.parse_args()
 
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     atlas = args.atlas
     Hem = args.Hem
     glm = args.glm
-    dist = args.dist
+    method = args.method
     sel_epoch = args.epoch
     sel_stimFinger = args.stimFinger
     sel_instr = args.instr
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     path = os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm, participant_id)
 
     # build filename
-    filename = f'{dist}.{atlas}.{Hem}'
+    filename = f'{method}.{atlas}.{Hem}'
     if len(sel_epoch) == 1:
         filename += f'.{sel_epoch[0]}'
 
@@ -60,43 +60,44 @@ if __name__ == "__main__":
     RDMs.reorder(index)
 
     # visualize
-    fig, axs = plt.subplots(1, len(RDMs), figsize=(15, 4), sharex=True, sharey=True)
+    fig, axs = plt.subplots(2, int(RDMs.n_rdm / 2), figsize=(15, 9), sharex=True, sharey=True)
     for r, rdm in enumerate(RDMs):
         cax = rsa.vis.show_rdm_panel(
             rdm,
-            axs[r],
+            axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))],
             rdm_descriptor='roi',
             cmap='viridis',
             vmin=RDMs.get_matrices().min(),
             vmax=RDMs.get_matrices().max(),
         )
 
-        axs[r].set_xticks(np.linspace(0,
-                                      len(RDMs.pattern_descriptors['stimFinger,cue']) - 1,
-                                      len(RDMs.pattern_descriptors['stimFinger,cue'])))
-        axs[r].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=45, ha='right')
-        axs[r].set_yticks(axs[r].get_xticks())
-        axs[r].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'])
+        if sel_epoch == ['plan']:
+            axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].axvline(4.5, color='k', lw=.8)
+            axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].axvline(8.5, color='k', lw=.8)
+            axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].axhline(4.5, color='k', lw=.8)
+            axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].axhline(8.5, color='k', lw=.8)
+        else:
+            axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].axvline(3.5, color='k', lw=.8)
+            axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].axhline(3.5, color='k', lw=.8)
+
+        axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].set_xticks(np.linspace(0,
+                                                                                          len(RDMs.pattern_descriptors[
+                                                                                                  'stimFinger,cue']) - 1,
+                                                                                          len(RDMs.pattern_descriptors[
+                                                                                                  'stimFinger,cue'])))
+        axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].set_xticklabels(
+            RDMs.pattern_descriptors['stimFinger,cue'], rotation=45, ha='right')
+        axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].set_yticks(
+            axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].get_xticks())
+        axs[int(r // (RDMs.n_rdm / 2)), int(r % (RDMs.n_rdm / 2))].set_yticklabels(
+            RDMs.pattern_descriptors['stimFinger,cue'])
 
     cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
     cbar.set_label('cross-validated multivariate distance (a.u.)')
 
+    fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}\n')
 
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id,
+                             f'RDMs.{filename}.png'))
 
-    # fig, axs, oth = rsa.vis.show_rdm(
-    #                 RDMs,
-    #                 show_colorbar=None,
-    #                 rdm_descriptor='roi',
-    #                 pattern_descriptor='cue',
-    #                 n_row=1,
-    #                 figsize=(15, 3.5),
-    #                 vmin=0, vmax=RDMs.get_matrices().max())
-    #
-    # # oth[-1]['colorbar'].ax.yaxis.set_tick_params(labelleft=True, labelright=False)
-    # fig.suptitle(f'{participant_id}\nepoch:{sel_epoch}, instr:{sel_instr}, stimFinger:{sel_stimFinger}, hem:{Hem}')
-    # fig.tight_layout()
-    #
-    # fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'RDMs.{filename}.png'))
-    #
-    # plt.show()
-
+    plt.show()
