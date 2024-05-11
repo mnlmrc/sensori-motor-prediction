@@ -17,6 +17,7 @@ function varargout = smp1_imana(what,varargin)
         addpath([path 'GitHub/suit/'])
         addpath([path 'GitHub/rsatoolbox_matlab/'])
         addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
+        addpath([path 'GitHub/region/'])
     elseif isfolder(cbsPath)
         path = cbsPath;
         addpath([path 'GitHub/spmj_tools/'])
@@ -28,6 +29,7 @@ function varargout = smp1_imana(what,varargin)
         addpath([path 'GitHub/surfing/surfing/'])
         addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
         addpath([path 'GitHub/rsatoolbox_matlab/'])
+        addpath([path 'GitHub/region/'])
     end
 
     % Define the data base directory 
@@ -50,6 +52,7 @@ function varargout = smp1_imana(what,varargin)
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
     glmEstDir       = 'glm';
+    regDir          = 'ROI';
     suitDir = 'suit';
     wbDir   = 'surfaceWB';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
@@ -2022,6 +2025,7 @@ function varargout = smp1_imana(what,varargin)
 
 
         case 'SEARCH:define' 
+
             glm=[];
             sn=[];
             rad=12;
@@ -2049,8 +2053,92 @@ function varargout = smp1_imana(what,varargin)
             L = rsa.defineSearchlight_surface(S, Mask, 'sphere', [rad vox]);
             save(fullfile(baseDir, anatomicalDir, subj_id, sprintf('%s_searchlight_%d.mat',subj_id,vox)),'-struct','L');
             varargout={L};
-
         
+        case 'HRF:ROI_hrf_get'                   % Extract raw and estimated time series from ROIs
+            
+            sn = [];
+            ROI = 'all';
+            pre=10;
+            post=10;
+            atlas = 'ROI';
+            glm = 4;
+
+            vararginoptions(varargin,{'ROI','pre','post', 'glm', 'sn', 'atlas'});
+
+            glmDir = fullfile(baseDir, [glmEstDir num2str(glm)]);
+            T=[];
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+            fprintf('%s\n',subj_id);
+
+            % load SPM.mat
+            cd(fullfile(glmDir,subj_id));
+            SPM = load('SPM.mat'); SPM=SPM.SPM;
+            
+            % load ROI definition (R)
+            R = load(fullfile(baseDir, regDir,subj_id,[subj_id '_' atlas '_region.mat'])); R=R.R;
+            
+            % extract time series data
+            [y_raw, y_adj, y_hat, y_res,B] = region_getts(SPM,R);
+            
+            D = spmj_get_ons_struct(SPM);
+            
+            for r=1:size(y_raw,2)
+                for i=1:size(D.block,1);
+                    D.y_adj(i,:)=cut(y_adj(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
+                    D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
+                    D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
+                end;
+                
+                % Add the event and region information to tje structure. 
+                len = size(D.event,1);                
+                D.SN        = ones(len,1)*s;
+                D.region    = ones(len,1)*r;
+                D.name      = repmat({R{r}.name},len,1);
+                D.type      = D.event; 
+                T           = addstruct(T,D);
+            end; 
+
+            varargout{1} = T;
+
+        case 'ROI:define'
+            
+            sn = [];
+            glm = 4;
+            atlas = 'ROI';
+            
+            vararginoptions(varargin,{'sn', 'glm', 'atlas'});
+
+            atlasDir = '/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32';
+            atlasH = {sprintf('%s.32k.L.label.gii', atlas), sprintf('%s.32k.R.label.gii', atlas)};
+            atlas_gii = {gifti(fullfile(atlasDir, atlasH{1})), gifti(fullfile(atlasDir, atlasH{1}))};
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            Hem = {'L', 'R'};
+            R = {};
+            r = 1;
+            for h = 1:length(Hem)
+                for reg = 1:length(atlas_gii{h}.labels.name)
+
+                    R{r}.white = fullfile(baseDir, wbDir, subj_id, [subj_id '.' Hem{h} '.white.32k.surf.gii']);
+                    R{r}.pial = fullfile(baseDir, wbDir, subj_id, [subj_id '.' Hem{h} '.pial.32k.surf.gii']);
+                    R{r}.image = fullfile(baseDir, [glmEstDir num2str(glm)], subj_id, 'mask.nii');
+                    R{r}.linedef = [5 0 1];
+                    key = atlas_gii{h}.labels.key(reg);
+                    R{r}.location = find(atlas_gii{h}.cdata==key);
+                    R{r}.hem = Hem{h};
+                    R{r}.name = atlas_gii{h}.labels.name{reg};
+                    R{r}.type = 'surf_nodes_wb';
+
+                    r = r+1;
+                end
+            end
+
+            R = region_calcregions(R);
+            
+            save(fullfile(baseDir, regDir, subj_id, sprintf('%s_%s_region.mat',subj_id, atlas)), 'R');
+            
     end
 
 
