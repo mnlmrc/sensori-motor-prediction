@@ -2148,34 +2148,40 @@ function varargout = smp1_imana(what,varargin)
             sn = [];
             roi = [];
             atlas = 'ROI';
+            hem = 'L';
             regressor = [];
 
-            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'regressor'});
+            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'regressor', 'hem'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
             T = load(fullfile(baseDir, regDir, subj_id, 'hrf.mat')); T=T.T;
-            T = getrow(T,T.region==roi);
+            T = getrow(T,strcmp(T.name, roi));
             pre = 10;
             post = 10;
     
             
             % Select a specific subset of things to plot 
-            subset      = find(contains(T.eventname, regressor));
+            subset      = find(contains(T.eventname, regressor) & strcmp(T.hem, hem));
                     
-            traceplot([-pre:post],T.y_adj, 'subset',subset, 'leg',{[regressor ', adj'], [regressor ', hat'], [regressor ', res']},'leglocation','bestoutside'); % ,
+            t1 = traceplot([-pre:post],T.y_hat, 'subset',subset, 'split', [], 'linestyle','--'); % ,
             hold on;
-            traceplot([-pre:post],T.y_hat, 'subset',subset,'leg',{[regressor ', adj'], [regressor ', hat'], [regressor ', res']}, 'leglocation','bestoutside', 'linestyle','--');
-            traceplot([-pre:post],T.y_res, 'subset',subset,'leg',{[regressor ', adj'], [regressor ', hat'], [regressor ', res']}, 'leglocation','bestoutside', 'linestyle',':');
+            t2 = traceplot([-pre:post],T.y_res, 'subset',subset, 'split', [], 'linestyle',':');
+            % drawline([-8 8 16],'dir','vert','linestyle','--');
+            % drawline([0],'dir','horz','linestyle','--');
+            drawline(0);
+
+            yyaxis right
+            t3 = traceplot([-pre:post],T.y_raw, 'subset',subset,'leg',[], 'leglocation','bestoutside', 'linestyle','-');
             % traceplot([-pre:post],T.y_hat,'linestyle','--',...
             %     'split',[T.type],'subset',subset,...
             %     'linewidth',3); % ,
-            drawline([-8 8 16],'dir','vert','linestyle','--');
-            drawline([0],'dir','horz','linestyle','--');
+            drawline(0);
+            
             hold off;
             xlabel('TR');
             ylabel('activation');
-            drawline(0);
+            
             
     end
 
