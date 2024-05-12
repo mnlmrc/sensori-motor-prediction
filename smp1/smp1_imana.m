@@ -8,30 +8,30 @@ function varargout = smp1_imana(what,varargin)
     % Directory specification
     if isfolder(localPath)
         path = localPath;
-        addpath([path 'GitHub/spmj_tools/'])
-        addpath([path 'GitHub/dataframe/util/'])
-        addpath([path 'GitHub/surfAnalysis/'])
-        addpath([path 'MATLAB/spm12/'])
-        addpath([path 'GitHub/rwls/'])
-        addpath([path 'GitHub/surfing/surfing/'])
-        addpath([path 'GitHub/suit/'])
-        addpath([path 'GitHub/rsatoolbox_matlab/'])
-        addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
-        addpath([path 'GitHub/region/'])
     elseif isfolder(cbsPath)
         path = cbsPath;
-        addpath([path 'GitHub/spmj_tools/'])
-        addpath([path 'GitHub/dataframe/util/'])
-        addpath([path 'GitHub/surfAnalysis/'])
-        addpath([path 'MATLAB/spm12/'])
-        addpath([path 'GitHub/rwls/'])
-        addpath([path 'GitHub/suit/'])
-        addpath([path 'GitHub/surfing/surfing/'])
-        addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
-        addpath([path 'GitHub/rsatoolbox_matlab/'])
-        addpath([path 'GitHub/region/'])
+%         addpath([path 'GitHub/spmj_tools/'])
+%         addpath([path 'GitHub/dataframe/util/'])
+%         addpath([path 'GitHub/surfAnalysis/'])
+%         addpath([path 'MATLAB/spm12/'])
+%         addpath([path 'GitHub/rwls/'])
+%         addpath([path 'GitHub/suit/'])
+%         addpath([path 'GitHub/surfing/surfing/'])
+%         addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
+%         addpath([path 'GitHub/rsatoolbox_matlab/'])
+%         addpath([path 'GitHub/region/'])
     end
-
+    addpath([path 'GitHub/spmj_tools/'])
+    addpath([path 'GitHub/dataframe/util/'])
+    addpath([path 'GitHub/dataframe/kinematics/'])
+    addpath([path 'GitHub/surfAnalysis/'])
+    addpath([path 'MATLAB/spm12/'])
+    addpath([path 'GitHub/rwls/'])
+    addpath([path 'GitHub/surfing/surfing/'])
+    addpath([path 'GitHub/suit/'])
+    addpath([path 'GitHub/rsatoolbox_matlab/'])
+    addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
+    addpath([path 'GitHub/region/'])
     % Define the data base directory 
     
     % automatic detection of datashare location:
@@ -2084,21 +2084,22 @@ function varargout = smp1_imana(what,varargin)
             D = spmj_get_ons_struct(SPM);
             
             for r=1:size(y_raw,2)
-                for i=1:size(D.block,1);
+                for i=1:size(D.block,1)
                     D.y_adj(i,:)=cut(y_adj(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
                     D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
                     D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
-                end;
+                end
                 
                 % Add the event and region information to tje structure. 
                 len = size(D.event,1);                
-                D.SN        = ones(len,1)*s;
+                D.SN        = ones(len,1)*sn;
                 D.region    = ones(len,1)*r;
                 D.name      = repmat({R{r}.name},len,1);
                 D.type      = D.event; 
                 T           = addstruct(T,D);
-            end; 
-
+            end
+            
+            save(fullfile(baseDir,regDir, subj_id, sprintf('hrf.mat'),'-struct','T')); 
             varargout{1} = T;
 
         case 'ROI:define'
