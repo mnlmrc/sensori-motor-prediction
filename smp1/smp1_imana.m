@@ -2099,7 +2099,7 @@ function varargout = smp1_imana(what,varargin)
                 T           = addstruct(T,D);
             end
             
-            save(fullfile(baseDir,regDir, subj_id, sprintf('hrf.mat'),'-struct','T')); 
+            save(fullfile(baseDir,regDir, subj_id, sprintf('hrf.mat')),'T'); 
             varargout{1} = T;
 
         case 'ROI:define'
