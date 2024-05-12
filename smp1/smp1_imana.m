@@ -24,6 +24,8 @@ function varargout = smp1_imana(what,varargin)
     addpath([path 'GitHub/spmj_tools/'])
     addpath([path 'GitHub/dataframe/util/'])
     addpath([path 'GitHub/dataframe/kinematics/'])
+    addpath([path 'GitHub/dataframe/graph/'])
+    addpath([path 'GitHub/dataframe/pivot/'])
     addpath([path 'GitHub/surfAnalysis/'])
     addpath([path 'MATLAB/spm12/'])
     addpath([path 'GitHub/rwls/'])
@@ -2139,6 +2141,39 @@ function varargout = smp1_imana(what,varargin)
             R = region_calcregions(R);
             
             save(fullfile(baseDir, regDir, subj_id, sprintf('%s_%s_region.mat',subj_id, atlas)), 'R');
+
+        case 'HRF:ROI_hrf_plot'                 % Plot extracted time series
+            sn = [];
+            roi = [];
+            atlas = 'ROI';
+            regressor = [];
+
+            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'regressor'});
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            T = load(fullfile(baseDir, regDir, subj_id, 'hrf.mat')); T=T.T;
+            T = getrow(T,T.region==roi);
+            pre = 10;
+            post = 10;
+    
+            
+            % Select a specific subset of things to plot 
+            subset      = find(contains(T.eventname, regressor));
+                    
+            traceplot([-pre:post],T.y_adj, 'subset',subset, 'leg',{[regressor ', adj'], [regressor ', hat'], [regressor ', res']},'leglocation','bestoutside'); % ,
+            hold on;
+            traceplot([-pre:post],T.y_hat, 'subset',subset,'leg',{[regressor ', adj'], [regressor ', hat'], [regressor ', res']}, 'leglocation','bestoutside', 'linestyle','--');
+            traceplot([-pre:post],T.y_res, 'subset',subset,'leg',{[regressor ', adj'], [regressor ', hat'], [regressor ', res']}, 'leglocation','bestoutside', 'linestyle',':');
+            % traceplot([-pre:post],T.y_hat,'linestyle','--',...
+            %     'split',[T.type],'subset',subset,...
+            %     'linewidth',3); % ,
+            drawline([-8 8 16],'dir','vert','linestyle','--');
+            drawline([0],'dir','horz','linestyle','--');
+            hold off;
+            xlabel('TR');
+            ylabel('activation');
+            drawline(0);
             
     end
 
