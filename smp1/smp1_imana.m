@@ -2146,7 +2146,7 @@ function varargout = smp1_imana(what,varargin)
 
         case 'HRF:ROI_hrf_plot'                 % Plot extracted time series
             sn = [];
-            roi = [];
+            roi = {'SMA', 'PMd', 'PMv', 'M1', 'S1', 'SPLa', 'SPLp', 'V1'};
             atlas = 'ROI';
             hem = 'L';
             regressor = [];
@@ -2155,32 +2155,57 @@ function varargout = smp1_imana(what,varargin)
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
-            T = load(fullfile(baseDir, regDir, subj_id, 'hrf.mat')); T=T.T;
-            T = getrow(T,strcmp(T.name, roi));
-            pre = 10;
-            post = 10;
-    
-            
-            % Select a specific subset of things to plot 
-            subset      = find(contains(T.eventname, regressor) & strcmp(T.hem, hem));
-                    
-            t1 = traceplot([-pre:post],T.y_hat, 'subset',subset, 'split', [], 'linestyle','--'); % ,
-            hold on;
-            t2 = traceplot([-pre:post],T.y_res, 'subset',subset, 'split', [], 'linestyle',':');
-            % drawline([-8 8 16],'dir','vert','linestyle','--');
-            % drawline([0],'dir','horz','linestyle','--');
-            drawline(0);
+            figure
 
-            yyaxis right
-            t3 = traceplot([-pre:post],T.y_raw, 'subset',subset,'leg',[], 'leglocation','bestoutside', 'linestyle','-');
-            % traceplot([-pre:post],T.y_hat,'linestyle','--',...
-            %     'split',[T.type],'subset',subset,...
-            %     'linewidth',3); % ,
-            drawline(0);
-            
-            hold off;
-            xlabel('TR');
-            ylabel('activation');
+            for r=1:length(roi)
+
+                T = load(fullfile(baseDir, regDir, subj_id, 'hrf.mat')); T=T.T;
+                T = getrow(T,strcmp(T.name, roi{r}));
+                pre = 10;
+                post = 10;
+                
+                % Select a specific subset of things to plot 
+                subset      = find(contains(T.eventname, regressor) & strcmp(T.hem, hem));
+
+                subplot(2, 4, r)
+                
+                % yyaxis left
+                traceplot([-pre:post],T.y_hat, 'subset',subset, 'split', [], 'linestyle','--');
+                hold on;
+                traceplot([-pre:post],T.y_res, 'subset',subset, 'split', [], 'linestyle',':');
+                xline(0);
+                yline(0);
+                % ax = gca;
+                % ax.YColor = 'b';
+                
+    
+                % yyaxis right
+                traceplot([-pre:post],T.y_raw - mean(T.y_raw, 2), 'subset',subset,'leg',[], 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
+                % ax = gca;
+                % ax.YColor = 'r';
+                
+                if r==1
+                    legend({'y_{hat}', 'residuals', '', '', 'y_{raw}'}, 'Location','northwest')
+                end
+
+                hold off;
+                xlabel('TR');
+                ylabel('activation');
+
+                ylim([-1, 2])
+    
+                title(roi{r})
+
+            end
+
+            sgtitle(sprintf('%s\nhemisphere:%s, regressor:%s', subj_id, hem, regressor), 'interpreter', 'none')
+            set(gcf, 'Position', [100 100, 1400, 800])
+
+            drawnow;
+
+            fig = gcf;
+
+            saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.%s.png', hem, regressor)))
             
             
     end

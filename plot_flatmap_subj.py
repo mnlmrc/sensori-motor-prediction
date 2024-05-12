@@ -13,11 +13,11 @@ import surfAnalysisPy as surf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Input parameters")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
-    parser.add_argument('--glm', default='2', help='GLM model (e.g., 1, 2, ...)')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--glm', default='4', help='GLM model (e.g., 1, 2, ...)')
     parser.add_argument('--measure', default='con', help='Measurement (e.g., psc, tval, ...)')
     parser.add_argument('--epoch', default='exec', help='Selected epoch')
-    parser.add_argument('--stimFinger', nargs='+', default=['index', 'ring'], help='Selected stimulated finger')
+    parser.add_argument('--stimFinger', nargs='+', default=[ 'index', 'ring'], help='Selected stimulated finger')
     parser.add_argument('--instr', nargs='+', default=['go'], help='Selected instruction')
 
     args = parser.parse_args()
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     cscale = {
         'spmT': [-2.5, 2.5],
         'psc': [-1, 1],
-        'con': [-3, 3]
+        'con': [-20, 20]
     }
 
     D = [nb.load(data[0]), nb.load(data[1])]
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     surface = ['fs32k_L', 'fs32k_R']
 
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
     for h in range(2):
         plt.sca(axs[h])
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     elif sel_epoch is 'exec':
         plt.suptitle(f"{participant_id}\nepoch:{sel_epoch}, instr:['go'], stimFinger:{sel_stimFinger}")
 
-    plt.subplots_adjust(bottom=0, left=0, wspace=0, hspace=0, right=1)
+    plt.subplots_adjust(bottom=0, left=0, wspace=0, hspace=0, right=1, top=.8)
 
     plt.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id,
                              f"{cond}".rstrip('.nii') + '.png'))
