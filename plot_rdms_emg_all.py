@@ -7,6 +7,10 @@ import numpy as np
 import globals as gl
 import rsatoolbox as rsa
 
+from scipy.spatial.distance import squareform
+
+from matplotlib.patches import Polygon
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
     parser.add_argument('--participants', default=['subj100',
@@ -38,28 +42,41 @@ if __name__ == "__main__":
         RDMs_mat[p] = npz['data_array']
         descr = json.loads(npz['descriptor'].item())
 
-    RDMs_mat_av = RDMs_mat.mean(axis=0)
+    RDMs_mat_avg = RDMs_mat.mean(axis=0)
 
     timew = descr['rdm_descriptors']['timew']
 
-    vmax = RDMs_mat_av.max()
-    vmin = RDMs_mat_av.min()
+    vmax = RDMs_mat_avg.max()
+    vmin = RDMs_mat_avg.min()
+
+    colors = ['purple', 'darkorange', 'darkgreen']
+    symmetry = [1, 1, -1]
+
+    interval = ['25-50 ms', '50-100 ms', '100-500 ms']
+
+    # make masks
+    mask_stimFinger = np.zeros([28], dtype=bool)
+    mask_cue = np.zeros([28], dtype=bool)
+    mask_stimFinger_cue = np.zeros([28], dtype=bool)
+    mask_stimFinger[[4, 11, 17]] = True
+    mask_cue[[0, 1, 7, 25, 26, 27]] = True
+    mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
 
     fig, axs = plt.subplots(1, 3, sharey='row', figsize=(15, 6))
     # for sf, stimF in enumerate(stimFinger):
     for t, time in enumerate(timew):
-        RDMs = rsa.rdm.RDMs(RDMs_mat_av[t].reshape(1, 8, 8),
+        RDMs = rsa.rdm.RDMs(RDMs_mat_avg[t].reshape(1, 8, 8),
                             pattern_descriptors=descr['pattern_descriptors'],
-                            rdm_descriptors={'cond': f'{time}'})
+                            rdm_descriptors={'cond': f'{time} ({interval[t]})'})
 
-        cax = rsa.vis.show_rdm_panel(RDMs,
-                               ax=axs[t],
-                               vmin=vmin,
-                               vmax=vmax,
-                               rdm_descriptor='cond',
-                               cmap='viridis')
+        cax = rsa.vis.rdm_plot.show_rdm_panel(RDMs,
+                                              ax=axs[t],
+                                              vmin=vmin,
+                                              vmax=vmax,
+                                              rdm_descriptor='cond',
+                                              cmap='viridis')
 
-        axs[ t].axvline(3.5, color='k', lw=.8)
+        axs[t].axvline(3.5, color='k', lw=.8)
         axs[t].axhline(3.5, color='k', lw=.8)
 
         axs[t].set_xticks(np.linspace(0, 7, 8))
@@ -67,18 +84,39 @@ if __name__ == "__main__":
         axs[t].set_yticks(np.linspace(0, 7, 8))
         axs[t].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'])
 
-        # rsa.vis.scatter_plot.show_MDS_panel(RDMs,
-        #                                     axs[1, t],
-        #                                     pattern_descriptor='stimFinger,cue')
-        # axs[1, t].set_xlim([-3, 3])
-        # axs[1, t].set_ylim([-3, 3])
+        masks = [mask_stimFinger, mask_cue, mask_stimFinger_cue]
+        # Draw contours for each mask with corresponding symmetry
+        for m, mask in enumerate(masks):
+            mask = squareform(mask)
+
+            for i in range(mask.shape[0]):
+                if symmetry[m] == 1:  # Upper triangular part
+                    start_j = i + 1
+                elif symmetry[m] == -1:  # Lower triangular part
+                    start_j = 0
+
+                for j in range(start_j, mask.shape[1]):
+                    if (symmetry[m] == 1 and j > i) or (symmetry[m] == -1 and j < i):  # Ensure upper or lower triangular part
+                        if mask[i, j]:
+                            # Coordinates of the cell corners
+                            corners = [(j - 0.5, i - 0.5), (j + 0.5, i - 0.5), (j + 0.5, i + 0.5), (j - 0.5, i + 0.5)]
+                            axs[t].add_patch(
+                                Polygon(
+                                    corners,
+                                    facecolor='none',
+                                    edgecolor=colors[m],
+                                    linewidth=3,
+                                    closed=True,
+                                    joinstyle='round',
+                                    hatch='/'
+                                )
+                            )
 
     cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
     cbar.set_label('cross-validated multivariate distance (a.u.)')
 
-    fig.suptitle('Average multivariate distances between EMG patterns for different cues')
+    fig.suptitle('Average cross-validated distances between EMG patterns')
 
     fig.subplots_adjust(bottom=.3)
 
     fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'RDMs.emg.png'))
-

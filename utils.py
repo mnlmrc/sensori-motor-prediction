@@ -137,3 +137,38 @@ def sort_cues(cue_list):
     sorted_cues = [f"{cue}%" for cue in sorted_cues]
 
     return sorted_cues
+
+
+def moving_average(signal, window_size, axis=-1):
+    """
+    Calculate the moving average of a signal along a specified axis and pad the result to maintain the same length.
+
+    Parameters:
+    signal (array-like): The input signal.
+    window_size (int): The size of the moving window.
+    axis (int): The axis along which to calculate the moving average.
+
+    Returns:
+    array: The moving average of the signal with the same length as the original along the specified axis.
+    """
+    signal = np.asarray(signal)
+
+    # Calculate the cumulative sum along the specified axis
+    cumsum = np.cumsum(np.insert(signal, 0, 0, axis=axis), axis=axis)
+
+    # Compute the moving average using slicing
+    ma = (cumsum.take(indices=range(window_size, cumsum.shape[axis]), axis=axis) -
+          cumsum.take(indices=range(cumsum.shape[axis] - window_size), axis=axis)) / window_size
+
+    # # Determine the padding width
+    # pad_width = [(0, 0)] * signal.ndim
+    # pad_size = (window_size - 1) // 2
+    # if window_size % 2 == 0:
+    #     pad_width[axis] = (pad_size, pad_size + 1)
+    # else:
+    #     pad_width[axis] = (pad_size, pad_size)
+    #
+    # # Pad the result to maintain the same shape as the original signal
+    # ma_padded = np.pad(ma, pad_width, mode='constant', constant_values=np.nan)
+
+    return ma

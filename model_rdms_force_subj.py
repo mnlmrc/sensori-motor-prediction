@@ -4,79 +4,90 @@ import json
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
 import globals as gl
 import rsatoolbox as rsa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participants', default=['subj100',
-                                                   'subj101',
-                                                   'subj102',
-                                                   'subj103',
-                                                   'subj104',
-                                                   'subj105',
-                                                   'subj106',
-                                                   'subj107',
-                                                   'subj108',
-                                                   'subj109',
-                                                   'subj110'], help='Participant IDs')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
 
     args = parser.parse_args()
 
-    participants = args.participants
+    participant_id = args.participant_id
 
     experiment = 'smp0'
 
     path = os.path.join(gl.baseDir, experiment)
 
-    RDMs_mat = np.zeros((len(participants), 3, 8, 8))
-    for p, participant in enumerate(participants):
+    sn = int(''.join([c for c in participant_id if c.isdigit()]))
 
-        sn = int(''.join([c for c in participant if c.isdigit()]))
+    participants = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
 
-        npz = np.load(os.path.join(path, participant, 'mov', f'smp0_{sn}_RDMs.npz'))
+    channels = participants[participants['sn'] == sn].channels_mov.iloc[0].split(',')
+    blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_mov.iloc[0].split('.')]
+    dat = pd.read_csv(os.path.join(path, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
+    dat = dat[dat.BN.isin(blocks)]
 
-        RDMs_mat[p] = npz['data_array']
-        descr = json.loads(npz['descriptor'].item())
+    cue = dat.chordID
+    stimFinger = dat.stimFinger
+    run = dat.BN
 
-    RDMs_mat_av = RDMs_mat.mean(axis=0)
+    map_cue = pd.DataFrame([('0%', 93),
+                            ('25%', 12),
+                            ('50%', 44),
+                            ('75%', 21),
+                            ('100%', 39)],
+                           columns=['label', 'code'])
+    map_dict = dict(zip(map_cue['code'], map_cue['label']))
+    cue = [map_dict.get(item, item) for item in cue]
 
-    # create finger model
-    stimFinger_RDM = np.zeros((8, 8))
-    for i in range(8):
-        for j in range(8):
-            if (i < 4 and j >= 4) or (i >= 4 and j < 4):
-                stimFinger_RDM[i, j] = 1  # Different fingers
+    map_stimFinger = pd.DataFrame([('index', 91999),
+                                   ('ring', 99919), ],
+                                  columns=['label', 'code'])
+    map_dict = dict(zip(map_stimFinger['code'], map_stimFinger['label']))
+    stimFinger = [map_dict.get(item, item) for item in stimFinger]
 
-    # create cue model
-    cue_RDM = np.zeros((8, 8))
-    max_cue_diff = 3
-    for i in range(8):
-        for j in range(8):
-            cue_diff = abs((i % 4) - (j % 4))
-            cue_RDM[i, j] = cue_diff / max_cue_diff
+    # load RDM(s)
+    npz = np.load(os.path.join(path, participant_id, 'mov', f'smp0_{sn}_RDMs.npz'))
+    RDMs = npz['data_array']
+    descr = json.loads(npz['descriptor'].item())
 
-    timew = descr['rdm_descriptors']['timew']
+    # load force
+    force = np.load(os.path.join(path, participant_id, 'mov', f'smp0_{sn}.npy'))
 
-    vmax = RDMs_mat_av.max()
-    vmin = RDMs_mat_av.min()
+    timeAx = np.linspace(-1, 2, force.shape[-1])
+    dist_stimFinger = np.zeros(force.shape[-1])
+    dist_cue = np.zeros(force.shape[-1])
+    for t in range(force.shape[-1]):
 
-    rdms = rsa.rdm.RDMs(np.stack([stimFinger_RDM, cue_RDM, np.zeros((8, 8))]))
-    model = rsa.model.ModelWeighted('test', rdms)
+        print('time point %f' % timeAx[t])
 
-    for t, time in enumerate(timew):
-        RDMs = rsa.rdm.RDMs(RDMs_mat_av[t].reshape(1, 8, 8),
-                            pattern_descriptors=descr['pattern_descriptors'],
-                            rdm_descriptors={'cond': f'{time}'})
+        # calculate rdm for timepoint t
+        force_tmp = force[:, :, t]
+        dataset = rsa.data.Dataset(
+            force_tmp,
+            channel_descriptors={'channels': channels},
+            obs_descriptors={'stimFinger,cue': [sf + ',' + c for c, sf in zip(cue, stimFinger)], 'run': run},
+        )
+        noise = rsa.data.noise.prec_from_unbalanced(dataset,
+                                                    obs_desc='stimFinger,cue',
+                                                    method='shrinkage_diag')
+        rdm = rsa.rdm.calc_rdm_unbalanced(dataset,
+                                          method='crossnobis',
+                                          descriptor='stimFinger,cue',
+                                          noise=noise,
+                                          cv_descriptor='run')
+        rdm.reorder(rdm.pattern_descriptors['stimFinger,cue'].argsort())
+        rdm.reorder(np.array([1, 2, 3, 0, 4, 5, 6, 7]))
 
-        theta = model.fit(RDMs)
-        pred = model.predict(theta)
+        rdm = rdm.get_matrices()
 
-        obs = RDMs.dissimilarities.squeeze()
+        dist_stimFinger[t] = rdm[0, [0, 1, 2], [5, 6, 7]].mean()
+        dist_cue[t] = rdm[0, [0, 1, 1], [1, 2, 2]].mean()
 
-        res_squared = ((obs - pred)**2).mean()
-        print(res_squared)
+    fig, axs = plt.subplots()
 
-
-
-
+    axs.plot(timeAx, dist_stimFinger)
+    axs.plot(timeAx, dist_cue)
