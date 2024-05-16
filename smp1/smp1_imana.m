@@ -783,11 +783,10 @@ function varargout = smp1_imana(what,varargin)
             operation  = sprintf('GLM:make_glm%d', glm);
             
             events = smp1_imana(operation, 'sn', sn);
-
+            
             %% export
             output_folder = fullfile(baseDir, behavDir, subj_id);
-            writetable(events, fullfile(output_folder, sprintf('glm%d_events.tsv', glm) ), 'FileType', 'text', 'Delimiter','\t')  
-            
+            writetable(events, fullfile(output_folder, 'glm6_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
 
         case 'GLM:make_glm1'
             
@@ -1339,7 +1338,7 @@ function varargout = smp1_imana(what,varargin)
             plan.stimFinger = D.stimFinger(~go);
             plan.Onset = D.startTimeReal(~go) + D.baselineWait(~go);
             plan.Duration = zeros(length(plan.BN), 1);
-            plan.eventtype = repmat({'plan (nogo)'}, [length(plan.BN), 1]);         
+            plan.eventtype = repmat({'plan_nogo'}, [length(plan.BN), 1]);         
             
             %% make table
             
@@ -1350,10 +1349,9 @@ function varargout = smp1_imana(what,varargin)
             
             %% convert to secs
             events.Onset = events.Onset ./ 1000;
-            events.Duration = events.Duration ./ 1000;
-            
-            
-             varargout{1}= events;
+            events.Duration = events.Duration ./ 1000;                 
+                       
+            varargout{1}= events;
 
         case 'GLM:design'
             
