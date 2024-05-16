@@ -1579,75 +1579,78 @@ function varargout = smp1_imana(what,varargin)
             end
 
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
+            contrasts = unique(T.name);
             
             % load contrasts table
-            contr = dload(fullfile(baseDir, sprintf('glm%d', glm), 'contr.tsv'));
+            % contr = dload(fullfile(baseDir, sprintf('glm%d', glm), 'contr.tsv'));
 
-            for c = 1:length(contr.condition)
-                condition = split(contr.condition(c), ',');
-                baseline = split(contr.baseline(c), ',');
-                
-                if strcmp(baseline, 'NA') baseline = {}; end
+            for c = 1:length(contrasts)
+                % condition = split(contr.condition(c), ',');
+                % baseline = split(contr.baseline(c), ',');
+                % 
+                % if strcmp(baseline, 'NA') baseline = {}; end
 
-                fprintf('%s: %s vs. %s\n', subj_id, char(contr.condition(c)), char(contr.baseline(c)))
+                % fprintf('%s: %s vs. %s\n', subj_id, char(contr.condition(c)), char(contr.baseline(c)))
 
-                xcn = zeros(length(T.name));
-                contrast1 = '';
-                for cn=1:length(condition)             
-                    if cn > 1
-                        if sum(xcn .* T.(condition{cn})) == 0
-                            xcn = xcn + T.(condition{cn});
-                        else
-                            xcn = xcn .* T.(condition{cn});
-                        end
-                        contrast1 = [contrast1 '_' condition{cn}];
-                    else
-                        xcn = T.(condition{cn});
-                        contrast1 = condition{cn};
-                    end
-                end
-    
-                xbs = zeros(length(T.name));
-                contrast2 = '';
-                for bs=1:length(baseline)
-                    if bs > 1
-                        if sum(xbs .* T.(condition{bs})) == 0
-                            xbs = xbs + T.(condition{bs});
-                        else
-                            xbs = xbs .* T.(baseline{bs});
-                        end
-                        contrast2 = [contrast2 '_' baseline{bs}];
-                    else
-                        if ~strcmp(baseline{bs}, '')
-                            xbs = T.(baseline{bs});
-                            contrast2 = baseline{bs};
-                        end
-                    end
-                end
-    
-                xcon = zeros(size(SPM.xX.X,2), 1);
-                for ic = 1:length(xcon) - max(T.run)
-                    if xcn(ic) == 1
-                        xcon(ic) = 1;
-                    elseif xbs(ic) == 1
-                        xcon(ic) = -1;
-                    end
-                end
-
-%                 if strcmp(baseline, '')
-%                     xcon(end-length(SPM.nscan):end) = -1;
+%                 xcn = zeros(length(T.name));
+%                 contrast1 = '';
+%                 for cn=1:length(condition)             
+%                     if cn > 1
+%                         if sum(xcn .* T.(condition{cn})) == 0
+%                             xcn = xcn + T.(condition{cn});
+%                         else
+%                             xcn = xcn .* T.(condition{cn});
+%                         end
+%                         contrast1 = [contrast1 '_' condition{cn}];
+%                     else
+%                         xcn = T.(condition{cn});
+%                         contrast1 = condition{cn};
+%                     end
 %                 end
-                
-                xcon(xcon > 0) = xcon(xcon > 0) / sum(xcon(xcon > 0));
-                xcon(xcon < 0) = xcon(xcon < 0) / abs(sum(xcon < 0));
-                
-                if abs(sum(xcon)) > 1e-10
-                    warning(['sum of weight contrast vector is not zero: ' sprintf('%f', sum(xcon))])
-                else
-                    fprintf('sum of weights: %f\n', sum(xcon))
-                end
+% 
+%                 xbs = zeros(length(T.name));
+%                 contrast2 = '';
+%                 for bs=1:length(baseline)
+%                     if bs > 1
+%                         if sum(xbs .* T.(condition{bs})) == 0
+%                             xbs = xbs + T.(condition{bs});
+%                         else
+%                             xbs = xbs .* T.(baseline{bs});
+%                         end
+%                         contrast2 = [contrast2 '_' baseline{bs}];
+%                     else
+%                         if ~strcmp(baseline{bs}, '')
+%                             xbs = T.(baseline{bs});
+%                             contrast2 = baseline{bs};
+%                         end
+%                     end
+%                 end
+% 
+%                 xcon = zeros(size(SPM.xX.X,2), 1);
+%                 for ic = 1:length(xcon) - max(T.run)
+%                     if xcn(ic) == 1
+%                         xcon(ic) = 1;
+%                     elseif xbs(ic) == 1
+%                         xcon(ic) = -1;
+%                     end
+%                 end
+% 
+% %                 if strcmp(baseline, '')
+% %                     xcon(end-length(SPM.nscan):end) = -1;
+% %                 end
+% 
+%                 xcon(xcon > 0) = xcon(xcon > 0) / sum(xcon(xcon > 0));
+%                 xcon(xcon < 0) = xcon(xcon < 0) / abs(sum(xcon < 0));
+% 
+%                 if abs(sum(xcon)) > 1e-10
+%                     warning(['sum of weight contrast vector is not zero: ' sprintf('%f', sum(xcon))])
+%                 else
+%                     fprintf('sum of weights: %f\n', sum(xcon))
+%                 end
 
-                contrast_name = sprintf('%s-%s', contrast1, contrast2);
+                contrast_name = contrasts{c};
+                xcon = zeros(size(SPM.xX.X,2), 1);
+                xcon(strcmp(T.name, contrast_name)) = 1;
                 if ~isfield(SPM, 'xCon')
                     SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
                     cname_idx = 1;
@@ -1673,27 +1676,6 @@ function varargout = smp1_imana(what,varargin)
                 end % conditions (n, conName: con and spmT)
 
             end
-
-        % case 'GLM:contrasts'
-        % 
-        %     sn             = [];    % subjects list
-        %     glm            = [];    % glm number
-        % 
-        %     vararginoptions(varargin, {'sn', 'glm'})
-        % 
-        %     if isempty(sn)
-        %         error('GLM:T_contrast -> ''sn'' must be passed to this function.')
-        %     end
-        % 
-        %     if isempty(glm)
-        %         error('GLM:T_contrast -> ''glm'' must be passed to this function.')
-        %     end
-        % 
-        %     subj_id = pinfo.subj_id{pinfo.sn==sn};            
-        %     glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
-        % 
-        %     % load the SPM.mat file
-        %     SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
 
         
 
