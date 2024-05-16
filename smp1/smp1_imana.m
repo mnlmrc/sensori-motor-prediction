@@ -1261,6 +1261,53 @@ function varargout = smp1_imana(what,varargin)
              end
             writetable(events, fullfile(output_folder,  'glm4_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
 
+        case 'GLM:make_glm5'
+            
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
+
+            go = strcmp(D.GoNogo, "go");
+            
+            %% execution
+            exec.BN = D.BN(go);
+            exec.TN = D.TN(go);
+            exec.cue = D.cue(go);
+            exec.stimFinger = D.stimFinger(go);
+            exec.Onset = D.startTimeReal(go) + D.baselineWait(go) + D.planTime(go);
+            exec.Duration = zeros(length(exec.BN), 1);
+            exec.eventtype = repmat({'exec'}, [length(exec.BN), 1]);
+            
+            %% planning
+            plan.BN = D.BN;
+            plan.TN = D.TN;
+            plan.cue = D.cue;
+            plan.stimFinger = D.stimFinger;
+            plan.Onset = D.startTimeReal + D.baselineWait;
+            plan.Duration = zeros(length(plan.BN), 1);
+            plan.eventtype = repmat({'plan'}, [length(plan.BN), 1]);         
+            
+            %% make table
+            
+            exec = struct2table(exec);
+            plan = struct2table(plan);
+            % rest = struct2table(rest);
+            events = [exec; plan];
+            
+            %% convert to secs
+            events.Onset = events.Onset ./ 1000;
+            events.Duration = events.Duration ./ 1000;
+            
+            %% export
+             output_folder = fullfile(baseDir, behavDir, subj_id);
+             if ~exist(output_folder, "dir")
+                mkdir(output_folder);
+             end
+            writetable(events, fullfile(output_folder,  'glm5_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
+
         case 'GLM:design'
             
             sn = [];
@@ -1316,11 +1363,11 @@ function varargout = smp1_imana(what,varargin)
                 for regr = 1:nRegr
                     % cue = Dd.cue(regr);
                     % stimFinger = Dd.stimFinger(regr);
-                    rows = find (Dd.BN == run & strcmp(Dd.eventtype, regressors(regr)));
-                    cue_id = unique(Dd.cue_id(rows));
-                    stimFinger_id = unique(Dd.stimFinger_id(rows));
-                    epoch = unique(Dd.epoch(rows));
-                    instr = unique(Dd.instruction(rows));
+                    rows = find(Dd.BN == run & strcmp(Dd.eventtype, regressors(regr)));
+                    % cue_id = unique(Dd.cue_id(rows));
+                    % stimFinger_id = unique(Dd.stimFinger_id(rows));
+                    % epoch = unique(Dd.epoch(rows));
+                    % instr = unique(Dd.instruction(rows));
                     
                     % Regressor name
                     J.sess(run).cond(regr).name = regressors{regr};
@@ -1351,10 +1398,10 @@ function varargout = smp1_imana(what,varargin)
                     TT.sn        = sn;
                     TT.run       = run;
                     TT.name      = regressors(regr);
-                    TT.cue       = cue_id;
-                    TT.epoch     = epoch;
-                    TT.stimFinger = stimFinger_id;
-                    TT.instr = instr;       
+                    % TT.cue       = cue_id;
+                    % TT.epoch     = epoch;
+                    % TT.stimFinger = stimFinger_id;
+                    % TT.instr = instr;       
 
                     T = addstruct(T, TT);
 
@@ -1433,22 +1480,22 @@ function varargout = smp1_imana(what,varargin)
                 
             end
 
-            T.cue000 = strcmp(T.cue, 'cue0');
-            T.cue025 = strcmp(T.cue, 'cue25');
-            T.cue050 = strcmp(T.cue, 'cue50');
-            T.cue075 = strcmp(T.cue, 'cue75');
-            T.cue100 = strcmp(T.cue, 'cue100');
-            
-            T.index = strcmp(T.stimFinger, 'index');
-            T.ring = strcmp(T.stimFinger, 'ring');
-            
-            T.plan = strcmp(T.epoch, 'plan');
-            T.exec = strcmp(T.epoch, 'exec');
-            
-            T.go = strcmp(T.instr, 'go');
-            T.nogo = strcmp(T.instr, 'nogo');
-            
-            T.rest = strcmp(T.name, 'rest');
+            % T.cue000 = strcmp(T.cue, 'cue0');
+            % T.cue025 = strcmp(T.cue, 'cue25');
+            % T.cue050 = strcmp(T.cue, 'cue50');
+            % T.cue075 = strcmp(T.cue, 'cue75');
+            % T.cue100 = strcmp(T.cue, 'cue100');
+            % 
+            % T.index = strcmp(T.stimFinger, 'index');
+            % T.ring = strcmp(T.stimFinger, 'ring');
+            % 
+            % T.plan = strcmp(T.epoch, 'plan');
+            % T.exec = strcmp(T.epoch, 'exec');
+            % 
+            % T.go = strcmp(T.instr, 'go');
+            % T.nogo = strcmp(T.instr, 'nogo');
+            % 
+            % T.rest = strcmp(T.name, 'rest');
             
             dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
             spm_rwls_run_fmri_spec(J);
