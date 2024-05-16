@@ -778,9 +778,16 @@ function varargout = smp1_imana(what,varargin)
             glm = [];
             vararginoptions(varargin,{'sn', 'glm'})
 
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+            
             operation  = sprintf('GLM:make_glm%d', glm);
+            
+            events = smp1_imana(operation, 'sn', sn);
 
-            smp1_imana(operation, 'sn', sn)
+            %% export
+            output_folder = fullfile(baseDir, behavDir, subj_id);
+            writetable(events, fullfile(output_folder, sprintf('glm%d_events.tsv', glm) ), 'FileType', 'text', 'Delimiter','\t')  
+            
 
         case 'GLM:make_glm1'
             
@@ -1301,12 +1308,52 @@ function varargout = smp1_imana(what,varargin)
             events.Onset = events.Onset ./ 1000;
             events.Duration = events.Duration ./ 1000;
             
-            %% export
-             output_folder = fullfile(baseDir, behavDir, subj_id);
-             if ~exist(output_folder, "dir")
-                mkdir(output_folder);
-             end
-            writetable(events, fullfile(output_folder,  'glm5_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
+            
+             varargout{1}= events;
+            % writetable(events, fullfile(output_folder,  'glm5_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
+
+        case 'GLM:make_glm6'
+            
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
+
+            go = strcmp(D.GoNogo, "go");
+            
+            %% execution
+            exec.BN = D.BN(go);
+            exec.TN = D.TN(go);
+            exec.cue = D.cue(go);
+            exec.stimFinger = D.stimFinger(go);
+            exec.Onset = D.startTimeReal(go) + D.baselineWait(go) + D.planTime(go);
+            exec.Duration = zeros(length(exec.BN), 1);
+            exec.eventtype = repmat({'exec'}, [length(exec.BN), 1]);
+            
+            %% planning (nogo)
+            plan.BN = D.BN(~go);
+            plan.TN = D.TN(~go);
+            plan.cue = D.cue(~go);
+            plan.stimFinger = D.stimFinger(~go);
+            plan.Onset = D.startTimeReal(~go) + D.baselineWait(~go);
+            plan.Duration = zeros(length(plan.BN), 1);
+            plan.eventtype = repmat({'plan (nogo)'}, [length(plan.BN), 1]);         
+            
+            %% make table
+            
+            exec = struct2table(exec);
+            plan = struct2table(plan);
+            % rest = struct2table(rest);
+            events = [exec; plan];
+            
+            %% convert to secs
+            events.Onset = events.Onset ./ 1000;
+            events.Duration = events.Duration ./ 1000;
+            
+            
+             varargout{1}= events;
 
         case 'GLM:design'
             
@@ -2138,7 +2185,7 @@ function varargout = smp1_imana(what,varargin)
         case 'ROI:define'
             
             sn = [];
-            glm = 4;
+            glm = 5;
             atlas = 'ROI';
             
             vararginoptions(varargin,{'sn', 'glm', 'atlas'});
@@ -2178,9 +2225,9 @@ function varargout = smp1_imana(what,varargin)
             roi = {'SMA', 'PMd', 'PMv', 'M1', 'S1', 'SPLa', 'SPLp', 'V1'};
             atlas = 'ROI';
             hem = 'L';
-            regressor = [];
+            eventname = [];
 
-            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'regressor', 'hem'});
+            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'eventname', 'hem'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
@@ -2194,7 +2241,7 @@ function varargout = smp1_imana(what,varargin)
                 post = 10;
                 
                 % Select a specific subset of things to plot 
-                subset      = find(contains(T.eventname, regressor) & strcmp(T.hem, hem));
+                subset      = find(contains(T.eventname, eventname) & strcmp(T.hem, hem));
 
                 subplot(2, 4, r)
                 
@@ -2227,14 +2274,14 @@ function varargout = smp1_imana(what,varargin)
 
             end
 
-            sgtitle(sprintf('%s\nhemisphere:%s, regressor:%s', subj_id, hem, regressor), 'interpreter', 'none')
+            sgtitle(sprintf('%s\nhemisphere:%s, eventname:%s', subj_id, hem, eventname), 'interpreter', 'none')
             set(gcf, 'Position', [100 100, 1400, 800])
 
             drawnow;
 
             fig = gcf;
 
-            saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.%s.png', hem, regressor)))
+            saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.%s.png', hem, eventname)))
             
             
     end
