@@ -10,16 +10,6 @@ function varargout = smp1_imana(what,varargin)
         path = localPath;
     elseif isfolder(cbsPath)
         path = cbsPath;
-%         addpath([path 'GitHub/spmj_tools/'])
-%         addpath([path 'GitHub/dataframe/util/'])
-%         addpath([path 'GitHub/surfAnalysis/'])
-%         addpath([path 'MATLAB/spm12/'])
-%         addpath([path 'GitHub/rwls/'])
-%         addpath([path 'GitHub/suit/'])
-%         addpath([path 'GitHub/surfing/surfing/'])
-%         addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
-%         addpath([path 'GitHub/rsatoolbox_matlab/'])
-%         addpath([path 'GitHub/region/'])
     end
     addpath([path 'GitHub/spmj_tools/'])
     addpath([path 'GitHub/dataframe/util/'])
@@ -30,7 +20,7 @@ function varargout = smp1_imana(what,varargin)
     addpath([path 'MATLAB/spm12/'])
     addpath([path 'GitHub/rwls/'])
     addpath([path 'GitHub/surfing/surfing/'])
-    addpath([path 'GitHub/suit/'])
+    % addpath([path 'GitHub/suit/'])
     addpath([path 'GitHub/rsatoolbox_matlab/'])
     addpath([path 'GitHub/surfing/toolbox_fast_marching/'])
     addpath([path 'GitHub/region/'])
@@ -786,7 +776,57 @@ function varargout = smp1_imana(what,varargin)
             
             %% export
             output_folder = fullfile(baseDir, behavDir, subj_id);
-            writetable(events, fullfile(output_folder, 'glm6_events.tsv'), 'FileType', 'text', 'Delimiter','\t')  
+            writetable(events, fullfile(output_folder, 'glm6_events.tsv'), 'FileType', 'text', 'Delimiter','\t')
+
+        case 'GLM:calculate_VIF'
+
+            sn = [];
+            glm = [];
+            vararginoptions(varargin,{'sn', 'glm'})
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            SPM = load(fullfile(baseDir,[glmEstDir num2str(glm)],subj_id, 'SPM.mat')); SPM = SPM.SPM;
+
+            X=(SPM.xX.X(:,SPM.xX.iC)); % Assuming 'X' is the field holding the design matrix
+            
+            % % Number of predictors
+            % [n, p] = size(X);
+            
+            % Initialize VIF array
+            vif_values = zeros(length(SPM.Sess), length(SPM.Sess(1).col));
+
+            for s = 1:length(SPM.Sess)
+                idx = 1;
+                for i = SPM.Sess(s).col
+                    % Separate the ith predictor
+                    Xi = X(:, i);
+                    % Remaining predictors
+                    other_predictors = X(:, setdiff(SPM.Sess(s).col, i));
+                    
+                    % Fit a regression model of Xi on the other predictors
+                    model = fitlm(other_predictors, Xi);
+                    
+                    % Get R-squared value
+                    R_squared = model.Rsquared.Ordinary;
+                    
+                    % Compute VIF
+                    vif_values(s, idx) = 1 / (1 - R_squared);
+                    idx = idx + 1;
+                end
+
+            end
+
+            figure
+            bar([SPM.Sess(1).U.name], mean(vif_values, 1))
+            set(groot, 'defaultTextInterpreter', 'none');
+            hold on
+            errorbar(categorical([SPM.Sess(1).U.name]), mean(vif_values, 1), std(vif_values, 1), 'k', 'linestyle', 'none')
+             
+            % Display VIF values
+            vif_table = array2table( vif_values, 'VariableNames', [SPM.Sess(1).U.name]);
+            disp(vif_table);
+
 
         case 'GLM:make_glm1'
             
@@ -1547,10 +1587,11 @@ function varargout = smp1_imana(what,varargin)
             
             % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
 
-        case 'GLM:visualize_design_matrix'
+        case 'GLM:design_matrix'
             
             sn = [];
-            vararginoptions(varargin,{'sn'})
+            glm = [];
+            vararginoptions(varargin,{'sn', 'glm'})
 
             if isempty(sn)
                 error('GLM:visualize_design_matrix -> ''sn'' must be passed to this function.')
@@ -1558,9 +1599,11 @@ function varargout = smp1_imana(what,varargin)
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
-            SPM = load(fullfile(baseDir,glmEstDir,subj_id, 'SPM.mat'));
+            SPM = load(fullfile(baseDir,[glmEstDir num2str(glm)],subj_id, 'SPM.mat'));
 
             X = SPM.SPM.xX.X; % Assuming 'X' is the field holding the design matrix
+            
+            figure
 
             imagesc(X); % Plot the design matrix
             colormap('gray'); % Optional: Use a grayscale colormap for better visibility
@@ -2177,7 +2220,7 @@ function varargout = smp1_imana(what,varargin)
                 T           = addstruct(T,D);
             end
             
-            save(fullfile(baseDir,regDir, subj_id, sprintf('hrf.mat')),'T'); 
+            save(fullfile(baseDir,regDir, subj_id, sprintf('hrf_glm%d.mat', glm)),'T'); 
             varargout{1} = T;
 
         case 'ROI:define'
@@ -2254,7 +2297,7 @@ function varargout = smp1_imana(what,varargin)
                 
     
                 % yyaxis right
-                traceplot([-pre:post],T.y_raw - mean(T.y_raw, 2), 'subset',subset,'leg',[], 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
+                traceplot([-pre:post],T.y_adj, 'subset',subset,'leg',[], 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
                 % ax = gca;
                 % ax.YColor = 'r';
                 
