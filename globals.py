@@ -13,6 +13,7 @@ behavDir = "behavioural"
 trainDir = "training"
 imagingDir = "imaging_data"
 RDM = "rdm"
+ROI = 'ROI'
 
 # if Path(baseDir).exists():
 #     print("Switch to local directory")

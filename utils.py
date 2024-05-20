@@ -1,4 +1,6 @@
 # from PcmPy import indicator
+import re
+
 from scipy.signal import firwin, filtfilt
 
 
@@ -172,3 +174,9 @@ def moving_average(signal, window_size, axis=-1):
     # ma_padded = np.pad(ma, pad_width, mode='constant', constant_values=np.nan)
 
     return ma
+
+def sort_key(val):
+    num_match = re.match(r'(\d+)%', val)
+    if num_match:
+        return (0, int(num_match.group(1)))
+    return (1, val.lower())
