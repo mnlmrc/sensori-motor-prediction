@@ -1804,7 +1804,7 @@ function varargout = smp1_imana(what,varargin)
         
             for run = 1:max(Dd.BN)
                 % Setup scans for current session
-                J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id,'sess1', [subj_id, '_run_', run_list{run}, '.nii'])};
+                J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id, [subj_id, '_run_', run_list{run}, '.nii'])};
         
         
                 % Preallocate memory for conditions
@@ -1915,7 +1915,7 @@ function varargout = smp1_imana(what,varargin)
                 J.global = 'None';
 
                 % remove voxels involving non-neural tissue (e.g., skull)
-                J.mask = {fullfile(baseDir, imagingDir, subj_id, 'sess1', 'rmask_noskull.nii')};
+                J.mask = {fullfile(baseDir, imagingDir, subj_id, 'rmask_noskull.nii')};
                 
                 % Set threshold for brightness threshold for masking 
                 % If supplying explicit mask, set to 0  (default is 0.8)
@@ -1923,7 +1923,7 @@ function varargout = smp1_imana(what,varargin)
 
                 % Create map where non-sphericity correction must be
                 % applied
-                J.cvi_mask = {fullfile(baseDir, imagingDir, subj_id, 'sess1', 'rmask_gray.nii')};
+                J.cvi_mask = {fullfile(baseDir, imagingDir, subj_id, 'rmask_gray.nii')};
 
                 % Method for non sphericity correction
                 J.cvi =  'fast';
