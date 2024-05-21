@@ -19,8 +19,8 @@ import globals as gl
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
-    parser.add_argument('--atlas', default='BA_handArea', help='Atlas name')
-    parser.add_argument('--glm', default='9', help='GLM model (e.g., 1, 2, ...)')
+    parser.add_argument('--atlas', default='ROI', help='Atlas name')
+    parser.add_argument('--glm', default='5', help='GLM model (e.g., 1, 2, ...)')
 
     args = parser.parse_args()
 
@@ -80,6 +80,9 @@ if __name__ == "__main__":
         ],
         'BA_handArea': [
             'ba4a', 'ba4p', 'ba3A', 'ba3B', 'ba1', 'ba2'
+        ],
+        'ROI': [
+            'SMA', 'PMd', 'PMv', 'M1', 'S1', 'SPLa', 'SPLp', 'V1'
         ]
     }
     rois = rois[atlas]
