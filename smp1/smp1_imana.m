@@ -129,7 +129,7 @@ function varargout = smp1_imana(what,varargin)
                     func_raw_path = fullfile(baseDir,bidsDir,sprintf('subj%.02d',sn),'func',FuncRawName_tmp);
             
                     % destination path:
-                    output_folder = fullfile(baseDir,imagingRawDir,subj_id,['sess' num2str(sess)]);
+                    output_folder = fullfile(baseDir,imagingRawDir,subj_id);
                     output_file = fullfile(output_folder,[subj_id sprintf('_run_%.02d.nii.gz',run_list(i))]);
                     
                     if ~exist(output_folder,"dir")
@@ -179,7 +179,7 @@ function varargout = smp1_imana(what,varargin)
                 phase_path = fullfile(baseDir,bidsDir,sprintf('subj%.02d',sn),'fmap',phase);
         
                 % destination path:
-                output_folder = fullfile(baseDir,fmapDir,subj_id,['sess' num2str(sess)]);
+                output_folder = fullfile(baseDir,fmapDir,subj_id);
                 output_magnitude = fullfile(output_folder,[subj_id '_magnitude.nii.gz']);
                 output_phase = fullfile(output_folder,[subj_id '_phase.nii.gz']);
                 
@@ -290,6 +290,18 @@ function varargout = smp1_imana(what,varargin)
             % <project_id>/anatomicals/<subj_id>/ directory. Each of these
             % files contains a segment (e.g., white matter, grey matter) of
             % the centered anatomical image.
+
+            % The output images correspond to the native parameter. For the
+            % first five tissues, native is set to [1 0], which means that
+            % the native space segmented images are saved. For the sixth
+            % tissue (background), native is set to [0 0], which means that
+            % no native space segmented image is saved for this tissue.
+
+            % Thus, the code is designed to create segmentation for six tissue classes,
+            % but only the first five are saved as output files (c1 to c5). The sixth
+            % tissue class (background) does not produce an output image because its
+            % native parameter is set to [0 0]. This is why you only see five output
+            % images, despite the code handling six tissue classes.
     
             % handling input args:
             sn = [];
@@ -309,27 +321,27 @@ function varargout = smp1_imana(what,varargin)
             J.channel.biasreg = 0.001;
             J.channel.biasfwhm = 60;
             J.channel.write = [0 0];
-            J.tissue(1).tpm = {fullfile(SPMhome,'tpm/TPM.nii,1')};
+            J.tissue(1).tpm = {fullfile(SPMhome,'tpm/TPM.nii,1')}; % grey matter
             J.tissue(1).ngaus = 1;
             J.tissue(1).native = [1 0];
             J.tissue(1).warped = [0 0];
-            J.tissue(2).tpm = {fullfile(SPMhome,'tpm/TPM.nii,2')};
+            J.tissue(2).tpm = {fullfile(SPMhome,'tpm/TPM.nii,2')}; % white matter
             J.tissue(2).ngaus = 1;
             J.tissue(2).native = [1 0];
             J.tissue(2).warped = [0 0];
-            J.tissue(3).tpm = {fullfile(SPMhome,'tpm/TPM.nii,3')};
-            J.tissue(3).ngaus = 2;
+            J.tissue(3).tpm = {fullfile(SPMhome,'tpm/TPM.nii,3')}; % CSF
+            J.tissue(3).ngaus = 2; 
             J.tissue(3).native = [1 0];
             J.tissue(3).warped = [0 0];
-            J.tissue(4).tpm = {fullfile(SPMhome,'tpm/TPM.nii,4')};
+            J.tissue(4).tpm = {fullfile(SPMhome,'tpm/TPM.nii,4')}; % soft tissue
             J.tissue(4).ngaus = 3;
             J.tissue(4).native = [1 0];
             J.tissue(4).warped = [0 0];
-            J.tissue(5).tpm = {fullfile(SPMhome,'tpm/TPM.nii,5')};
+            J.tissue(5).tpm = {fullfile(SPMhome,'tpm/TPM.nii,5')}; % bone
             J.tissue(5).ngaus = 4;
             J.tissue(5).native = [1 0];
             J.tissue(5).warped = [0 0];
-            J.tissue(6).tpm = {fullfile(SPMhome,'tpm/TPM.nii,6')};
+            J.tissue(6).tpm = {fullfile(SPMhome,'tpm/TPM.nii,6')}; % NOT SAVED
             J.tissue(6).ngaus = 2;
             J.tissue(6).native = [0 0];
             J.tissue(6).warped = [0 0];
@@ -381,7 +393,7 @@ function varargout = smp1_imana(what,varargin)
                 run_list = str2double(split(run_list,'.'));
                 run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
     
-                subfolderFieldmap = sprintf('sess%d',sess);
+                % subfolderFieldmap = sprintf('sess%d',sess);
                 % function to create the makefieldmap job and passing it to the SPM
                 % job manager:
                 spmj_makefieldmap(baseDir,subj_id,run_list, ...
@@ -390,8 +402,8 @@ function varargout = smp1_imana(what,varargin)
                                   'tert', tert, ...
                                   'image', 1, ... % remove numDummys?
                                   'prefix',prefixepi, ...
-                                  'rawdataDir',fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess)), ...
-                                  'subfolderFieldmap',subfolderFieldmap);
+                                  'rawdataDir',fullfile(baseDir,imagingRawDir,subj_id), ...
+                                  'subfolderFieldmap','');
             end
     
         case 'FUNC:realign_unwarp'      
@@ -420,32 +432,10 @@ function varargout = smp1_imana(what,varargin)
                 subfolderFieldmap = sprintf('sess%d',sess);
                 spmj_realign_unwarp(baseDir,subj_id,run_list, startTR, inf, ...
                                     'prefix',prefixepi,...
-                                    'rawdataDir',fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess)),...
-                                    'subfolderFieldmap',subfolderFieldmap,...
+                                    'rawdataDir',fullfile(baseDir,imagingRawDir,subj_id),...
+                                    'subfolderFieldmap','',...
                                     'rtm',rtm);
             end
-    
-        % case 'FUNC:realign'          
-        %     % realign functional images
-        %     % SPM realigns all volumes to the mean volume of first run
-        % 
-        %     for s = sn
-        %         spm_jobman('initcfg')
-        % 
-        %         data = {};
-        %             % initialize data cell array which will contain file names for runs/TR images
-        %             func_ses_subj_dir = fullfile(imaging_dir ,subj_id);
-        % 
-        %             for r = runs
-        %                 % Obtain the number of TRs for the current run
-        %                 for j = 1:numTRs - numDummys
-        %                     data{r}{j,1} = fullfile(func_ses_subj_dir,sprintf('%s_run-%02d.nii,%d', subj_id, r,j));
-        %                 end % j (TRs/images)
-        %             end % r (runs)            
-        %         spmj_realign(data);
-        %         fprintf('- runs realigned for %s  ',subj_id);
-        % 
-        %     end % s (sn)
 
         case 'FUNC:inspect_realign_parameters'
             % looks for motion correction logs into imaging_data, needs to

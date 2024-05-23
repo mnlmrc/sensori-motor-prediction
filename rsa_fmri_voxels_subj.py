@@ -18,9 +18,9 @@ import globals as gl
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
-    parser.add_argument('--glm', default='5', help='GLM model (e.g., 1, 2, ...)')
+    parser.add_argument('--glm', default='9', help='GLM model (e.g., 1, 2, ...)')
 
     args = parser.parse_args()
 

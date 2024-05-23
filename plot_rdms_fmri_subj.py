@@ -11,8 +11,8 @@ if __name__ == "__main__":
     # glm9 : [0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12]
     # Argument parsing
     parser = argparse.ArgumentParser(description="Plot RDM")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
-    parser.add_argument('--atlas', default='BA_handArea', help='Atlas name')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--glm', default='9', help='GLM model')
     parser.add_argument('--index', nargs='+', type=int, default=[0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12], help='Label order')
     args = parser.parse_args()
