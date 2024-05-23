@@ -437,33 +437,27 @@ function varargout = smp1_imana(what,varargin)
                                     'rtm',rtm);
             end
 
-        case 'FUNC:inspect_realign_parameters'
+        case 'FUNC:inspect_realign'
             % looks for motion correction logs into imaging_data, needs to
             % be run after realigned images are moved there from
             % imaging_data_raw
 
             % handling input args:
-            sn = [];
-            sess = [];   
-            vararginoptions(varargin,{'sn','sess'})
+            sn = []; 
+            vararginoptions(varargin,{'sn'})
             if isempty(sn)
                 error('FUNC:inspect_realign_parameters -> ''sn'' must be passed to this function.')
-            end
-
-            if isempty(sess)
-                error('FUNC:inspect_realign_parameters -> ''sess'' must be passed to this function.')
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
             
             % pull list of runs from the participant.tsv:
-            run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
+            run_list = pinfo.('runsSess1'){pinfo.sn==sn};
             run_list = str2double(split(run_list,'.'));
             run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
 
             file_list = cellfun(@(run) fullfile(baseDir,imagingDir, subj_id,...
-                sprintf('sess%d',sess),['rp_', subj_id,...
-                '_run_', run, '.txt']), run_list, 'UniformOutput', false);
+                ['rp_', subj_id, '_run_', run, '.txt']), run_list, 'UniformOutput', false);
 
             smpj_plot_mov_corr(file_list)
             
@@ -482,57 +476,57 @@ function varargout = smp1_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
-            for sess = 1:pinfo.numSess(pinfo.sn==sn)
+            % for sess = 1:pinfo.numSess(pinfo.sn==sn)
 
-                % pull list of runs from the participant.tsv:
-                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
-                run_list = str2double(split(run_list,'.'));
-                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
-                
-                % loop on runs of the session:
-                for r = 1:length(run_list)
-                    % realigned (and unwarped) images names:
-                    file_name = [prefix, char(pinfo.subj_id(pinfo.sn==sn)), '_run_', run_list{r}, '.nii'];
-                    source = fullfile(baseDir,imagingRawDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),file_name);
-                    dest = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess));
-                    if ~exist(dest,'dir')
-                        mkdir(dest)
-                    end
+            % pull list of runs from the participant.tsv:
+            run_list = pinfo.('runsSess1'){pinfo.sn==sn};
+            run_list = str2double(split(run_list,'.'));
+            run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
+            
+            % loop on runs of the session:
+            for r = 1:length(run_list)
+                % realigned (and unwarped) images names:
+                file_name = [prefix, subj_id, '_run_', run_list{r}, '.nii'];
+                source = fullfile(baseDir,imagingRawDir,subj_id,file_name);
+                dest = fullfile(baseDir,imagingDir,subj_id);
+                if ~exist(dest,'dir')
+                    mkdir(dest)
+                end
 
-                    file_name = file_name(length(prefix) + 1:end); % skip prefix in realigned (and unwarped) files
-                    dest = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess),file_name);
-                    % move to destination:
-                    [status,msg] = movefile(source,dest);
-                    if ~status  
-                        error('BIDS:move_realigned_images -> %s',msg)
-                    end
-    
-                    % realign parameters names:
-                    source = fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess),['rp_', subj_id, '_run_', run_list{r}, '.txt']);
-                    dest = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['rp_', subj_id, '_run_', run_list{r}, '.txt']);
-                    % move to destination:
-                    [status,msg] = movefile(source,dest);
-                    if ~status  
-                        error('BIDS:move_realigned_images -> %s',msg)
-                    end
+                file_name = file_name(length(prefix) + 1:end); % skip prefix in realigned (and unwarped) files
+                dest = fullfile(baseDir,imagingDir,subj_id,file_name);
+                % move to destination:
+                [status,msg] = movefile(source,dest);
+                if ~status  
+                    error('BIDS:move_realigned_images -> %s',msg)
                 end
-                
-                % mean epi name - the generated file name will be different for
-                % rtm=0 and rtm=1. Extra note: rtm is an option in
-                % realign_unwarp function. Refer to spmj_realign_unwarp().
-                if rtm==0   % if registered to first volume of each run:
-                    source = fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess),['mean', prefix, subj_id, '_run_', run_list{1}, '.nii']);
-                    dest = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['mean', prefix, subj_id, '_run_', run_list{1}, '.nii']);
-                else        % if registered to mean image of each run:
-                    source = fullfile(baseDir,imagingRawDir,subj_id,sprintf('sess%d',sess),[prefix, 'meanepi_', subj_id, '.nii']);
-                    dest = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),[prefix, 'meanepi_', subj_id, '.nii']);
-                end
+
+                % realign parameters names:
+                source = fullfile(baseDir,imagingRawDir,subj_id,['rp_', subj_id, '_run_', run_list{r}, '.txt']);
+                dest = fullfile(baseDir,imagingDir,subj_id,['rp_', subj_id, '_run_', run_list{r}, '.txt']);
                 % move to destination:
                 [status,msg] = movefile(source,dest);
                 if ~status  
                     error('BIDS:move_realigned_images -> %s',msg)
                 end
             end
+            
+            % mean epi name - the generated file name will be different for
+            % rtm=0 and rtm=1. Extra note: rtm is an option in
+            % realign_unwarp function. Refer to spmj_realign_unwarp().
+            if rtm==0   % if registered to first volume of each run:
+                source = fullfile(baseDir,imagingRawDir,subj_id,['mean', prefix, subj_id, '_run_', run_list{1}, '.nii']);
+                dest = fullfile(baseDir,imagingDir,subj_id,['mean', prefix, subj_id, '_run_', run_list{1}, '.nii']);
+            else        % if registered to mean image of each run:
+                source = fullfile(baseDir,imagingRawDir,subj_id,[prefix, 'meanepi_', subj_id, '.nii']);
+                dest = fullfile(baseDir,imagingDir,subj_id,[prefix, 'meanepi_', subj_id, '.nii']);
+            end
+            % move to destination:
+            [status,msg] = movefile(source,dest);
+            if ~status  
+                error('BIDS:move_realigned_images -> %s',msg)
+            end
+            % end
         
         case 'FUNC:meanimage_bias_correction'                                         
             % EPI images often contain smooth artifacts caused by MRI
@@ -552,6 +546,8 @@ function varargout = smp1_imana(what,varargin)
             % correction on this file. In addition, this step generates
             % five tissue probability maps (c1-5) for grey matter, white
             % matter, csf, bone and soft tissue.
+
+            % Output of this step is bmeanu<subj_n>_run_01.nii
     
             % handling input args:
             sn = [];
@@ -565,23 +561,26 @@ function varargout = smp1_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
-            for sess = 1:pinfo.numSess(pinfo.sn==sn)
+            % for sess = 1:pinfo.numSess(pinfo.sn==sn)
 
-                % pull list of runs from the participant.tsv:
-                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
-                run_list = str2double(split(run_list,'.'));
-                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
-    
-                if rtm==0   % if registered to first volume of each run:
-                    P{1} = fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), ['mean', prefix,  subj_id, '_run_', run_list{1}, '.nii']);
-                else        % if registered to mean image of each run:
-                    P{1} = fullfile(baseDir, imagingDir, subj_id, sprintf('sess%d',sess), [prefix, 'meanepi_', subj_id, '.nii']);
-                end
-                spmj_bias_correct(P);
+            % pull list of runs from the participant.tsv:
+            run_list = pinfo.('runsSess1'){pinfo.sn==sn};
+            run_list = str2double(split(run_list,'.'));
+            run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
+
+            if rtm==0   % if registered to first volume of each run:
+                P{1} = fullfile(baseDir, imagingDir, subj_id, ['mean', prefix,  subj_id, '_run_', run_list{1}, '.nii']);
+            else        % if registered to mean image of each run:
+                P{1} = fullfile(baseDir, imagingDir, subj_id, [prefix, 'meanepi_', subj_id, '.nii']);
             end
+            spmj_bias_correct(P);
+            % end
     
         case 'FUNC:coreg'                                                      
             % coregister rbumean image to anatomical image for each session
+
+            % co registration is performed on the file
+            % meanusubjXXX_run_01.nii !!!!!!!!
             
             % handling input args:
             sn = [];
@@ -595,50 +594,50 @@ function varargout = smp1_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
             
             % loop on sessions:
-            for sess = 1:pinfo.numSess(pinfo.sn==sn)
-                % (1) Manually seed the functional/anatomical registration
-                % - Open fsleyes
-                % - Add anatomical image and b*mean*.nii (bias corrected mean) image to overlay
-                % - click on the bias corrected mean image in the 'Overlay
-                %   list' in the bottom left of the fsleyes window.
-                %   list to highlight it.
-                % - Open tools -> Nudge
-                % - Manually adjust b*mean*.nii image to the anatomical by 
-                %   changing the 6 paramters (tranlation xyz and rotation xyz) 
-                %   and Do not change the scales! 
-                % - When done, click apply and close the tool tab. Then to save
-                %   the changes, click on the save icon next to the mean image 
-                %   name in the 'Overlay list' and save the new image by adding
-                %   'r' in the beginning of the name: rb*mean*.nii. If you don't
-                %   set the format to be .nii, fsleyes automatically saves it as
-                %   a .nii.gz so either set it or gunzip afterwards to make it
-                %   compatible with SPM.
-                
-                % (2) Run automated co-registration to register bias-corrected meanimage to anatomical image
-                
-                % pull list of runs from the participant.tsv:
-                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
-                run_list = str2double(split(run_list,'.'));
-                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
-    
-                if rtm==0   % if registered to first volume
-                    mean_file_name = sprintf('mean%s%s_run_%s.nii', prefix, subj_id, run_list{1});
-                else    % if registered to the mean image
-                    mean_file_name = sprintf('rb%smeanepi_%s.nii', prefix, subj_id);
-                end
-                J.source = {fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),mean_file_name)}; 
-                J.ref = {fullfile(baseDir,anatomicalDir,subj_id,[subj_id, '_anatomical','.nii'])};
-                J.other = {''};
-                J.eoptions.cost_fun = 'nmi';
-                J.eoptions.sep = [4 2];
-                J.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
-                J.eoptions.fwhm = [7 7];
-                matlabbatch{1}.spm.spatial.coreg.estimate=J;
-                spm_jobman('run',matlabbatch);
+            % for sess = 1:pinfo.numSess(pinfo.sn==sn)
+            % (1) Manually seed the functional/anatomical registration
+            % - Open fsleyes
+            % - Add anatomical image and b*mean*.nii (bias corrected mean) image to overlay
+            % - click on the bias corrected mean image in the 'Overlay
+            %   list' in the bottom left of the fsleyes window.
+            %   list to highlight it.
+            % - Open tools -> Nudge
+            % - Manually adjust b*mean*.nii image to the anatomical by 
+            %   changing the 6 paramters (tranlation xyz and rotation xyz) 
+            %   and Do not change the scales! 
+            % - When done, click apply and close the tool tab. Then to save
+            %   the changes, click on the save icon next to the mean image 
+            %   name in the 'Overlay list' and save the new image by adding
+            %   'r' in the beginning of the name: rb*mean*.nii. If you don't
+            %   set the format to be .nii, fsleyes automatically saves it as
+            %   a .nii.gz so either set it or gunzip afterwards to make it
+            %   compatible with SPM.
+            
+            % (2) Run automated co-registration to register bias-corrected meanimage to anatomical image
+            
+            % pull list of runs from the participant.tsv:
+            run_list = pinfo.('runsSess1'){pinfo.sn==sn};
+            run_list = str2double(split(run_list,'.'));
+            run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
+
+            if rtm==0   % if registered to first volume
+                mean_file_name = sprintf('mean%s%s_run_%s.nii', prefix, subj_id, run_list{1});
+            else    % if registered to the mean image
+                mean_file_name = sprintf('rb%smeanepi_%s.nii', prefix, subj_id);
+            end
+            J.source = {fullfile(baseDir,imagingDir,subj_id,mean_file_name)}; 
+            J.ref = {fullfile(baseDir,anatomicalDir,subj_id,[subj_id, '_anatomical','.nii'])};
+            J.other = {''};
+            J.eoptions.cost_fun = 'nmi';
+            J.eoptions.sep = [4 2];
+            J.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
+            J.eoptions.fwhm = [7 7];
+            matlabbatch{1}.spm.spatial.coreg.estimate=J;
+            spm_jobman('run',matlabbatch);
                 
                 % (3) Check alignment manually by using fsleyes similar to step
                 % one.
-            end
+            % end
     
         case 'FUNC:make_samealign'
             % align to registered bias corrected mean image of each session
@@ -668,30 +667,30 @@ function varargout = smp1_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
-            for sess = 1:pinfo.numSess(pinfo.sn==sn)
+            % for sess = 1:pinfo.numSess(pinfo.sn==sn)
 
-                % pull list of runs from the participant.tsv:
-                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
-                run_list = str2double(split(run_list,'.'));
-                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
-                
-                % select the reference image:
-                if rtm==0
-                    P{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['mean' prefix subj_id '_run_' run_list{1} '.nii']);
-                else
-                    P{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['rb' prefix 'meanepi_' subj_id '.nii']);
-                end
-    
-                % select images to be realigned:
-                Q = {};
-                for r = 1:length(run_list)
-                    for i = 1:pinfo.numTR
-                         Q{end+1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),[ subj_id '_run_' run_list{r} '.nii,' num2str(i)]);
-                    end
-                end
-    
-                spmj_makesamealign_nifti(char(P),char(Q));
+            % pull list of runs from the participant.tsv:
+            run_list = pinfo.('runsSess1'){pinfo.sn==sn};
+            run_list = str2double(split(run_list,'.'));
+            run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
+            
+            % select the reference image:
+            if rtm==0
+                P{1} = fullfile(baseDir,imagingDir,subj_id,['mean' prefix subj_id '_run_' run_list{1} '.nii']);
+            else
+                P{1} = fullfile(baseDir,imagingDir,subj_id,['rb' prefix 'meanepi_' subj_id '.nii']);
             end
+
+            % select images to be realigned:
+            Q = {};
+            for r = 1:length(run_list)
+                for i = 1:pinfo.numTR
+                     Q{end+1} = fullfile(baseDir,imagingDir,subj_id,[ subj_id '_run_' run_list{r} '.nii,' num2str(i)]);
+                end
+            end
+
+            spmj_makesamealign_nifti(char(P),char(Q));
+            % end
         
         case 'FUNC:make_maskImage'       
             % Make mask images (noskull and gray_only) for 1st level glm
@@ -708,49 +707,49 @@ function varargout = smp1_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
     
             % loop on sessions:
-            for sess = 1:pinfo.numSess(pinfo.sn==sn)
+            % for sess = 1:pinfo.numSess(pinfo.sn==sn)
 
-                % pull list of runs from the participant.tsv:
-                run_list = pinfo.(['runsSess', num2str(sess)]){pinfo.sn==sn};
-                run_list = str2double(split(run_list,'.'));
-                run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
-            
-                % bias corrected mean epi image:
-                if rtm==0
-                    nam{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['mean' prefix subj_id '_run_' run_list{1} '.nii']);
-                else
-                    nam{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['rb' prefix 'meanepi_' subj_id '.nii']);
-                end
-                nam{2}  = fullfile(baseDir,anatomicalDir,subj_id,['c1',subj_id, '_anatomical','.nii']);
-                nam{3}  = fullfile(baseDir,anatomicalDir,subj_id,['c2',subj_id, '_anatomical','.nii']);
-                nam{4}  = fullfile(baseDir,anatomicalDir,subj_id,['c3',subj_id, '_anatomical','.nii']);
-                spm_imcalc(nam, fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess), 'rmask_noskull.nii'), 'i1>1 & (i2+i3+i4)>0.2')
-                
-                source = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess), 'rmask_noskull.nii'); % does this need to have some flag for session?
-                dest = fullfile(baseDir,anatomicalDir,subj_id,'rmask_noskull.nii');
-                movefile(source,dest);
-                
-                % gray matter mask for covariance estimation
-                % ------------------------------------------
-                nam={};
-                % nam{1}  = fullfile(imagingDir,subj_id{sn}, 'sess1', ['rb' prefix 'meanepi_' subj_id{sn} '.nii']);
-
-                % IS THIS CHANGE CORRECT??
-                % nam{1}  = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), ['rb' prefix 'meanepi_' char(pinfo.subj_id(pinfo.sn==sn)) '.nii']);
-                % bias corrected mean epi image:
-                if rtm==0
-                    nam{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['mean' prefix subj_id '_run_' run_list{1} '.nii']);
-                else
-                    nam{1} = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess),['rb' prefix 'meanepi_' subj_id '.nii']);
-                end
-
-                nam{2}  = fullfile(baseDir,anatomicalDir,subj_id,['c1',subj_id, '_anatomical','.nii']);
-                spm_imcalc(nam, fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess), 'rmask_gray.nii'), 'i1>1 & i2>0.4')
-                
-                source = fullfile(baseDir,imagingDir,subj_id,sprintf('sess%d',sess), 'rmask_gray.nii');
-                dest = fullfile(baseDir,anatomicalDir,subj_id,'rmask_gray.nii');
-                movefile(source,dest);
+            % pull list of runs from the participant.tsv:
+            run_list = pinfo.('runsSess1'){pinfo.sn==sn};
+            run_list = str2double(split(run_list,'.'));
+            run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
+        
+            % bias corrected mean epi image:
+            if rtm==0
+                nam{1} = fullfile(baseDir,imagingDir,subj_id,['mean' prefix subj_id '_run_' run_list{1} '.nii']);
+            else
+                nam{1} = fullfile(baseDir,imagingDir,subj_id,['rb' prefix 'meanepi_' subj_id '.nii']);
             end
+            nam{2}  = fullfile(baseDir,anatomicalDir,subj_id,['c1',subj_id, '_anatomical','.nii']);
+            nam{3}  = fullfile(baseDir,anatomicalDir,subj_id,['c2',subj_id, '_anatomical','.nii']);
+            nam{4}  = fullfile(baseDir,anatomicalDir,subj_id,['c3',subj_id, '_anatomical','.nii']);
+            spm_imcalc(nam, fullfile(baseDir,imagingDir,subj_id, 'rmask_noskull.nii'), 'i1>1 & (i2+i3+i4)>0.2')
+            
+            source = fullfile(baseDir,imagingDir,subj_id, 'rmask_noskull.nii'); % does this need to have some flag for session?
+            dest = fullfile(baseDir,anatomicalDir,subj_id,'rmask_noskull.nii');
+            movefile(source,dest);
+            
+            % gray matter mask for covariance estimation
+            % ------------------------------------------
+            nam={};
+            % nam{1}  = fullfile(imagingDir,subj_id{sn}, 'sess1', ['rb' prefix 'meanepi_' subj_id{sn} '.nii']);
+
+            % IS THIS CHANGE CORRECT??
+            % nam{1}  = fullfile(baseDir,imagingDir,char(pinfo.subj_id(pinfo.sn==sn)),sprintf('sess%d',sess), ['rb' prefix 'meanepi_' char(pinfo.subj_id(pinfo.sn==sn)) '.nii']);
+            % bias corrected mean epi image:
+            if rtm==0
+                nam{1} = fullfile(baseDir,imagingDir,subj_id,['mean' prefix subj_id '_run_' run_list{1} '.nii']);
+            else
+                nam{1} = fullfile(baseDir,imagingDir,subj_id,['rb' prefix 'meanepi_' subj_id '.nii']);
+            end
+
+            nam{2}  = fullfile(baseDir,anatomicalDir,subj_id,['c1',subj_id, '_anatomical','.nii']);
+            spm_imcalc(nam, fullfile(baseDir,imagingDir,subj_id, 'rmask_gray.nii'), 'i1>1 & i2>0.4')
+            
+            source = fullfile(baseDir,imagingDir,subj_id, 'rmask_gray.nii');
+            dest = fullfile(baseDir,anatomicalDir,subj_id,'rmask_gray.nii');
+                movefile(source,dest);
+            % end
 
         case 'GLM:make_events'
 
@@ -1905,7 +1904,7 @@ function varargout = smp1_imana(what,varargin)
                 J.global = 'None';
 
                 % remove voxels involving non-neural tissue (e.g., skull)
-                J.mask = {fullfile(baseDir, imagingDir, subj_id, 'rmask_noskull.nii')};
+                J.mask = {fullfile(baseDir, anatomicalDir, subj_id, 'rmask_noskull.nii')};
                 
                 % Set threshold for brightness threshold for masking 
                 % If supplying explicit mask, set to 0  (default is 0.8)
@@ -1913,7 +1912,7 @@ function varargout = smp1_imana(what,varargin)
 
                 % Create map where non-sphericity correction must be
                 % applied
-                J.cvi_mask = {fullfile(baseDir, imagingDir, subj_id, 'rmask_gray.nii')};
+                J.cvi_mask = {fullfile(baseDir, anatomicalDir, subj_id, 'rmask_gray.nii')};
 
                 % Method for non sphericity correction
                 J.cvi =  'fast';
