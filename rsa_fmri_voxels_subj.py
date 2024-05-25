@@ -20,13 +20,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     parser.add_argument('--participant_id', default='subj101', help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
-    parser.add_argument('--glm', default='9', help='GLM model (e.g., 1, 2, ...)')
+    parser.add_argument('--glm', default='8', help='GLM model (e.g., 1, 2, ...)')
+    # order:
+    # glm8 : [2, 4, 6, 1,  0, 3, 5, 7]
+    # glm9 : [0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12]
+    parser.add_argument('--index', nargs='+', type=int, default=[2, 4, 6, 1,  0, 3, 5, 7],
+                        help='Label order')
 
     args = parser.parse_args()
 
     participant_id = args.participant_id
     atlas = args.atlas
     glm = args.glm
+    index = args.index
 
     experiment = 'smp1'
 
@@ -103,9 +109,16 @@ if __name__ == "__main__":
             rdm = rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='conds',
                                               cv_descriptor='run')
             rdm.rdm_descriptors = {'roi': r["name"], 'hem': r["hem"], 'index': [0]}
+            rdm.reorder(np.argsort(rdm.pattern_descriptors['conds']))
+            rdm.reorder(index)
             RDMs.append(rdm)
 
     RDMs = rsa.rdm.rdms.concat(RDMs)
-    RDMs.save(os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm, participant_id, f'RDMs.{atlas}.hdf5'),
+
+    output_path = os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm, participant_id)
+    if not os.path.isdir(output_path):
+        os.mkdir(output_path)
+
+    RDMs.save(os.path.join(output_path, f'RDMs.{atlas}.hdf5'),
               file_type='hdf5',
               overwrite=True)

@@ -1956,6 +1956,8 @@ function varargout = smp1_imana(what,varargin)
             SPM = load(fullfile(baseDir,[glmEstDir num2str(glm)],subj_id, 'SPM.mat'));
 
             X = SPM.SPM.xX.X; % Assuming 'X' is the field holding the design matrix
+
+            force = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.mov', sn)));
             
             figure
 
@@ -2351,6 +2353,31 @@ function varargout = smp1_imana(what,varargin)
 %         %                   fullfile(anatomical_dir, subj_str{s}, 'anatomical.nii'));
 %         %     end % s (sn)
             
+        case 'SURF:reconall'
+
+            sn   = []; % subject list
+            % hemi = [1, 2];      % list of hemispheres
+           
+            vararginoptions(varargin, {'sn'});
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            % Set the SUBJECTS_DIR environment variable
+            setenv('SUBJECTS_DIR', '/cifs/diedrichsen/data/SensoriMotorPrediction/smp1/surfaceFreesurfer/subj103');
+            
+            % Execute the recon-all command with real-time output
+            system('recon-all -s subj103 -i /cifs/diedrichsen/data/SensoriMotorPrediction/smp1/anatomicals/subj103/subj103_anatomical.nii -all -cw256 & echo');
+
+            
+            % Display the command output
+            disp(cmdout);
+
+% Check for errors
+if status ~= 0
+    error('The recon-all command failed.');
+end
+
+
         case 'SURF:fs2wb'          % Resampling subject from freesurfer fsaverage to fs_LR
             
             sn   = []; % subject list
@@ -2612,8 +2639,14 @@ function varargout = smp1_imana(what,varargin)
             end
 
             R = region_calcregions(R);
+
+            output_path = fullfile(baseDir, regDir, subj_id);
+            if ~exist(output_path, 'dir')
+                mkdir(output_path)
+            end
+
             
-            save(fullfile(baseDir, regDir, subj_id, sprintf('%s_%s_region.mat',subj_id, atlas)), 'R');
+            save(fullfile(output_path, sprintf('%s_%s_region.mat',subj_id, atlas)), 'R');
 
         case 'HRF:ROI_hrf_plot'                 % Plot extracted time series
             sn = [];

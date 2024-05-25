@@ -1,33 +1,51 @@
 import argparse
 import os
+import json
+
 import matplotlib.pyplot as plt
 import numpy as np
 import globals as gl
 import rsatoolbox as rsa
 
+from scipy.spatial.distance import squareform
+
+from matplotlib.patches import Polygon
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument('--participants', default=[
+        'subj100',
+        'subj101',
+        'subj103'], help='Participant IDs')
+    parser.add_argument('--atlas', default='ROI', help='atlas')
+    parser.add_argument('--glm', default='8', help='glm')
 
-    # order:
-    # glm9 : [0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12]
-    # Argument parsing
-    parser = argparse.ArgumentParser(description="Plot RDM")
-    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
-    parser.add_argument('--atlas', default='ROI', help='Atlas name')
-    parser.add_argument('--glm', default='8', help='GLM model')
+
     args = parser.parse_args()
-
-    participant_id = args.participant_id
+    participants = args.participants
     atlas = args.atlas
     glm = args.glm
+    # index = args.index
 
     experiment = 'smp1'
-    path = os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm, participant_id)
 
-    # Load RDMs
-    RDMs = rsa.rdm.load_rdm(os.path.join(path, f'RDMs.{atlas}.hdf5'))
-    # if index is not None:
-    #     RDMs.reorder(np.argsort(RDMs.pattern_descriptors['conds']))
-    #     RDMs.reorder(index)
+    path = os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm)
+
+    rdms = list()
+    for p, participant in enumerate(participants):
+        # Load RDMs
+        rdm = rsa.rdm.load_rdm(os.path.join(path, participant, f'RDMs.{atlas}.hdf5'))
+        # rdm.reorder(np.argsort(rdm.pattern_descriptors['conds']))
+        # rdm.reorder(index)
+        rdms.append(rdm.get_matrices())
+
+    rdms = np.array(rdms)
+    RDMs = rsa.rdm.rdms.RDMs(rdms.mean(axis=0),
+                             dissimilarity_measure='crossnobis',
+                             descriptors={},
+                             rdm_descriptors=rdm.rdm_descriptors,
+                             pattern_descriptors=rdm.pattern_descriptors)
+
     # RDMs.pattern_descriptors['conds'] = [c.decode('utf-8').replace(' ', '') for c in RDMs.pattern_descriptors['conds']]
 
     vmin = RDMs.dissimilarities.min()
@@ -57,6 +75,8 @@ if __name__ == "__main__":
 
         cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
         cbar.set_label('Cross-validated multivariate distance (a.u.)')
-        fig.suptitle(f'RDMs, {participant_id}, glm{glm}, hemisphere: {hem}')
+        fig.suptitle(f'RDMs, all participants (N={len(participants)}), glm{glm}, hemisphere: {hem}')
 
     plt.show()
+
+

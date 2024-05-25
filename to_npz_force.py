@@ -27,9 +27,9 @@ if __name__ == "__main__":
     # session = sys.argv[3]
 
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
-    parser.add_argument('--experiment', default='smp0', help='Atlas name')
-    parser.add_argument('--session', default='behav')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser.add_argument('--experiment', default='smp1', help='Atlas name')
+    parser.add_argument('--session', default='training')
     # parser.add_argument('--mode', type=str, help='Mode of operation')
     # parser.add_argument('--host', type=str, help='Host address')
     # parser.add_argument('--port', type=int, help='Port number')
@@ -81,9 +81,10 @@ if __name__ == "__main__":
                  'thumb', 'index', 'middle', 'ring', 'pinkie', 'indexViz', 'ringViz']
     }
     columns = columns[experiment]
+    ch_idx = [col in ['thumb', 'index', 'middle', 'ring', 'pinkie'] for col in columns]
 
     for bl in blocks:
-        print(f'processing... {participant_id}, block {bl}')
+
         block = '%02d' % int(bl)
         filename = os.path.join(path, f'{experiment}_{sn}_{block}.mov')
 
@@ -100,12 +101,14 @@ if __name__ == "__main__":
         idxD = np.diff(idx)
         stimOnset = np.where(idxD == 1)[0]
 
+        print(f'processing... {participant_id}, block {bl}, {len(stimOnset)} trials found...')
+
         for st, ons in enumerate(stimOnset):
             BN = mov_df['block'].iloc[ons]
             TN = mov_df['trialNum'].iloc[ons]
             GoNogo = dat[(dat.BN == BN) & (dat.TN == TN)].GoNogo.iloc[0]
             if GoNogo == 'go':
-                force.append(movC[ons - prestim:ons + poststim])
+                force.append(movC[ons - prestim:ons + poststim, ch_idx].swapaxes(0, 1))
                 trial_info['cue'].append(dat[(dat.BN == BN) & (dat.TN == TN)]['cue'].iloc[0].astype(str))
                 trial_info['stimFinger'].append(dat[(dat.BN == BN) & (dat.TN == TN)]['stimFinger'].iloc[0].astype(str))
                 trial_info['trialLabel'].append(dat[(dat.BN == BN) & (dat.TN == TN)]['trialLabel'].iloc[0])

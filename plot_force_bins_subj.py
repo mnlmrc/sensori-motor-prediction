@@ -14,9 +14,9 @@ from visual import make_colors
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--participant_id', default='subj110', help='Participant ID')
-    parser.add_argument('--experiment', default='smp0', help='')
-    parser.add_argument('--session', default='behav', help='')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--experiment', default='smp1', help='')
+    parser.add_argument('--session', default='scanning', help='')
 
     args = parser.parse_args()
 
@@ -24,29 +24,46 @@ if __name__ == "__main__":
     experiment = args.experiment
     session = args.session
 
+    participants = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
+
     # extract subject number
     sn = int(''.join([c for c in participant_id if c.isdigit()]))
 
     if session == 'scanning':
         path = os.path.join(gl.baseDir, experiment, gl.behavDir, participant_id)
+        npz = np.load(os.path.join(path, f'{experiment}_{sn}.npz'))
+        force = npz['data_array']
+        blocks = [int(b) for b in participants[participants['sn'] == sn].runsSess1.iloc[0].split('.')]
+        dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
+        dat = dat[dat.BN.isin(blocks)]
+        dat = dat[dat.stimFinger != 99999]
+        stimFinger = dat.stimFinger
+        cue = dat.cue
+        channels_mov = ['thumb', 'index', 'middle', 'ring', 'pinkie']
     elif session == 'training':
         path = os.path.join(gl.baseDir, experiment, gl.trainDir, participant_id)
+        npz = np.load(os.path.join(path, f'{experiment}_{sn}.npz'))
+        force = npz['data_array']
+        blocks = [int(b) for b in participants[participants['sn'] == sn].runsTraining.iloc[0].split('.')]
+        dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
+        dat = dat[dat.BN.isin(blocks)]
+        dat = dat[dat.stimFinger != 99999]
+        stimFinger = dat.stimFinger
+        cue = dat.cue
+        channels_mov = ['thumb', 'index', 'middle', 'ring', 'pinkie']
     elif session == 'behav':
-        path = os.path.join(gl.baseDir, experiment, participant_id)
+        path = os.path.join(gl.baseDir, experiment, participant_id, 'mov')
+        force = np.load(os.path.join(path, f'{experiment}_{sn}.npy'))
+        blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_mov.iloc[0].split('.')]
+        dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
+        dat = dat[dat.BN.isin(blocks)]
+        stimFinger = dat.stimFinger
+        cue = dat.chordID
+        channels_mov = participants[participants['sn'] == sn].channels_mov.iloc[0].split(',')
     else:
         raise ValueError('Session name not recognized. Allowed session names are "scanning" and "training".')
 
-    force = np.load(os.path.join(path, 'mov', f'{experiment}_{sn}.npy'))
-    dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
 
-    participants = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
-
-    blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_mov.iloc[0].split('.')]
-    dat = dat[dat.BN.isin(blocks)]
-
-    stimFinger = dat.stimFinger
-    cue = dat.chordID
-    channels_mov = participants[participants['sn'] == sn].channels_mov.iloc[0].split(',')
     # columns = pd.Series(descr['columns'])
 
     map_cue = pd.DataFrame([('0%', 93),
@@ -99,8 +116,8 @@ if __name__ == "__main__":
         'time windows': win
     }
 
-    df_force.to_csv(os.path.join(path, 'mov', f'smp0_{sn}_binned.tsv'), sep='\t')
-    np.savez(os.path.join(path, 'mov', f'{experiment}_{sn}_binned.npz'),
+    df_force.to_csv(os.path.join(path, f'smp0_{sn}_binned.tsv'), sep='\t')
+    np.savez(os.path.join(path, f'{experiment}_{sn}_binned.npz'),
              data_array=force_binned, descriptor=descr, allow_pickle=False)
 
     colors = make_colors(5)
@@ -129,10 +146,10 @@ if __name__ == "__main__":
 
     # fig.legend(ncol=3, loc='upper left')
     fig.supylabel('Force (N)')
-    fig.suptitle(f'{participant_id}, force')
+    fig.suptitle(f'{participant_id}, force, session:{session}')
 
     fig.tight_layout()
 
-    # fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, 'force_bins.png'))
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'force_bins_{session}.png'))
 
     plt.show()
