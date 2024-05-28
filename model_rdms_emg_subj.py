@@ -14,18 +14,18 @@ import globals as gl
 import rsatoolbox as rsa
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process some integers.")
+    parser = argparse.ArgumentParser(description="")
     parser.add_argument('--participant_id', default='subj102', help='Participant ID')
     parser.add_argument('--method', default='crossnobis', help='Distance')
+    parser.add_argument('--experiment', default='smp0', help='Experiment')
     parser.add_argument('--make_plot', default=False, help='Make plot for single subject')
 
     args = parser.parse_args()
 
     participant_id = args.participant_id
     method = args.method
+    experiment = args.experiment
     make_plot = args.make_plot
-
-    experiment = 'smp0'
 
     path = os.path.join(gl.baseDir, experiment)
 

@@ -119,6 +119,6 @@ if __name__ == "__main__":
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
 
-    RDMs.save(os.path.join(output_path, f'RDMs.{atlas}.hdf5'),
+    RDMs.save(os.path.join(output_path, f'RDMs.vox.{atlas}.hdf5'),
               file_type='hdf5',
               overwrite=True)

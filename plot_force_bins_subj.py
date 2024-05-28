@@ -14,7 +14,7 @@ from visual import make_colors
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj103', help='Participant ID')
     parser.add_argument('--experiment', default='smp1', help='')
     parser.add_argument('--session', default='scanning', help='')
 

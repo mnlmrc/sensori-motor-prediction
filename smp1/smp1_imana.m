@@ -1749,9 +1749,12 @@ function varargout = smp1_imana(what,varargin)
 
         case 'GLM:design'
             
+            currentDir = pwd;
+
             sn = [];
             glm = [];
-            vararginoptions(varargin,{'sn', 'glm'})
+            hrf_params = [4.5 11 1 1 6 0 32];
+            vararginoptions(varargin,{'sn', 'glm', 'hrf_params'})
 
             if isempty(sn)
                 error('GLM:design -> ''sn'' must be passed to this function.')
@@ -1889,7 +1892,7 @@ function varargout = smp1_imana(what,varargin)
                 % Specify hrf parameters for convolution with
                 % regressors
                 J.bases.hrf.derivs = [0 0];
-                J.bases.hrf.params = [4.5 11];  % positive and negative peak of HRF - set to [] if running wls (?)
+                J.bases.hrf.params = hrf_params;  % positive and negative peak of HRF - set to [] if running wls (?)
                 
                 % Specify the order of the Volterra series expansion 
                 % for modeling nonlinear interactions in the BOLD response
@@ -1938,6 +1941,8 @@ function varargout = smp1_imana(what,varargin)
             
             dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
             spm_rwls_run_fmri_spec(J);
+
+            cd(currentDir)
             
             % fprintf('- estimates for glm_%d session %d has been saved for %s \n', glm, ses, subj_str{s});
 
@@ -1952,23 +1957,50 @@ function varargout = smp1_imana(what,varargin)
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
+            runs = str2double(split(pinfo.runsSess1{pinfo.sn==sn}, '.')); 
 
-            SPM = load(fullfile(baseDir,[glmEstDir num2str(glm)],subj_id, 'SPM.mat'));
+            SPM = load(fullfile(baseDir,[glmEstDir num2str(glm)],subj_id, 'SPM.mat'));SPM=SPM.SPM;
 
-            X = SPM.SPM.xX.X; % Assuming 'X' is the field holding the design matrix
-
-            force = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.mov', sn)));
+            reginfo = dload(fullfile(baseDir,[glmEstDir num2str(glm)],subj_id, sprintf('subj%d_reginfo.tsv', sn)));
+            
+            xTicks = SPM.xX.iC;
+            X = SPM.xX.X(:, xTicks); % Assuming 'X' is the field holding the design matrix
+            
+            force = [];
+            for run = 1:length(runs)
+                force_tmp = smp1_forceFromMov(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d_%02d.mov', sn, runs(run))));
+                force_tmp(:, 1) = force_tmp(:, 1) + force_tmp(:, 2) / 1000 + 276 * (runs(run) -1);
+                force = [force; force_tmp];
+            end
             
             figure
-
+            % Subplot 1: Force Plot
+            subplot(121)
+            plot(force(:, [4,6]), force(:,1))
+            xlabel('X-axis Label'); % Add appropriate label
+            ylabel('Y-axis Label'); % Add appropriate label
+            title('Force Plot'); % Add appropriate title
+            legend('index', 'ring')
+            set(gca, 'YDir', 'reverse', 'ylim', [0, size(X,1)]); % Flip the y-axis direction
+            % Subplot 2: Design Matrix
+            subplot(122)
             imagesc(X); % Plot the design matrix
             colormap('gray'); % Optional: Use a grayscale colormap for better visibility
             colorbar; % Optional: Include a colorbar to indicate scaling
             xlabel('Regressors');
             ylabel('Scans');
             title('Design Matrix');
+            xticks(xTicks)
+            xticklabels(reginfo.name)
+            % Link the x and y axes of the two subplots
+            h1 = subplot(121);
+            h2 = subplot(122);
+            linkaxes([h1, h2], 'y');
+            xtickangle(90)
         
         case 'GLM:estimate'      % estimate beta values
+
+            currentDir = pwd;
             
             sn = [];
             glm = [];
@@ -1992,6 +2024,8 @@ function varargout = smp1_imana(what,varargin)
             
                 spm_rwls_spm(SPM.SPM);
             end
+
+            cd(currentDir)
 
         case 'GLM:T_contrasts'
 
@@ -2372,10 +2406,10 @@ function varargout = smp1_imana(what,varargin)
             % Display the command output
             disp(cmdout);
 
-% Check for errors
-if status ~= 0
-    error('The recon-all command failed.');
-end
+            % Check for errors
+            if status ~= 0
+                error('The recon-all command failed.');
+            end
 
 
         case 'SURF:fs2wb'          % Resampling subject from freesurfer fsaverage to fs_LR
@@ -2561,7 +2595,7 @@ end
             pre=10;
             post=10;
             atlas = 'ROI';
-            glm = 4;
+            glm = 5;
 
             vararginoptions(varargin,{'ROI','pre','post', 'glm', 'sn', 'atlas'});
 
@@ -2710,7 +2744,7 @@ end
 
             fig = gcf;
 
-            saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.%s.png', hem, eventname)))
+            saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.glm%d.%s.%s.png', atlas, glm, hem, eventname)))
             
             
     end

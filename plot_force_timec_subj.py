@@ -12,8 +12,8 @@ from visual import make_colors
 
 if __name__ == "__main__":
     experiment = 'smp1'
-    participant_id = 'subj100'
-    session = 'scanning'
+    participant_id = 'subj106'
+    session = 'training'
 
     # extract subject number
     sn = int(''.join([c for c in participant_id if c.isdigit()]))

@@ -13,12 +13,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot RDM")
     parser.add_argument('--participant_id', default='subj101', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
-    parser.add_argument('--glm', default='8', help='GLM model')
+    parser.add_argument('--glm', default='9', help='GLM model')
+    parser.add_argument('--type', default='surf', help='GLM model')
     args = parser.parse_args()
 
     participant_id = args.participant_id
     atlas = args.atlas
     glm = args.glm
+    type = args.type
 
     experiment = 'smp1'
     path = os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm, participant_id)
@@ -58,5 +60,7 @@ if __name__ == "__main__":
         cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
         cbar.set_label('Cross-validated multivariate distance (a.u.)')
         fig.suptitle(f'RDMs, {participant_id}, glm{glm}, hemisphere: {hem}')
+
+        fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'RDMs.{atlas}.glm{glm}.{hem}.png'), dpi=300)
 
     plt.show()

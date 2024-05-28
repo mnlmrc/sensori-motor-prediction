@@ -2,6 +2,10 @@ import argparse
 import os
 import json
 
+from utils import moving_average
+
+from scipy.signal import decimate
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,29 +14,64 @@ import globals as gl
 import rsatoolbox as rsa
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument('--participant_id', default='subj104', help='Participant ID')
+    parser.add_argument('--method', default='crossnobis', help='Distance')
+    parser.add_argument('--experiment', default='smp1', help='Experiment')
+    parser.add_argument('--make_plot', default=False, help='Make plot for single subject')
+    parser.add_argument('--session', default='training', help='Session')
 
     args = parser.parse_args()
 
     participant_id = args.participant_id
-
-    experiment = 'smp0'
+    method = args.method
+    experiment = args.experiment
+    make_plot = args.make_plot
+    session = args.session
 
     path = os.path.join(gl.baseDir, experiment)
 
     sn = int(''.join([c for c in participant_id if c.isdigit()]))
 
+    fsample = 500
+
     participants = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
 
-    channels = participants[participants['sn'] == sn].channels_mov.iloc[0].split(',')
-    blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_mov.iloc[0].split('.')]
-    dat = pd.read_csv(os.path.join(path, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
-    dat = dat[dat.BN.isin(blocks)]
+    if experiment is 'smp0':
+        channels = participants[participants['sn'] == sn].channels_mov.iloc[0].split(',')
+        blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_mov.iloc[0].split('.')]
+        dat = pd.read_csv(os.path.join(path, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
+        dat = dat[dat.BN.isin(blocks)]
+        cue = dat.chordID
+        stimFinger = dat.stimFinger
+        run = dat.BN
+        force = np.load(os.path.join(path, participant_id, 'mov', f'{experiment}_{sn}.npy'))
+        out_path = os.path.join(path, participant_id, 'mov')
+    elif experiment is 'smp1':
+        channels = ['thumb', 'index', 'middle', 'ring', 'pinkie']
+        if session is 'scanning':
+            blocks = [int(b) for b in participants[participants['sn'] == sn].runsSess1.iloc[0].split('.')]
+            dat = pd.read_csv(os.path.join(path, gl.behavDir, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
+            dat = dat[dat.BN.isin(blocks)]
+            dat = dat[dat.GoNogo == 'go']
+            cue = dat.cue
+            stimFinger = dat.stimFinger
+            run = dat.BN
+            force = np.load(os.path.join(path, gl.behavDir, participant_id, f'{experiment}_{sn}.npz'))['data_array']
+            out_path = os.path.join(path, gl.behavDir, participant_id)
+        elif session is 'training':
+            blocks = [int(b) for b in participants[participants['sn'] == sn].runsTraining.iloc[0].split('.')]
+            dat = pd.read_csv(os.path.join(path, gl.trainDir, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
+            dat = dat[dat.BN.isin(blocks)]
+            dat = dat[dat.GoNogo == 'go']
+            cue = dat.cue
+            stimFinger = dat.stimFinger
+            run = dat.BN
+            force = np.load(os.path.join(path, gl.trainDir, participant_id, f'{experiment}_{sn}.npz'))['data_array']
+            out_path = os.path.join(path, gl.trainDir, participant_id)
 
-    cue = dat.chordID
-    stimFinger = dat.stimFinger
-    run = dat.BN
+
+    latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'), sep='\t')
 
     map_cue = pd.DataFrame([('0%', 93),
                             ('25%', 12),
@@ -44,25 +83,30 @@ if __name__ == "__main__":
     cue = [map_dict.get(item, item) for item in cue]
 
     map_stimFinger = pd.DataFrame([('index', 91999),
-                                   ('ring', 99919), ],
+                                   ('ring', 99919),
+                                   ('none', 99999)],
                                   columns=['label', 'code'])
     map_dict = dict(zip(map_stimFinger['code'], map_stimFinger['label']))
     stimFinger = [map_dict.get(item, item) for item in stimFinger]
 
-    # load RDM(s)
-    npz = np.load(os.path.join(path, participant_id, 'mov', f'smp0_{sn}_RDMs.npz'))
-    RDMs = npz['data_array']
-    descr = json.loads(npz['descriptor'].item())
+    # make masks
+    mask_stimFinger = np.zeros([28], dtype=bool)
+    mask_cue = np.zeros([28], dtype=bool)
+    mask_stimFinger_cue = np.zeros([28], dtype=bool)
+    mask_stimFinger[[4, 11, 17]] = True
+    mask_cue[[0, 1, 7, 25, 26, 27]] = True
+    mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
 
-    # load force
-    force = np.load(os.path.join(path, participant_id, 'mov', f'smp0_{sn}.npy'))
+    # win_size = 100
+    # emg = moving_average(emg, win_size, axis=-1)
 
-    timeAx = np.linspace(-1, 2, force.shape[-1])
+    timeAx = (np.linspace(-1, 2, force.shape[-1]) -
+              latency[['ring', 'index']].mean(axis=1).to_numpy())
     dist_stimFinger = np.zeros(force.shape[-1])
     dist_cue = np.zeros(force.shape[-1])
+    dist_stimFinger_cue = np.zeros(force.shape[-1])
     for t in range(force.shape[-1]):
-
-        print('time point %f' % timeAx[t])
+        print('participant %s' % participant_id + ', time point %f' % timeAx[t])
 
         # calculate rdm for timepoint t
         force_tmp = force[:, :, t]
@@ -75,19 +119,50 @@ if __name__ == "__main__":
                                                     obs_desc='stimFinger,cue',
                                                     method='shrinkage_diag')
         rdm = rsa.rdm.calc_rdm_unbalanced(dataset,
-                                          method='crossnobis',
+                                          method=method,
                                           descriptor='stimFinger,cue',
                                           noise=noise,
                                           cv_descriptor='run')
         rdm.reorder(rdm.pattern_descriptors['stimFinger,cue'].argsort())
         rdm.reorder(np.array([1, 2, 3, 0, 4, 5, 6, 7]))
 
-        rdm = rdm.get_matrices()
+        dist_stimFinger[t] = rdm.dissimilarities[:, mask_stimFinger].mean()
+        dist_cue[t] = rdm.dissimilarities[:, mask_cue].mean()
+        dist_stimFinger_cue[t] = rdm.dissimilarities[:, mask_stimFinger_cue].mean()
 
-        dist_stimFinger[t] = rdm[0, [0, 1, 2], [5, 6, 7]].mean()
-        dist_cue[t] = rdm[0, [0, 1, 1], [1, 2, 2]].mean()
+    descr = json.dumps({
+        'participant': participant_id,
+        'mask_stimFinger': list(mask_stimFinger.astype(str)),
+        'mask_cue': list(mask_cue.astype(str)),
+        'mask_stimFinger_by_cue': list(mask_stimFinger_cue.astype(str)),
+        'factor_order': ['stimFinger', 'cue', 'stimFinger_by_cue'],
+    })
+
+    dist = np.stack([dist_stimFinger, dist_cue, dist_stimFinger_cue])
+    np.savez(os.path.join(out_path, f'{experiment}_{sn}_distances.npz'),
+             data_array=dist, descriptor=descr, allow_pickle=False)
 
     fig, axs = plt.subplots()
 
-    axs.plot(timeAx, dist_stimFinger)
-    axs.plot(timeAx, dist_cue)
+    axs.plot(timeAx, dist_stimFinger, label='finger')
+    axs.plot(timeAx, dist_cue, label='cue')
+    axs.plot(timeAx, dist_stimFinger_cue, label='interaction')
+    axs.set_title(f'cross-validated distance over time, {participant_id}, {session}')
+    axs.set_xlabel('time relative to stimulation (s)')
+    axs.set_ylabel('cross-validated distance (a.u.)')
+    axs.axvline(0, color='k', lw=.8, ls='--')
+
+    axs.axvline(0, color='k', ls='-', lw=.8)
+    axs.axvline(.2, color='k', ls=':', lw=.8)
+    axs.axvline(.5, color='k', ls='--', lw=.8)
+    axs.axvline(1, color='k', ls='-.', lw=.8)
+    axs.axhline(0, color='k', ls='-', lw=.8)
+
+    axs.set_yscale('symlog', linthresh=.1)
+
+    axs.legend(loc='upper left')
+
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'dist.timec.force.{session}.png'))
+
+    if make_plot:
+        plt.show()

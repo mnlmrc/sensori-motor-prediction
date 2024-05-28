@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere (L/R)')
-    parser.add_argument('--glm', default='7', help='GLM model (e.g., 1, 2, ...)')
+    parser.add_argument('--glm', default='8', help='GLM model (e.g., 1, 2, ...)')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
     # parser.add_argument('--condition', nargs='+', default=['plan'], help='Selected epoch')
     # parser.add_argument('--stimFinger', nargs='+',default=['none'], help='Selected stimulated finger')
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     label_df = pd.DataFrame(label, columns=['key', 'label'])
 
     B = nb.load(os.path.join(pathSurf, f'glm{glm}.beta.{Hem}.func.gii'))
-    Res = nb.load(os.path.join(pathSurf, f'glm{glm}.res.{Hem}.func.gii'))
+    # Res = nb.load(os.path.join(pathSurf, f'glm{glm}.res.{Hem}.func.gii'))
 
     rdm_eucl = list()
     rdm_maha = list()
@@ -69,41 +69,42 @@ if __name__ == "__main__":
         print(f'processing {roi}, {(keys == key).sum()} vertices...')
 
         data = np.array([b.data[(keys == key) & (abs(b.data) > 1e-8)] for b in B.darrays])
-        res = Res.darrays[0].data[(keys == key) & (abs(B.darrays[0].data) > 1e-8)].astype(float)
-        res = np.diag(res)
+        # res = Res.darrays[0].data[(keys == key) & (abs(B.darrays[0].data) > 1e-8)].astype(float)
+        # res = np.diag(res)
 
         # Euclidean distance (prewhitened)
-        data_prewhitened = np.dot(data, np.linalg.inv(sqrtm(res)))
-        dataset_prewhitened = rsa.data.Dataset(
-            data_prewhitened,
-            channel_descriptors={'channel': np.array(['vertex_' + str(x) for x in range(data_prewhitened.shape[-1])])},
-            obs_descriptors={'conds': reginfo.name,
-                             'run': reginfo.run})
-        rdm_eucl.append(rsa.rdm.calc_rdm_unbalanced(dataset_prewhitened,
-                                                    method='euclidean',
-                                                    descriptor='conds'))
-
-        # mahalanobis (non-prewhitened)
+        # data_prewhitened = np.dot(data, np.linalg.inv(sqrtm(res)))
         dataset = rsa.data.Dataset(
             data,
             channel_descriptors={'channel': np.array(['vertex_' + str(x) for x in range(data.shape[-1])])},
             obs_descriptors={'conds': reginfo.name,
                              'run': reginfo.run})
-        rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='conds',
-                                                    noise=np.linalg.inv(res)))
+        # rdm_eucl.append(rsa.rdm.calc_rdm_unbalanced(dataset_prewhitened,
+        #                                             method='euclidean',
+        #                                             descriptor='conds'))
+
+        # mahalanobis (non-prewhitened)
+        # dataset = rsa.data.Dataset(
+        #     data,
+        #     channel_descriptors={'channel': np.array(['vertex_' + str(x) for x in range(data.shape[-1])])},
+        #     obs_descriptors={'conds': reginfo.name,
+        #                      'run': reginfo.run})
+        # rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='conds',
+        #                                             noise=np.linalg.inv(res)))
+        noise = rsa.data.noise.prec_from_measurements(dataset, obs_desc='conds', method='shrinkage_eye')
         rdm_cv.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='conds',
-                                                    noise=np.linalg.inv(res),
+                                                    noise=noise,
                                                     cv_descriptor='run'))
 
-    RDMs_eucl = rsa.rdm.RDMs(np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0),
-                             dissimilarity_measure='euclidean',
-                             rdm_descriptors={'ROI': rois},
-                             pattern_descriptors=rdm_eucl[0].pattern_descriptors)
-
-    RDMs_maha = rsa.rdm.RDMs(np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0),
-                             dissimilarity_measure='mahalanobis',
-                             rdm_descriptors={'ROI': rois},
-                             pattern_descriptors=rdm_maha[0].pattern_descriptors)
+    # RDMs_eucl = rsa.rdm.RDMs(np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0),
+    #                          dissimilarity_measure='euclidean',
+    #                          rdm_descriptors={'ROI': rois},
+    #                          pattern_descriptors=rdm_eucl[0].pattern_descriptors)
+    #
+    # RDMs_maha = rsa.rdm.RDMs(np.concatenate([rdm.get_matrices() for rdm in rdm_maha], axis=0),
+    #                          dissimilarity_measure='mahalanobis',
+    #                          rdm_descriptors={'ROI': rois},
+    #                          pattern_descriptors=rdm_maha[0].pattern_descriptors)
 
     RDMs_cv = rsa.rdm.RDMs(np.concatenate([rdm.get_matrices() for rdm in rdm_cv], axis=0),
                              dissimilarity_measure='crossnobis',
@@ -124,11 +125,8 @@ if __name__ == "__main__":
         'experiment': experiment,
         'participant': participant_id,
         'rdm_descriptors': dict(roi=tuple(rois)),
-        'pattern_descriptors': {'conds': list(rdm_eucl[0].pattern_descriptors['conds'])}
+        'pattern_descriptors': {'conds': list(rdm_cv[0].pattern_descriptors['conds'])}
     })
-
-    # build filename
-    filename = f'{atlas}.{Hem}.glm{glm}'
 
     # if len(sel_epoch) == 1:
     #     filename += f'.{sel_epoch[0]}'
@@ -143,5 +141,9 @@ if __name__ == "__main__":
     #          data_array=RDMs_eucl, descriptor=descr, allow_pickle=False)
     # # np.savez(os.path.join(pathRDM, f'RDMs.maha.{filename}.npz'),
     # #          data_array=RDMs_maha, descriptor=descr, allow_pickle=False)
-    # np.savez(os.path.join(pathRDM, f'RDMs.cv.{filename}.npz'),
+    # np.savez(os.path.join(pathRDM, f'RDMs.surf.cv.{filename}.npz'),
     #          data_array=RDMs_cv, descriptor=descr, allow_pickle=False)
+
+    RDMs_cv.save(os.path.join(pathRDM, f'RDMs.surf.{atlas}.{Hem}.hdf5'),
+              file_type='hdf5',
+              overwrite=True)

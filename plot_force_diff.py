@@ -42,9 +42,13 @@ if __name__ == "__main__":
     axs.set_title(f'Moving average (window={window_size}) of force '
                   f'difference\nbetween cued and non-cued finger in session {session}')
 
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', f'avg.mov.forceDiff.{session}.png'))
+
     fig, axs = plt.subplots()
     palette = sns.color_palette('tab10')
     sns.boxplot(forceDiff, y='forceDiff', x='subNum', ax=axs, palette=palette)
     axs.axhline(0, color='k', ls='--', lw=.8)
     axs.set_ylabel('force difference (N)')
     axs.set_title(f'Average force difference\nbetween cued and non-cued finger in session {session}')
+
+    fig.savefig(os.path.join(gl.baseDir, experiment,'figures', f'avg.forceDiff.{session}.png'))
