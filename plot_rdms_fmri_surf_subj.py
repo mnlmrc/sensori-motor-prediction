@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--glm', default='8', help='GLM model')
     parser.add_argument('--type', default='surf', help='GLM model')
-    parser.add_argument('--hem', default='L', help='GLM model')
+    parser.add_argument('--hem', default='R', help='GLM model')
 
     args = parser.parse_args()
 

@@ -2672,7 +2672,12 @@ function varargout = smp1_imana(what,varargin)
                 end
             end
 
-            R = region_calcregions(R);
+            R = region_calcregions(R, 'exclude', 'all');
+            
+            Vol = fullfile(baseDir, [glmEstDir num2str(glm)], subj_id, 'ResMS.nii');
+            for r = 1:length(R)
+                img = region_saveasimg(R{r}, Vol, fullfile(baseDir, regDir, subj_id, sprintf('%s.%s.nii', atlas, R{r}.name)));
+            end
 
             output_path = fullfile(baseDir, regDir, subj_id);
             if ~exist(output_path, 'dir')

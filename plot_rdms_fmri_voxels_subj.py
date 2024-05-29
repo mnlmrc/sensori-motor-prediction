@@ -11,10 +11,10 @@ if __name__ == "__main__":
     # glm9 : [0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12]
     # Argument parsing
     parser = argparse.ArgumentParser(description="Plot RDM")
-    parser.add_argument('--participant_id', default='subj101', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
-    parser.add_argument('--glm', default='9', help='GLM model')
-    parser.add_argument('--type', default='surf', help='GLM model')
+    parser.add_argument('--glm', default='8', help='GLM model')
+    parser.add_argument('--type', default='voxels', help='GLM model')
     args = parser.parse_args()
 
     participant_id = args.participant_id
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     path = os.path.join(gl.baseDir, experiment, gl.RDM, gl.glmDir + glm, participant_id)
 
     # Load RDMs
-    RDMs = rsa.rdm.load_rdm(os.path.join(path, f'RDMs.{atlas}.hdf5'))
+    RDMs = rsa.rdm.load_rdm(os.path.join(path, f'RDMs.vox.{atlas}.hdf5'))
     # if index is not None:
     #     RDMs.reorder(np.argsort(RDMs.pattern_descriptors['conds']))
     #     RDMs.reorder(index)

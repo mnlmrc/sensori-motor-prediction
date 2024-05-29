@@ -15,10 +15,12 @@ import globals as gl
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Input parameters")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--participant_id', default='subj101', help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--Hem', default='L', help='Hemisphere (L/R)')
     parser.add_argument('--glm', default='8', help='GLM model (e.g., 1, 2, ...)')
+    parser.add_argument('--index', nargs='+', type=int, default=[2, 4, 6, 1,  0, 3, 5, 7],
+                        help='Label order')
     # parser.add_argument('--sel_cue', nargs='+', default=['0%', '25%', '50%', '75%', '100%'], help='Selected cue')
     # parser.add_argument('--condition', nargs='+', default=['plan'], help='Selected epoch')
     # parser.add_argument('--stimFinger', nargs='+',default=['none'], help='Selected stimulated finger')
@@ -30,6 +32,7 @@ if __name__ == "__main__":
     atlas = args.atlas
     Hem = args.Hem
     glm = args.glm
+    index = args.index
     # sel_epoch = args.condition
     # sel_stimFinger = args.stimFinger
     # sel_instr = args.instr
@@ -59,7 +62,7 @@ if __name__ == "__main__":
     label_df = pd.DataFrame(label, columns=['key', 'label'])
 
     B = nb.load(os.path.join(pathSurf, f'glm{glm}.beta.{Hem}.func.gii'))
-    # Res = nb.load(os.path.join(pathSurf, f'glm{glm}.res.{Hem}.func.gii'))
+    Res = nb.load(os.path.join(pathSurf, f'glm{glm}.res.{Hem}.func.gii'))
 
     rdm_eucl = list()
     rdm_maha = list()
@@ -69,13 +72,13 @@ if __name__ == "__main__":
         print(f'processing {roi}, {(keys == key).sum()} vertices...')
 
         data = np.array([b.data[(keys == key) & (abs(b.data) > 1e-8)] for b in B.darrays])
-        # res = Res.darrays[0].data[(keys == key) & (abs(B.darrays[0].data) > 1e-8)].astype(float)
+        res = Res.darrays[0].data[(keys == key) & (abs(B.darrays[0].data) > 1e-8)].astype(float)
         # res = np.diag(res)
 
         # Euclidean distance (prewhitened)
-        # data_prewhitened = np.dot(data, np.linalg.inv(sqrtm(res)))
+        data_prewhitened = data / np.sqrt(res)
         dataset = rsa.data.Dataset(
-            data,
+            data_prewhitened,
             channel_descriptors={'channel': np.array(['vertex_' + str(x) for x in range(data.shape[-1])])},
             obs_descriptors={'conds': reginfo.name,
                              'run': reginfo.run})
@@ -91,10 +94,13 @@ if __name__ == "__main__":
         #                      'run': reginfo.run})
         # rdm_maha.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='mahalanobis', descriptor='conds',
         #                                             noise=np.linalg.inv(res)))
-        noise = rsa.data.noise.prec_from_measurements(dataset, obs_desc='conds', method='shrinkage_eye')
-        rdm_cv.append(rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='conds',
-                                                    noise=noise,
-                                                    cv_descriptor='run'))
+        # noise = rsa.data.noise.prec_from_measurements(dataset, obs_desc='conds', method='shrinkage_eye')
+        rdm = rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='conds',
+                                                    cv_descriptor='run')
+        rdm.reorder(np.argsort(rdm.pattern_descriptors['conds']))
+        rdm.reorder(index)
+        rdm_cv.append(rdm)
+
 
     # RDMs_eucl = rsa.rdm.RDMs(np.concatenate([rdm.get_matrices() for rdm in rdm_eucl], axis=0),
     #                          dissimilarity_measure='euclidean',
@@ -108,7 +114,7 @@ if __name__ == "__main__":
 
     RDMs_cv = rsa.rdm.RDMs(np.concatenate([rdm.get_matrices() for rdm in rdm_cv], axis=0),
                              dissimilarity_measure='crossnobis',
-                             rdm_descriptors={'ROI': rois},
+                             rdm_descriptors={'roi': rois},
                              pattern_descriptors=rdm_cv[0].pattern_descriptors)
 
 
