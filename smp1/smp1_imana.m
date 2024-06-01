@@ -49,16 +49,18 @@ function varargout = smp1_imana(what,varargin)
     wbDir   = 'surfaceWB';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
     
+    
     %% subject info
     
-    % Read info from participants .tsv file 
+    % Read info frompin participants .tsv file 
     % pinfo = dload(fullfile(baseDir,'participants.tsv'));
+    pinpinpin    
     pinfo = dload(fullfile(baseDir,'participants.tsv'));
     
     %% MAIN OPERATION 
     switch(what)
-        
-        case 'BIDS:move_unzip_raw_anat'
+        case 'BIDS:move_unzip_raw_anat'    
+
             % Moves, unzips and renames anatomical images from BIDS
             % directory to anatomicalDir. After you run this function you 
             % will find a <subj_id>_anatomical_raw.nii file in the
