@@ -2582,7 +2582,7 @@ function varargout = smp1_imana(what,varargin)
                 
                 % Select a specific subset of things to plot 
 
-                subset      = find(contains(T.eventname, eventname) & strcmp(T.hem, hem));
+                % subset      = find(contains(T.eventname, eventname) & strcmp(T.hem, hem));
 
                 subplot(2, 4, r)
                 
