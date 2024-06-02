@@ -2468,7 +2468,7 @@ function varargout = smp1_imana(what,varargin)
             
             % D = spmj_get_ons_struct(SPM);
             Dd = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.dat', sn)));
-            D.ons = Dd.startTimeReal;
+            D.ons = Dd.startTimeReal / 1000;
             D.block = Dd.BN;
             
             
