@@ -2581,14 +2581,15 @@ function varargout = smp1_imana(what,varargin)
                 post = 10;
                 
                 % Select a specific subset of things to plot 
+
                 subset      = find(contains(T.eventname, eventname) & strcmp(T.hem, hem));
 
                 subplot(2, 4, r)
                 
                 % yyaxis left
-                traceplot([-pre:post],T.y_hat, 'subset',subset, 'split', [], 'linestyle','--');
+                traceplot([-pre:post],T.y_hat, 'split', [], 'linestyle','--');
                 hold on;
-                traceplot([-pre:post],T.y_res, 'subset',subset, 'split', [], 'linestyle',':');
+                traceplot([-pre:post],T.y_res,  'split', [], 'linestyle',':');
                 xline(0);
                 yline(0);
                 % ax = gca;
@@ -2596,7 +2597,7 @@ function varargout = smp1_imana(what,varargin)
                 
     
                 % yyaxis right
-                traceplot([-pre:post],T.y_adj, 'subset',subset,'leg',[], 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
+                traceplot([-pre:post],T.y_adj,'leg',[], 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
                 % ax = gca;
                 % ax.YColor = 'r';
                 
