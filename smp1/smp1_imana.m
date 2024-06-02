@@ -2689,6 +2689,17 @@ function varargout = smp1_imana(what,varargin)
             
             save(fullfile(output_path, sprintf('%s_%s_region.mat',subj_id, atlas)), 'R');
 
+        case 'ROI:define_all'
+            sn = [];
+            atlas = 'ROI';
+            
+            vararginoptions(varargin,{'sn', 'atlas'});
+            
+            for s=sn
+                smp1_imana('ROI:define', 'sn', s)
+                clc
+            end
+
         case 'HRF:ROI_hrf_plot'                 % Plot extracted time series
             sn = [];
             roi = {'SMA', 'PMd', 'PMv', 'M1', 'S1', 'SPLa', 'SPLp', 'V1'};
