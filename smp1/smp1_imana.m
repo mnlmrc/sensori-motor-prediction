@@ -2470,7 +2470,7 @@ function varargout = smp1_imana(what,varargin)
             Dd = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.dat', sn)));
             D.ons = Dd.startTimeReal / 1000;
             D.block = Dd.BN;
-            
+            D.eventname = Dd.GoNogo;            
             
             for r=1:size(y_raw,2)
                 for i=1:size(D.block,1)
