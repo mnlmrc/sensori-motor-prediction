@@ -2439,6 +2439,8 @@ function varargout = smp1_imana(what,varargin)
         
         case 'HRF:ROI_hrf_get'                   % Extract raw and estimated time series from ROIs
             
+            currentDir = pwd;
+            
             sn = [];
             ROI = 'all';
             pre=10;
@@ -2465,7 +2467,10 @@ function varargout = smp1_imana(what,varargin)
             [y_raw, y_adj, y_hat, y_res,B] = region_getts(SPM,R);
             
             % D = spmj_get_ons_struct(SPM);
-            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' sn '.dat']));
+            Dd = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.dat', sn)));
+            D.ons = Dd.startTimeReal;
+            D.block = Dd.BN;
+            
             
             for r=1:size(y_raw,2)
                 for i=1:size(D.block,1)
@@ -2476,17 +2481,19 @@ function varargout = smp1_imana(what,varargin)
                 end
                 
                 % Add the event and region information to tje structure. 
-                len = size(D.event,1);                
+                len = size(D.ons,1);                
                 D.SN        = ones(len,1)*sn;
                 D.region    = ones(len,1)*r;
                 D.name      = repmat({R{r}.name},len,1);
                 D.hem       = repmat({R{r}.hem},len,1);
-                D.type      = D.event; 
+%                 D.type      = D.event; 
                 T           = addstruct(T,D);
             end
             
             save(fullfile(baseDir,regDir, subj_id, sprintf('hrf_glm%d.mat', glm)),'T'); 
             varargout{1} = T;
+            
+            cd(currentDir)
 
         case 'ROI:define'
             
@@ -2538,7 +2545,6 @@ function varargout = smp1_imana(what,varargin)
             if ~exist(output_path, 'dir')
                 mkdir(output_path)
             end
-
             
             save(fullfile(output_path, sprintf('%s_%s_region.mat',subj_id, atlas)), 'R');
 
