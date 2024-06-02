@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot RDM")
     parser.add_argument('--participant_id', default='subj100', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
-    parser.add_argument('--glm', default='8', help='GLM model')
+    parser.add_argument('--glm', default='9', help='GLM model')
     parser.add_argument('--type', default='voxels', help='GLM model')
     args = parser.parse_args()
 
