@@ -2160,6 +2160,7 @@ function varargout = smp1_imana(what,varargin)
 
         case 'GLM:calc_PSC'
 
+
             sn             = [];    % subjects list
             glm            = [];    % glm number
 
@@ -2267,126 +2268,21 @@ function varargout = smp1_imana(what,varargin)
 
             end
 
-            
-             
-%         case 'GLM:T_contrast'    % make T contrasts for each condition
-%             %%% Calculating contrast images.
-% 
-%             sn             = [];    % subjects list
-%             glm            = [];              % glm number
-%             condition      = {};
-%             baseline       = {};         % contrast will be calculated against base (available options: 'rest')
-% 
-%             vararginoptions(varargin, {'sn', 'glm', 'condition', 'baseline'})
-% 
-%             if isempty(sn)
-%                 error('GLM:T_contrast -> ''sn'' must be passed to this function.')
-%             end
-% 
-%             if isempty(glm)
-%                 error('GLM:T_contrast -> ''glm'' must be passed to this function.')
-%             end
-% 
-%             if isempty(condition)
-%                 error('GLM:T_contrast -> ''condition'' must be passed to this function.')
-%             end
-% 
-%             if isempty(condition)
-%                 error('GLM:T_contrast -> ''baseline'' must be passed to this function.')
-%             end
-% 
-%             subj_id = pinfo.subj_id{pinfo.sn==sn};
-% 
-%             % get the subject id folder name
-%             fprintf('Contrasts for participant %s\n', subj_id)
-%             glm_dir = fullfile(baseDir, sprintf('glm%d', glm), subj_id); 
-% 
-%             % load the SPM.mat file
-%             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
-% 
-%             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
-% 
-%             xcn = zeros(length(T.name));
-%             for cn=1:length(condition)             
-%                 if cn > 1
-%                     if sum(xcn .* T.(condition{cn})) == 0
-%                         xcn = xcn + T.(condition{cn});
-%                     else
-%                         xcn = xcn .* T.(condition{cn});
-%                     end
-%                     contrast1 = [contrast1 '&' condition{cn}];
-%                 else
-%                     xcn = T.(condition{cn});
-%                     contrast1 = condition{cn};
-%                 end
-%             end
-% 
-%             xbs = zeros(length(T.name));
-%             contrast2 = '';
-%             for bs=1:length(baseline)
-%                 if bs > 1
-%                     if sum(xbs .* T.(condition{bs})) == 0
-%                         xbs = xbs + T.(condition{bs});
-%                     else
-%                         xbs = xbs .* T.(baseline{bs});
-%                     end
-%                     contrast2 = [contrast2 '&' baseline{bs}];
-%                 else
-%                     xbs = T.(baseline{bs});
-%                     contrast2 = baseline{bs};
-%                 end
-%             end
-% 
-%             xcon = zeros(size(SPM.xX.X,2), 1);
-%             for ic = 1:length(xcon) - max(T.run)
-%                 if xcn(ic) == 1
-%                     xcon(ic) = 1;
-%                 elseif xbs(ic) == 1
-%                     xcon(ic) = -1;
-%                 end
-%             end
-% 
-%             xcon = xcon/sum(abs(xcon));
-%             contrast_name = sprintf('%s-%s', contrast1, contrast2);
-%             if ~isfield(SPM, 'xCon')
-%                 SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-%                 cname_idx = 1;
-%             elseif sum(strcmp(contrast_name, {SPM.xCon.name})) > 0
-%                 idx = find(strcmp(contrast_name, {SPM.xCon.name}));
-%                 SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-%                 cname_idx = idx;
-%             else
-%                 SPM.xCon(end+1) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
-%                 cname_idx = length(SPM.xCon);
-%             end
-%             SPM = spm_contrasts(SPM,1:length(SPM.xCon));
-%             save('SPM.mat', 'SPM','-v7.3');
-% %             SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
-% %             save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
-% 
-%             % rename contrast images and spmT images
-%             conName = {'con','spmT'};
-%             for n = 1:numel(conName)
-%                 oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx));
-%                 newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
-%                 movefile(oldName, newName);
-%             end % conditions (n, conName: con and spmT)
-% 
-%         % case 'SURF:reconall' % Freesurfer reconall routine
-%         %     % Calls recon-all, which performs, all of the
-%         %     % FreeSurfer cortical reconstruction process
-%         % 
-%         %     sn   = subj_id; % subject list
-%         % 
-%         %     vararginoptions(varargin, {'sn'});
-%         % 
-%         %     % Parent dir of anatomical images    
-%         %     for s = sn
-%         %         fprintf('- recon-all %s\n', subj_str{s});
-%         %                     % Get the directory of subjects anatomical;
-%         %         freesurfer_reconall(fs_dir, subj_str{s}, ...
-%         %                   fullfile(anatomical_dir, subj_str{s}, 'anatomical.nii'));
-%         %     end % s (sn)
+        case 'GLM:all'
+
+            sn = [];
+            glm = [];
+            vararginoptions(varargin,{'sn', 'glm'})
+
+            for s=sn
+                smp1_imana('GLM:make_events', 'sn', sn, 'glm', glm)
+                smp1_imana('GLM:design', 'sn', sn, 'glm', glm)
+                smp1_imana('GLM:estimate', 'sn', sn, 'glm', glm)
+                smp1_imana('GLM:T_contrasts', 'sn', sn, 'glm', glm)
+                smp1_imana('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT')
+                smp1_imana('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'beta')
+                smp1_imana('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'res')
+            end
             
         case 'SURF:reconall'
 
@@ -2401,11 +2297,11 @@ function varargout = smp1_imana(what,varargin)
             setenv('SUBJECTS_DIR', sprintf('/cifs/diedrichsen/data/SensoriMotorPrediction/smp1/surfaceFreesurfer/%s', subj_id));
             
             % Execute the recon-all command with real-time output
-            system(sprintf('recon-all -s %s -i /cifs/diedrichsen/data/SensoriMotorPrediction/smp1/anatomicals/s%/%s_anatomical.nii -all -cw256 & echo', subj_id));
+            system(sprintf('recon-all -s %s -i /cifs/diedrichsen/data/SensoriMotorPrediction/smp1/anatomicals/%s/%s_anatomical.nii -all -cw256 & echo', subj_id));
 
             
             % Display the command output
-            disp(cmdout);
+            % disp(cmdout);
 
             % Check for errors
             if status ~= 0
@@ -2433,7 +2329,7 @@ function varargout = smp1_imana(what,varargin)
             sn   = []; % subject list
             filename = [];
             res  = 32;          % resolution of the atlas. options are: 32, 164
-            type = 'tval';
+            type = 'spmT';
             id = [];
             glm = [];
             % hemi = [1, 2];      % list of hemispheres
