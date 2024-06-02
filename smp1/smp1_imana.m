@@ -2646,8 +2646,12 @@ function varargout = smp1_imana(what,varargin)
             atlas = 'ROI';
             
             vararginoptions(varargin,{'sn', 'atlas'});
-
-            atlasDir = '/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32';
+            
+            if isfolder('/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32')
+                atlasDir = '/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32';
+            elseif isfolder('/cifs/diedrichsen/data/Atlas_templates/fs_LR_32')
+                atlasDir = '/cifs/diedrichsen/data/Atlas_templates/fs_LR_32';
+            end
             atlasH = {sprintf('%s.32k.L.label.gii', atlas), sprintf('%s.32k.R.label.gii', atlas)};
             atlas_gii = {gifti(fullfile(atlasDir, atlasH{1})), gifti(fullfile(atlasDir, atlasH{1}))};
 
