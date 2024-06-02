@@ -1754,7 +1754,7 @@ function varargout = smp1_imana(what,varargin)
 
             sn = [];
             glm = [];
-            hrf_params = [4.5 11 1 1 6 0 32];
+            hrf_params = [3.5 10 1 1 6 0 32];
             vararginoptions(varargin,{'sn', 'glm', 'hrf_params'})
 
             if isempty(sn)
@@ -2029,6 +2029,8 @@ function varargout = smp1_imana(what,varargin)
             cd(currentDir)
 
         case 'GLM:T_contrasts'
+            
+            currentDir = pwd;
 
             sn             = [];    % subjects list
             glm            = [];              % glm number
@@ -2059,74 +2061,9 @@ function varargout = smp1_imana(what,varargin)
 
             T    = dload(fullfile(glm_dir, sprintf('%s_reginfo.tsv', subj_id)));
             contrasts = unique(T.name);
-            
-            % load contrasts table
-            % contr = dload(fullfile(baseDir, sprintf('glm%d', glm), 'contr.tsv'));
 
             for c = 1:length(contrasts)
-                % condition = split(contr.condition(c), ',');
-                % baseline = split(contr.baseline(c), ',');
-                % 
-                % if strcmp(baseline, 'NA') baseline = {}; end
-
-                % fprintf('%s: %s vs. %s\n', subj_id, char(contr.condition(c)), char(contr.baseline(c)))
-
-%                 xcn = zeros(length(T.name));
-%                 contrast1 = '';
-%                 for cn=1:length(condition)             
-%                     if cn > 1
-%                         if sum(xcn .* T.(condition{cn})) == 0
-%                             xcn = xcn + T.(condition{cn});
-%                         else
-%                             xcn = xcn .* T.(condition{cn});
-%                         end
-%                         contrast1 = [contrast1 '_' condition{cn}];
-%                     else
-%                         xcn = T.(condition{cn});
-%                         contrast1 = condition{cn};
-%                     end
-%                 end
-% 
-%                 xbs = zeros(length(T.name));
-%                 contrast2 = '';
-%                 for bs=1:length(baseline)
-%                     if bs > 1
-%                         if sum(xbs .* T.(condition{bs})) == 0
-%                             xbs = xbs + T.(condition{bs});
-%                         else
-%                             xbs = xbs .* T.(baseline{bs});
-%                         end
-%                         contrast2 = [contrast2 '_' baseline{bs}];
-%                     else
-%                         if ~strcmp(baseline{bs}, '')
-%                             xbs = T.(baseline{bs});
-%                             contrast2 = baseline{bs};
-%                         end
-%                     end
-%                 end
-% 
-%                 xcon = zeros(size(SPM.xX.X,2), 1);
-%                 for ic = 1:length(xcon) - max(T.run)
-%                     if xcn(ic) == 1
-%                         xcon(ic) = 1;
-%                     elseif xbs(ic) == 1
-%                         xcon(ic) = -1;
-%                     end
-%                 end
-% 
-% %                 if strcmp(baseline, '')
-% %                     xcon(end-length(SPM.nscan):end) = -1;
-% %                 end
-% 
-%                 xcon(xcon > 0) = xcon(xcon > 0) / sum(xcon(xcon > 0));
-%                 xcon(xcon < 0) = xcon(xcon < 0) / abs(sum(xcon < 0));
-% 
-%                 if abs(sum(xcon)) > 1e-10
-%                     warning(['sum of weight contrast vector is not zero: ' sprintf('%f', sum(xcon))])
-%                 else
-%                     fprintf('sum of weights: %f\n', sum(xcon))
-%                 end
-
+ 
                 contrast_name = contrasts{c};
                 xcon = zeros(size(SPM.xX.X,2), 1);
                 xcon(strcmp(T.name, contrast_name)) = 1;
@@ -2156,7 +2093,7 @@ function varargout = smp1_imana(what,varargin)
 
             end
 
-        
+            cd(currentDir)
 
         case 'GLM:calc_PSC'
 
@@ -2273,15 +2210,24 @@ function varargout = smp1_imana(what,varargin)
             sn = [];
             glm = [];
             vararginoptions(varargin,{'sn', 'glm'})
+            
+            spm_get_defaults('cmdline', true);  % Suppress GUI prompts, no request for overwirte
 
             for s=sn
-                smp1_imana('GLM:make_events', 'sn', sn, 'glm', glm)
-                smp1_imana('GLM:design', 'sn', sn, 'glm', glm)
-                smp1_imana('GLM:estimate', 'sn', sn, 'glm', glm)
-                smp1_imana('GLM:T_contrasts', 'sn', sn, 'glm', glm)
-                smp1_imana('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT')
-                smp1_imana('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'beta')
-                smp1_imana('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'res')
+                
+                % Check for and delete existing SPM.mat file
+                spm_file = fullfile(baseDir, [glmEstDir num2str(glm)], ['subj' num2str(s)], 'SPM.mat');
+                if exist(spm_file, 'file')
+                    delete(spm_file);
+                end
+                
+                smp1_imana('GLM:make_events', 'sn', s, 'glm', glm)
+                smp1_imana('GLM:design', 'sn', s, 'glm', glm)
+                smp1_imana('GLM:estimate', 'sn', s, 'glm', glm)
+                smp1_imana('GLM:T_contrasts', 'sn', s, 'glm', glm)
+                smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'spmT')
+                smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'beta')
+                smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'res')
             end
             
         case 'SURF:reconall'
@@ -2325,6 +2271,8 @@ function varargout = smp1_imana(what,varargin)
             surf_resliceFS2WB(subj_id, fsDir, fullfile(baseDir, wbDir), 'resolution', sprintf('%dk', res))
 
         case 'SURF:vol2surf'
+            
+            currentDir = pwd;
 
             sn   = []; % subject list
             filename = [];
@@ -2401,6 +2349,8 @@ function varargout = smp1_imana(what,varargin)
             GR = surf_makeFuncGifti(GR.cdata,'anatomicalStruct', 'CortexRight', 'columnNames', cols);
 
             save(GR, fullfile(baseDir, wbDir, subj_id, [glmEstDir '.' type '.R.func.gii']))
+            
+            cd(currentDir)
             
 
         case 'SURF:resample_labelFS2WB'
