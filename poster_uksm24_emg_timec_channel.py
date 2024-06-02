@@ -92,8 +92,11 @@ if __name__ == "__main__":
     for c, cue in enumerate(map_cue.items()):
         axs.plot(tAx, y[c], label=cue[0], color=colors[c])
 
-    axs.set_title('Average EMG activity from one electrode placed over flexor digitorum '
-                  'superficialis\nwhen the perturbation was delivered to the index finger')
+    axs.axvline(0, ls='-', color='k', lw=.8)
+    axs.axvline(.025, ls='--', color='k', lw=.8)
+    axs.axvline(.05, ls='-.', color='k', lw=.8)
+    axs.axvline(.1, ls=':', color='k', lw=.8)
+    axs.set_title('Average EMG activity from flexor electrode\nwhen the perturbation was delivered to the index finger')
     axs.set_ylabel('EMG (mV)')
     axs.set_xlabel('time relative to stimulation (s)')
     axs.set_xlim([-.05, .2])
