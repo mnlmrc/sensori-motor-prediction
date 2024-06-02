@@ -99,6 +99,8 @@ if __name__ == "__main__":
     axs.set_xlim([-.05, .2])
     axs.legend()
 
+    plt.show()
+
 
 
 

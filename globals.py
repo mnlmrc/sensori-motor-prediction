@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-baseDir = ["/Users/mnlmrc/Documents/data/SensoriMotorPrediction/",
+baseDir = [
            "/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/",
            "/cifs/diedrichsen/data/SensoriMotorPrediction/",
            ]
