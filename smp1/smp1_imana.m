@@ -52,9 +52,8 @@ function varargout = smp1_imana(what,varargin)
     
     %% subject info
     
-    % Read info frompin participants .tsv file 
-    % pinfo = dload(fullfile(baseDir,'participants.tsv'));
-    pinpinpin    
+    % Read info from participants .tsv file 
+    % pinfo = dload(fullfile(baseDir,'participants.tsv'));    
     pinfo = dload(fullfile(baseDir,'participants.tsv'));
     
     %% MAIN OPERATION 
@@ -2646,7 +2645,7 @@ function varargout = smp1_imana(what,varargin)
             glm = 5;
             atlas = 'ROI';
             
-            vararginoptions(varargin,{'sn', 'glm', 'atlas'});
+            vararginoptions(varargin,{'sn', 'atlas'});
 
             atlasDir = '/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32';
             atlasH = {sprintf('%s.32k.L.label.gii', atlas), sprintf('%s.32k.R.label.gii', atlas)};
@@ -2674,7 +2673,8 @@ function varargout = smp1_imana(what,varargin)
                 end
             end
 
-            R = region_calcregions(R, 'exclude', 'all');
+            R = region_calcregions(R, 'exclude', [2 3; 2 4; 2 5; 4 5; 8 9; 2 8;...
+                11 12; 11 13; 11 14; 13 14; 17 18; 11 17], 'exclude_thres', .8);
             
             Vol = fullfile(baseDir, [glmEstDir num2str(glm)], subj_id, 'ResMS.nii');
             for r = 1:length(R)
