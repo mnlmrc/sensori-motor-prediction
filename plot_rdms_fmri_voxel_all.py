@@ -16,10 +16,12 @@ if __name__ == "__main__":
     parser.add_argument('--participants', default=[
         'subj100',
         'subj101',
-        'subj103'], help='Participant IDs')
+        'subj102',
+        'subj103',
+        'subj106'
+    ], help='Participant IDs')
     parser.add_argument('--atlas', default='ROI', help='atlas')
-    parser.add_argument('--glm', default='8', help='glm')
-
+    parser.add_argument('--glm', default='9', help='glm')
 
     args = parser.parse_args()
     participants = args.participants
@@ -34,7 +36,7 @@ if __name__ == "__main__":
     rdms = list()
     for p, participant in enumerate(participants):
         # Load RDMs
-        rdm = rsa.rdm.load_rdm(os.path.join(path, participant, f'RDMs.{atlas}.hdf5'))
+        rdm = rsa.rdm.load_rdm(os.path.join(path, participant, f'RDMs.vox.{atlas}.hdf5'))
         # rdm.reorder(np.argsort(rdm.pattern_descriptors['conds']))
         # rdm.reorder(index)
         rdms.append(rdm.get_matrices())
@@ -48,7 +50,7 @@ if __name__ == "__main__":
 
     # RDMs.pattern_descriptors['conds'] = [c.decode('utf-8').replace(' ', '') for c in RDMs.pattern_descriptors['conds']]
 
-    vmin = 0 # RDMs.dissimilarities.min()
+    vmin = 0  # RDMs.dissimilarities.min()
     vmax = RDMs.dissimilarities.max()
 
     if RDMs.n_rdm <= 16:
@@ -78,5 +80,3 @@ if __name__ == "__main__":
         fig.suptitle(f'RDMs, all participants (N={len(participants)}), glm{glm}, hemisphere: {hem}')
 
     plt.show()
-
-

@@ -2464,7 +2464,8 @@ function varargout = smp1_imana(what,varargin)
             % extract time series data
             [y_raw, y_adj, y_hat, y_res,B] = region_getts(SPM,R);
             
-            D = spmj_get_ons_struct(SPM);
+            % D = spmj_get_ons_struct(SPM);
+            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' sn '.dat']));
             
             for r=1:size(y_raw,2)
                 for i=1:size(D.block,1)
@@ -2490,7 +2491,7 @@ function varargout = smp1_imana(what,varargin)
         case 'ROI:define'
             
             sn = [];
-            glm = 5;
+            glm = 9;
             atlas = 'ROI';
             
             vararginoptions(varargin,{'sn', 'atlas'});
