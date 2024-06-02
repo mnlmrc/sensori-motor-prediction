@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # order:
     # glm8 : [2, 4, 6, 1,  0, 3, 5, 7]
     # glm9 : [0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12]
-    parser.add_argument('--index', nargs='+', type=int, default=[2, 4, 6, 1,  0, 3, 5, 7],
+    parser.add_argument('--index', nargs='+', type=int, default=[0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12],
                         help='Label order')
 
     args = parser.parse_args()
