@@ -759,10 +759,12 @@ function varargout = smp1_imana(what,varargin)
             vararginoptions(varargin,{'sn', 'glm'})
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
+            runs = str2double(split(pinfo.runsSess1{pinfo.sn==sn}, '.')); 
             
             operation  = sprintf('GLM:make_glm%d', glm);
             
             events = smp1_imana(operation, 'sn', sn);
+            events = events(ismember(events.BN, runs), :);
             
             %% export
             output_folder = fullfile(baseDir, behavDir, subj_id);
