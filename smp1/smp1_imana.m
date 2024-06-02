@@ -2297,16 +2297,16 @@ function varargout = smp1_imana(what,varargin)
             setenv('SUBJECTS_DIR', sprintf('/cifs/diedrichsen/data/SensoriMotorPrediction/smp1/surfaceFreesurfer/%s', subj_id));
             
             % Execute the recon-all command with real-time output
-            system(sprintf('recon-all -s %s -i /cifs/diedrichsen/data/SensoriMotorPrediction/smp1/anatomicals/%s/%s_anatomical.nii -all -cw256 & echo', subj_id));
+            system(sprintf('recon-all -s %s -i /cifs/diedrichsen/data/SensoriMotorPrediction/smp1/anatomicals/%s/%s_anatomical.nii -all -cw256 & echo', subj_id, subj_id, subj_id));
 
             
             % Display the command output
             % disp(cmdout);
 
             % Check for errors
-            if status ~= 0
-                error('The recon-all command failed.');
-            end
+%             if status ~= 0
+%                 error('The recon-all command failed.');
+%             end
 
 
         case 'SURF:fs2wb'          % Resampling subject from freesurfer fsaverage to fs_LR
