@@ -2582,12 +2582,14 @@ function varargout = smp1_imana(what,varargin)
                 
                 % Select a specific subset of things to plot 
 
-                subset = find(contains(T.eventname, eventname) & strcmp(T.hem, hem));
+                % subset = find(strcmp(T.eventname, eventname) & strcmp(T.hem, hem));
 
                 subplot(2, 4, r)
                 
                 % yyaxis left
-                traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
+                % traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
+                xAx = linspace(-pre, post, pre+post+1);
+                plot(xAx, mean(T.y_adj(strcmp(T.eventname, eventname), :), 1), 'linestyle','-', 'Color', 'red')
                 hold on;
                 % traceplot([-pre:post],T.y_res,  'subset', subset ,'split', [], 'linestyle',':');
                 xline(0);
@@ -2597,7 +2599,8 @@ function varargout = smp1_imana(what,varargin)
                 
     
                 % yyaxis right
-                traceplot([-pre:post],T.y_adj,'leg',[],'subset', subset , 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
+                plot(xAx, mean(T.y_hat(strcmp(T.eventname, eventname), :), 1), 'linestyle','--', 'Color', 'blue')
+                % traceplot([-pre:post],T.y_adj,'leg',[],'subset', subset , 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
                 % ax = gca;
                 % ax.YColor = 'r';
                 
