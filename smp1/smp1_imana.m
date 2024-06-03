@@ -2460,6 +2460,9 @@ function varargout = smp1_imana(what,varargin)
             cd(fullfile(glmDir,subj_id));
             SPM = load('SPM.mat'); SPM=SPM.SPM;
             
+            TR = SPM.xY.RT;
+            nScan = SPM.nscan(1);
+            
             % load ROI definition (R)
             R = load(fullfile(baseDir, regDir,subj_id,[subj_id '_' atlas '_region.mat'])); R=R.R;
             
@@ -2468,7 +2471,8 @@ function varargout = smp1_imana(what,varargin)
             
 %             D = spmj_get_ons_struct(SPM);
             Dd = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.dat', sn)));
-            D.ons = Dd.startTimeReal / 1000;
+            D.ons = (Dd.startTimeReal / 1000) / TR;
+            D.ons = D.ons + (Dd.BN - 1) * nScan;
             D.block = Dd.BN;
             D.eventname = Dd.GoNogo;            
             
