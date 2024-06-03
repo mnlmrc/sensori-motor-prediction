@@ -1768,7 +1768,7 @@ function varargout = smp1_imana(what,varargin)
             end
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
-            
+
             % Load data once, outside of session loop
             % D = dload(fullfile(baseDir,behavDir,subj_id, sprintf('smp1_%d.dat', sn)));
             events_file = sprintf('glm%d_events.tsv', glm);
@@ -1779,8 +1779,8 @@ function varargout = smp1_imana(what,varargin)
 
             % pull list of runs from the participant.tsv:
             run_list = pinfo.('runsSess1'){pinfo.sn==sn};
-            run_list = str2double(split(run_list,'.'));
-            run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
+            run_list_vec = str2double(split(run_list,'.'));
+            run_list = arrayfun(@(x) sprintf('%02d', x), run_list_vec, 'UniformOutput', false);
         
             % init J
             J = [];
@@ -1797,7 +1797,7 @@ function varargout = smp1_imana(what,varargin)
             % each TR
             J.timing.fmri_t0 = 1;
         
-            for run = 1:max(Dd.BN)
+            for run = run_list_vec
                 % Setup scans for current session
                 J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id, [subj_id, '_run_', run_list{run}, '.nii'])};
         
