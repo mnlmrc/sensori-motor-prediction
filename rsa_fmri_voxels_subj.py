@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 
+import nitools as nt
 import nibabel as nb
 import numpy as np
 import pandas as pd
@@ -39,11 +40,6 @@ if __name__ == "__main__":
     pathROI = os.path.join(gl.baseDir, experiment, gl.ROI, participant_id)
     pathGlm = os.path.join(gl.baseDir, experiment, gl.glmDir + glm, participant_id)
 
-    # Load the ROI file
-    print('loading R...')
-    R_cell = loadmat(os.path.join(pathROI, f'{participant_id}_{atlas}_region.mat'))['R'][0]
-    R = list()
-
     # load SPM
     print('loading SPM...')
     try:
@@ -57,22 +53,17 @@ if __name__ == "__main__":
     print('loading reginfo...')
     reginfo = pd.read_csv(f'{pathGlm}/{participant_id}_reginfo.tsv', sep='\t')
 
+    # Load the ROI file
+    print('loading R...')
+    R_cell = loadmat(os.path.join(pathROI, f'{participant_id}_{atlas}_region.mat'))['R'][0]
+    R = list()
+
     for r in R_cell:
         R.append({field: r[field].item() for field in r.dtype.names})
 
     files = [file for f, file in enumerate(os.listdir(pathGlm)) if file.startswith('beta') and f + 1 < iB[0]]
 
-    # extract betas
-    beta = list()
-    for f in files:
-        print(f'loading {f}...')
-        vol = nb.load(os.path.join(pathGlm, f)).get_fdata()
-        b = vol
-        beta.append(b)
-    beta = np.array(beta).reshape(len(files), -1)
-
-    ResMS = nb.load(os.path.join(pathGlm, 'ResMS.nii')).get_fdata().reshape(-1)
-    beta_prewhitened = beta / np.sqrt(ResMS)
+    ResMS = nb.load(os.path.join(pathGlm, 'ResMS.nii'))
 
     # define rois per atlas:
     rois = {
@@ -97,17 +88,21 @@ if __name__ == "__main__":
     RDMs = list()
     for r in R:
         if r["name"] in rois:
-            print(f'region:{r["name"]}, hemisphere:{r["hem"]}, {len(r["linvoxidxs"])} voxels')
-            # get linear indices
-            linvoxidxs = r['linvoxidxs']
-            b = beta_prewhitened[:, linvoxidxs].squeeze()
+            print(f'region:{r["name"]}, hemisphere:{r["hem"]}, {len(r["data"])} voxels')
+            beta_prewhitened = list()
+            for f in files:
+                vol = nb.load(os.path.join(pathGlm, f))
+                beta = nt.sample_image(vol, r['data'][:, 0],  r['data'][:, 1], r['data'][:, 2], 0)
+                res = nt.sample_image(ResMS, r['data'][:, 0],  r['data'][:, 1], r['data'][:, 2], 0)
+                beta_prewhitened.append(beta / np.sqrt(res))
+
+            beta_prewhitened = np.array(beta_prewhitened)
             dataset = rsa.data.Dataset(
-                b,
-                channel_descriptors={'channel': np.array(['vox_' + str(x) for x in range(b.shape[-1])])},
+                beta_prewhitened,
+                channel_descriptors={'channel': np.array(['vox_' + str(x) for x in range(beta_prewhitened.shape[-1])])},
                 obs_descriptors={'conds': reginfo.name,
                                  'run': reginfo.run})
-            rdm = rsa.rdm.calc_rdm_unbalanced(dataset, method='crossnobis', descriptor='conds',
-                                              cv_descriptor='run')
+            rdm = rsa.rdm.calc_rdm(dataset, method='crossnobis', descriptor='conds', cv_descriptor='run')
             rdm.rdm_descriptors = {'roi': r["name"], 'hem': r["hem"], 'index': [0]}
             rdm.reorder(np.argsort(rdm.pattern_descriptors['conds']))
             rdm.reorder(index)
