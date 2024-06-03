@@ -21,7 +21,7 @@ if __name__ == "__main__":
         'subj106'
     ], help='Participant IDs')
     parser.add_argument('--atlas', default='ROI', help='atlas')
-    parser.add_argument('--glm', default='9', help='glm')
+    parser.add_argument('--glm', default='8', help='glm')
 
     args = parser.parse_args()
     participants = args.participants
