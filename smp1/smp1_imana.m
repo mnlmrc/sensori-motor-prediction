@@ -2542,7 +2542,7 @@ function varargout = smp1_imana(what,varargin)
             
             Vol = fullfile(baseDir, [glmEstDir num2str(glm)], subj_id, 'mask.nii');
             for r = 1:length(R)
-                img = region_saveasimg(R{r}, Vol, 'name',fullfile(baseDir, regDir, subj_id, sprintf('%s.%s.nii', atlas, R{r}.name)));
+                img = region_saveasimg(R{r}, Vol, 'name',fullfile(baseDir, regDir, subj_id, sprintf('%s.%s.%s.nii', atlas, Hem{h}, R{r}.name)));
             end
 
             output_path = fullfile(baseDir, regDir, subj_id);
@@ -2613,7 +2613,7 @@ function varargout = smp1_imana(what,varargin)
                 end
 
                 hold off;
-                xlabel('TR');
+                xlabel('TR relative to startTrialReal');
                 ylabel('activation');
 
                 ylim([-2, 2])
