@@ -2466,7 +2466,7 @@ function varargout = smp1_imana(what,varargin)
             % extract time series data
             [y_raw, y_adj, y_hat, y_res,B] = region_getts(SPM,R);
             
-            % D = spmj_get_ons_struct(SPM);
+%             D = spmj_get_ons_struct(SPM);
             Dd = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.dat', sn)));
             D.ons = Dd.startTimeReal / 1000;
             D.block = Dd.BN;
@@ -2474,10 +2474,10 @@ function varargout = smp1_imana(what,varargin)
             
             for r=1:size(y_raw,2)
                 for i=1:size(D.block,1)
-                    D.y_adj(i,:)=cut(y_adj(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
-                    D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
-                    D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
-                    D.y_raw(i,:)=cut(y_raw(:,r),pre,round(D.ons(i))-1,post,'padding','nan')';
+                    D.y_adj(i,:)=cut(y_adj(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+                    D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+                    D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+                    D.y_raw(i,:)=cut(y_raw(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                 end
                 
                 % Add the event and region information to tje structure. 
