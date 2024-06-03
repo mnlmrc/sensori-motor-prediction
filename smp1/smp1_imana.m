@@ -1797,7 +1797,7 @@ function varargout = smp1_imana(what,varargin)
             % each TR
             J.timing.fmri_t0 = 1;
         
-            for run = run_list_vec
+            for run = run_list_vec'
                 % Setup scans for current session
                 J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id, [subj_id, '_run_', run_list{run}, '.nii'])};
         
