@@ -2496,6 +2496,7 @@ function varargout = smp1_imana(what,varargin)
             
             save(fullfile(baseDir,regDir, subj_id, sprintf('hrf_glm%d.mat', glm)),'T'); 
             varargout{1} = T;
+            varargout{2} = y_adj;
             
             cd(currentDir)
 
