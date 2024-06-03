@@ -27,9 +27,9 @@ if __name__ == "__main__":
     # session = sys.argv[3]
 
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument('--participant_id', default='subj106', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj102', help='Participant ID')
     parser.add_argument('--experiment', default='smp1', help='Atlas name')
-    parser.add_argument('--session', default='training')
+    parser.add_argument('--session', default='scanning')
     # parser.add_argument('--mode', type=str, help='Mode of operation')
     # parser.add_argument('--host', type=str, help='Host address')
     # parser.add_argument('--port', type=int, help='Port number')
