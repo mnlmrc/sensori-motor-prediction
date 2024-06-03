@@ -1799,7 +1799,7 @@ function varargout = smp1_imana(what,varargin)
         
             for run = run_list_vec'
                 % Setup scans for current session
-                J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id, [subj_id, '_run_', run_list{run}, '.nii'])};
+                J.sess(run).scans = {fullfile(baseDir, imagingDir, subj_id, sprintf('%s_run_%02d.nii', subj_id, run))};
         
         
                 % Preallocate memory for conditions
@@ -1941,6 +1941,8 @@ function varargout = smp1_imana(what,varargin)
             % T.nogo = strcmp(T.instr, 'nogo');
             % 
             % T.rest = strcmp(T.name, 'rest');
+            J(all(ismissing(T), 2), :) = [];  % remove empty rows (e.g., when skipping runs)
+            
             
             dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
             spm_rwls_run_fmri_spec(J);
