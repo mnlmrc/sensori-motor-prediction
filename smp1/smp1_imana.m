@@ -1941,7 +1941,10 @@ function varargout = smp1_imana(what,varargin)
             % T.nogo = strcmp(T.instr, 'nogo');
             % 
             % T.rest = strcmp(T.name, 'rest');
-            J(all(ismissing(T), 2), :) = [];  % remove empty rows (e.g., when skipping runs)
+
+
+            % remove empty rows (e.g., when skipping runs)
+            J.sess = J.sess(~arrayfun(@(x) all(structfun(@isempty, x)), J.sess));
             
             
             dsave(fullfile(J.dir{1},sprintf('%s_reginfo.tsv', subj_id)), T);
