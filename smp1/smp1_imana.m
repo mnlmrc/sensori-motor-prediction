@@ -2541,7 +2541,7 @@ function varargout = smp1_imana(what,varargin)
             pre=10;
             post=10;
             atlas = 'ROI';
-            glm = 5;
+            glm = 9;
 
             vararginoptions(varargin,{'ROI','pre','post', 'glm', 'sn', 'atlas'});
 
