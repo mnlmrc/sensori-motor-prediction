@@ -2235,6 +2235,7 @@ function varargout = smp1_imana(what,varargin)
                 smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'spmT')
                 smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'beta')
                 smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'res')
+                smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'con')
             end
             
         case 'SURF:reconall'
@@ -2410,7 +2411,81 @@ function varargout = smp1_imana(what,varargin)
                 save(G, out_name)
             
             end
+        
+        case 'SURF:group'
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+            
+            PL = {};
+            PR = {};
+            participants = {};
+            namesL = {};
+            namesR = {};
+            
+            G = gifti(fullfile(baseDir, wbDir, pinfo.subj_id{pinfo.sn==sn(1)}, 'glm9.con.L.func.gii'));
 
+            names = surf_getGiftiColumnNames(G);
+            for n=1:length(names)
+                namesL{n} = [names{n}(1:end-3) 'L.func.gii'];
+                namesR{n} = [names{n}(1:end-3) 'R.func.gii'];
+            end
+
+            for s=1:length(sn)
+                subj_id = pinfo.subj_id{pinfo.sn==sn(s)};
+
+                participants = [participants, subj_id];
+
+                PL = [PL, fullfile(baseDir, wbDir, subj_id, 'glm9.spmT.L.func.gii')];
+                PR = [PR, fullfile(baseDir, wbDir, subj_id, 'glm9.spmT.R.func.gii')];
+
+            end
+
+            surf_groupGiftis(PL, 'outcolnames',participants, 'outfilenames', fullfile(baseDir, wbDir, 'group', namesL))
+            surf_groupGiftis(PR, 'outcolnames',participants, 'outfilenames', fullfile(baseDir, wbDir, 'group', namesR))
+
+            meanL = [];
+            tvalL = [];
+            pvalL = [];
+
+            meanR = [];
+            tvalR = [];
+            pvalR = [];
+
+            for n = 1:length(names)
+                
+                PL = gifti(fullfile(baseDir, wbDir, 'group', namesL{n}));
+                cdata = PL.cdata;
+                meanL = [meanL nansum(cdata, 2)];
+                [~, pval, ~, tval] = ttest(cdata');
+                tvalL = [tvalL tval.tstat' ];
+                pvalL = [pvalL pval' ];
+
+                PR = gifti(fullfile(baseDir, wbDir, 'group', namesR{n}));
+                cdata = PR.cdata;
+                meanR = [meanR nansum(cdata, 2)];
+                [~, pval, ~, tval] = ttest(cdata');
+                tvalR = [tvalR tval.tstat' ];
+                pvalR = [pvalR pval' ];
+                
+                
+
+            end
+
+            meanL = surf_makeFuncGifti(meanL,'anatomicalStruct', 'CortexLeft','columnNames', namesL);
+            tvalL = surf_makeFuncGifti(tvalL,'anatomicalStruct','CortexLeft','columnNames', namesL);
+            pvalL = surf_makeFuncGifti(pvalL,'anatomicalStruct','CortexLeft','columnNames', namesL);
+
+            meanR = surf_makeFuncGifti(meanR,'anatomicalStruct','CortexRight','columnNames', namesR);
+            tvalR = surf_makeFuncGifti(tvalR,'anatomicalStruct','CortexRight','columnNames', namesR);
+            pvalR = surf_makeFuncGifti(pvalR,'anatomicalStruct','CortexRight','columnNames', namesR);
+
+            save(meanL, fullfile(baseDir, wbDir, 'group', 'mean.L.func.gii'))
+            save(tvalL, fullfile(baseDir, wbDir, 'group', 'tval.L.func.gii'))
+            save(pvalL, fullfile(baseDir, wbDir, 'group', 'pval.L.func.gii'))
+            
+            save(meanR, fullfile(baseDir, wbDir, 'group', 'mean.R.func.gii'))
+            save(tvalR, fullfile(baseDir, wbDir, 'group', 'tval.R.func.gii'))
+            save(pvalR, fullfile(baseDir, wbDir, 'group', 'pval.R.func.gii'))
 
         case 'SEARCH:define' 
 

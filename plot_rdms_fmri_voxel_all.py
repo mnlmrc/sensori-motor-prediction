@@ -17,6 +17,8 @@ if __name__ == "__main__":
         'subj100',
         'subj101',
         'subj102',
+        'subj103',
+        # 'subj105',
         'subj106'
     ], help='Participant IDs')
     parser.add_argument('--atlas', default='ROI', help='atlas')
@@ -50,7 +52,7 @@ if __name__ == "__main__":
     # RDMs.pattern_descriptors['conds'] = [c.decode('utf-8').replace(' ', '') for c in RDMs.pattern_descriptors['conds']]
 
     vmin = 0  # RDMs.dissimilarities.min()
-    vmax = 2  # RDMs.dissimilarities.max()
+    vmax = .5  # RDMs.dissimilarities.max()
 
     if RDMs.n_rdm <= 16:
         num_of_rows = 2
