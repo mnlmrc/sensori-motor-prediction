@@ -17,8 +17,8 @@ if __name__ == "__main__":
         'subj100',
         'subj101',
         'subj102',
-        'subj103',
-        'subj104',
+        # 'subj103',
+        # 'subj104',
         # 'subj105',
         'subj106'
     ], help='Participant IDs')
@@ -50,10 +50,9 @@ if __name__ == "__main__":
                              rdm_descriptors=rdm.rdm_descriptors,
                              pattern_descriptors=rdm.pattern_descriptors)
 
-    # RDMs.pattern_descriptors['conds'] = [c.decode('utf-8').replace(' ', '') for c in RDMs.pattern_descriptors['conds']]
+    RDMs.pattern_descriptors['conds'] = [c.replace(' ', '') for c in RDMs.pattern_descriptors['conds']]
 
-    vmin = 0  # RDMs.dissimilarities.min()
-    vmax = .5  # RDMs.dissimilarities.max()
+
 
     if RDMs.n_rdm <= 16:
         num_of_rows = 2
@@ -62,9 +61,46 @@ if __name__ == "__main__":
     else:
         num_of_rows = 4
 
+    # planning
     hemispheres = ['L', 'R']
     for hem in hemispheres:
-        rdms = RDMs.subset(by='hem', value=hem)
+
+        rdms = RDMs.subsample_pattern(by='conds', value=['0%', '25%', '50%', '75%', '100%'])
+
+        vmin = rdms.dissimilarities.min()
+        vmax = rdms.dissimilarities.max()
+
+        rdms = rdms.subset(by='hem', value=hem)
+
+        fig, axs = plt.subplots(num_of_rows, rdms.n_rdm // num_of_rows, figsize=(8, 5), sharex=True, sharey=True)
+
+        for r, rdm in enumerate(rdms):
+            ax = axs[r // (rdms.n_rdm // num_of_rows), r % (rdms.n_rdm // num_of_rows)]
+            cax = rsa.vis.show_rdm_panel(
+                rdm, ax, rdm_descriptor='roi', cmap='viridis', vmin=vmin, vmax=vmax
+            )
+            ax.set_xticks(np.arange(len(rdms.pattern_descriptors['conds'])))
+            ax.set_xticklabels(rdms.pattern_descriptors['conds'], rotation=45, ha='right')
+            ax.set_yticks(ax.get_xticks())
+            ax.set_yticklabels(rdms.pattern_descriptors['conds'])
+
+        cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
+        cbar.set_label('Cross-validated multivariate distance (a.u.)')
+        fig.suptitle(f'RDMs, all participants (N={len(participants)}), glm{glm}, hemisphere: {hem}')
+
+    plt.show()
+
+    # execution
+    for hem in hemispheres:
+
+        rdms = RDMs.subsample_pattern(by='conds', value=['0%,ring', '25%,ring', '50%,ring', '75%,ring',
+                                                         '25%,index', '50%,index', '75%,index', '100%,index'])
+
+        vmin = rdms.dissimilarities.min()
+        vmax = rdms.dissimilarities.max()
+
+        rdms = rdms.subset(by='hem', value=hem)
+
         fig, axs = plt.subplots(num_of_rows, rdms.n_rdm // num_of_rows, figsize=(15, 9), sharex=True, sharey=True)
 
         for r, rdm in enumerate(rdms):
@@ -72,10 +108,10 @@ if __name__ == "__main__":
             cax = rsa.vis.show_rdm_panel(
                 rdm, ax, rdm_descriptor='roi', cmap='viridis', vmin=vmin, vmax=vmax
             )
-            ax.set_xticks(np.arange(len(RDMs.pattern_descriptors['conds'])))
-            ax.set_xticklabels(RDMs.pattern_descriptors['conds'], rotation=45, ha='right')
+            ax.set_xticks(np.arange(len(rdms.pattern_descriptors['conds'])))
+            ax.set_xticklabels(rdms.pattern_descriptors['conds'], rotation=45, ha='right')
             ax.set_yticks(ax.get_xticks())
-            ax.set_yticklabels(RDMs.pattern_descriptors['conds'])
+            ax.set_yticklabels(rdms.pattern_descriptors['conds'])
 
         cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
         cbar.set_label('Cross-validated multivariate distance (a.u.)')

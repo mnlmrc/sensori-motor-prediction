@@ -1751,12 +1751,18 @@ function varargout = smp1_imana(what,varargin)
             varargout{1}= events;
 
         case 'GLM:design'
+
+            % Import globals from spm_defaults 
+            global defaults; 
+            if (isempty(defaults)) 
+                spm_defaults;
+            end 
             
             currentDir = pwd;
 
             sn = [];
             glm = [];
-            hrf_params = [3.5 10 1 1 6 0 32];
+            hrf_params = [4.5 11 1 1 6 0 32];
             vararginoptions(varargin,{'sn', 'glm', 'hrf_params'})
 
             if isempty(sn)
@@ -1896,6 +1902,7 @@ function varargout = smp1_imana(what,varargin)
                 % regressors
                 J.bases.hrf.derivs = [0 0];
                 J.bases.hrf.params = hrf_params;  % positive and negative peak of HRF - set to [] if running wls (?)
+                defaults.stats.fmri.hrf=J.bases.hrf.params; 
                 
                 % Specify the order of the Volterra series expansion 
                 % for modeling nonlinear interactions in the BOLD response
@@ -2472,11 +2479,18 @@ function varargout = smp1_imana(what,varargin)
 
             end
 
-            meanL = surf_makeFuncGifti(meanL,'anatomicalStruct', 'CortexLeft','columnNames', namesL);
+            meanExecL = mean(meanL(:, contains(namesL, 'ring') | contains(namesL, 'index')), 2);
+            meanExecR = mean(meanR(:, contains(namesR, 'ring') | contains(namesR, 'index')), 2);
+
+            meanPlanL = mean(meanL(:, ~contains(namesL, 'ring') & ~contains(namesL, 'index')), 2);
+            meanPlanR = mean(meanR(:, ~contains(namesR, 'ring') & ~contains(namesR, 'index')), 2);
+
+
+            meanL = surf_makeFuncGifti([meanL meanExecL meanPlanL],'anatomicalStruct', 'CortexLeft','columnNames', [namesL, {'exec.L.func.gii'}, {'plan.L.func.gii'}]);
             tvalL = surf_makeFuncGifti(tvalL,'anatomicalStruct','CortexLeft','columnNames', namesL);
             pvalL = surf_makeFuncGifti(pvalL,'anatomicalStruct','CortexLeft','columnNames', namesL);
 
-            meanR = surf_makeFuncGifti(meanR,'anatomicalStruct','CortexRight','columnNames', namesR);
+            meanR = surf_makeFuncGifti([meanR meanExecR meanPlanR],'anatomicalStruct','CortexRight','columnNames', [namesR, {'exec.R.func.gii'}, {'plan.R.func.gii'}]);
             tvalR = surf_makeFuncGifti(tvalR,'anatomicalStruct','CortexRight','columnNames', namesR);
             pvalR = surf_makeFuncGifti(pvalR,'anatomicalStruct','CortexRight','columnNames', namesR);
 
