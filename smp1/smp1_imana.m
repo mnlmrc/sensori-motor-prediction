@@ -752,7 +752,7 @@ function varargout = smp1_imana(what,varargin)
                 movefile(source,dest);
             % end
 
-        case 'GLM:make_events'
+        case 'GLM:make_even'
 
             sn = [];
             glm = [];
@@ -2216,7 +2216,8 @@ function varargout = smp1_imana(what,varargin)
 
             sn = [];
             glm = [];
-            vararginoptions(varargin,{'sn', 'glm'})
+            hrf_params = [3.5 10 1 1 6 0 32];
+            vararginoptions(varargin,{'sn', 'glm', 'hrf_params'})
             
             spm_get_defaults('cmdline', true);  % Suppress GUI prompts, no request for overwirte
 
@@ -2229,7 +2230,7 @@ function varargout = smp1_imana(what,varargin)
                 end
                 
                 smp1_imana('GLM:make_events', 'sn', s, 'glm', glm)
-                smp1_imana('GLM:design', 'sn', s, 'glm', glm)
+                smp1_imana('GLM:design', 'sn', s, 'glm', glm, 'hrf_params', hrf_params)
                 smp1_imana('GLM:estimate', 'sn', s, 'glm', glm)
                 smp1_imana('GLM:T_contrasts', 'sn', s, 'glm', glm)
                 smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'spmT')
@@ -2482,7 +2483,7 @@ function varargout = smp1_imana(what,varargin)
             save(meanL, fullfile(baseDir, wbDir, 'group', 'mean.L.func.gii'))
             save(tvalL, fullfile(baseDir, wbDir, 'group', 'tval.L.func.gii'))
             save(pvalL, fullfile(baseDir, wbDir, 'group', 'pval.L.func.gii'))
-            
+
             save(meanR, fullfile(baseDir, wbDir, 'group', 'mean.R.func.gii'))
             save(tvalR, fullfile(baseDir, wbDir, 'group', 'tval.R.func.gii'))
             save(pvalR, fullfile(baseDir, wbDir, 'group', 'pval.R.func.gii'))
@@ -2562,6 +2563,7 @@ function varargout = smp1_imana(what,varargin)
                     D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                     D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                     D.y_raw(i,:)=cut(y_raw(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+                    % D.regr(i, :)=cut()
                 end
                 
                 % Add the event and region information to tje structure. 
@@ -2623,7 +2625,7 @@ function varargout = smp1_imana(what,varargin)
             
             Vol = fullfile(baseDir, [glmEstDir num2str(glm)], subj_id, 'mask.nii');
             for r = 1:length(R)
-                img = region_saveasimg(R{r}, Vol, 'name',fullfile(baseDir, regDir, subj_id, sprintf('%s.%s.%s.nii', atlas, Hem{h}, R{r}.name)));
+                img = region_saveasimg(R{r}, Vol, 'name',fullfile(baseDir, regDir, subj_id, sprintf('%s.%s.%s.nii', atlas, R{r}.hem, R{r}.name)));
             end
 
             output_path = fullfile(baseDir, regDir, subj_id);
