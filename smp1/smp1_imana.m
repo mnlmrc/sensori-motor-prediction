@@ -752,7 +752,7 @@ function varargout = smp1_imana(what,varargin)
                 movefile(source,dest);
             % end
 
-        case 'GLM:make_even'
+        case 'GLM:make_event'
 
             sn = [];
             glm = [];
@@ -1762,7 +1762,7 @@ function varargout = smp1_imana(what,varargin)
 
             sn = [];
             glm = [];
-            hrf_params = [4.5 11 1 1 6 0 32];
+            hrf_params = [5 12 1 1 6 0 32];
             vararginoptions(varargin,{'sn', 'glm', 'hrf_params'})
 
             if isempty(sn)
