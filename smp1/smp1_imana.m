@@ -770,8 +770,8 @@ function varargout = smp1_imana(what,varargin)
             output_folder = fullfile(baseDir, behavDir, subj_id);
             writetable(events, fullfile(output_folder, sprintf('glm%d_events.tsv', glm)), 'FileType', 'text', 'Delimiter','\t')
 
-            if ~isfolder(fullfile(baseDir, glmEstDir, subj_id))
-                mkdir(fullfile(baseDir, glmEstDir, subj_id))
+            if ~isfolder(fullfile(baseDir, [glmEstDir num2str(glm)] , subj_id))
+                mkdir(fullfile(baseDir, [glmEstDir num2str(glm)], subj_id))
             end
 
         case 'GLM:calculate_VIF'
@@ -2240,7 +2240,7 @@ function varargout = smp1_imana(what,varargin)
                     delete(spm_file);
                 end
                 
-                smp1_imana('GLM:make_events', 'sn', s, 'glm', glm)
+                smp1_imana('GLM:make_event', 'sn', s, 'glm', glm)
                 smp1_imana('GLM:design', 'sn', s, 'glm', glm, 'hrf_params', hrf_params)
                 smp1_imana('GLM:estimate', 'sn', s, 'glm', glm)
                 smp1_imana('GLM:T_contrasts', 'sn', s, 'glm', glm)
@@ -2814,7 +2814,7 @@ function varargout = smp1_imana(what,varargin)
                 % yyaxis left
                 % traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
                 xAx = linspace(-pre, post, pre+post+1);
-                p1 = plot(xAx, squeeze(mean(y_adj(:, r, :), 1)), 'linestyle','-', 'Color', 'red', LineWidth=2)
+                p1 = plot(xAx, squeeze(mean(y_adj(:, r, :), 1)), 'linestyle','-', 'Color', 'red', 'LineWidth', 2)
                 hold on
                 plot(xAx, squeeze(y_adj(:, r, :)), 'linestyle','-', 'Color', [1 0 0 .2])
                 % traceplot([-pre:post],T.y_res,  'subset', subset ,'split', [], 'linestyle',':');
@@ -2825,8 +2825,8 @@ function varargout = smp1_imana(what,varargin)
                 
     
                 % yyaxis right
-                p2 = plot(xAx, squeeze(mean(y_hat(:, r, :),1)), 'linestyle','-', 'Color', 'blue', LineWidth=2);
-                plot(xAx, squeeze(y_hat(:, r, :)), 'linestyle','-', 'Color', [0 0 1 .2], LineWidth=2)
+                p2 = plot(xAx, squeeze(mean(y_hat(:, r, :),1)), 'linestyle','-', 'Color', 'blue', 'LineWidth', 2);
+                plot(xAx, squeeze(y_hat(:, r, :)), 'linestyle','-', 'Color', [0 0 1 .2], 'LineWidth', 2)
                 % traceplot([-pre:post],T.y_adj,'leg',[],'subset', subset , 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
                 % ax = gca;
                 % ax.YColor = 'r';
