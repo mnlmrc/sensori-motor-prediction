@@ -1762,7 +1762,7 @@ function varargout = smp1_imana(what,varargin)
 
             sn = [];
             glm = [];
-            hrf_params = [5 12 1 1 6 0 32];
+            hrf_params = [5 14 1 1 6 0 32];
             vararginoptions(varargin,{'sn', 'glm', 'hrf_params'})
 
             if isempty(sn)
@@ -2583,6 +2583,8 @@ function varargout = smp1_imana(what,varargin)
             
 %             D = spmj_get_ons_struct(SPM);
             Dd = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.dat', sn)));
+            
+            D = [];
             D.ons = (Dd.startTimeReal / 1000) / TR;
             D.ons = D.ons + (Dd.BN - 1) * nScan;
             D.block = Dd.BN;
@@ -2594,7 +2596,7 @@ function varargout = smp1_imana(what,varargin)
                     D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                     D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                     D.y_raw(i,:)=cut(y_raw(:,r),pre,round(D.ons(i)),post,'padding','nan')';
-                    D.regr(i, :)=cut(regrC(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+                    D.regr(i, :, :)=cut(regrC,pre,round(D.ons(i)),post,'padding','nan')';
                 end
                 
                 % Add the event and region information to tje structure. 
