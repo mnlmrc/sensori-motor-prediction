@@ -17,9 +17,9 @@ if __name__ == "__main__":
         'subj100',
         'subj101',
         'subj102',
-        # 'subj103',
-        # 'subj104',
-        # 'subj105',
+        'subj103',
+        'subj104',
+        'subj105',
         'subj106'
     ], help='Participant IDs')
     parser.add_argument('--atlas', default='ROI', help='atlas')

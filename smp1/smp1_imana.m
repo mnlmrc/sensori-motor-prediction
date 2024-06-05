@@ -2559,21 +2559,21 @@ function varargout = smp1_imana(what,varargin)
             TR = SPM.xY.RT;
             nScan = SPM.nscan(1);
 
-            % make (dummy) regressors
-            hrf = spm_hrf(1, hrf_params);
-            events = dload(fullfile(baseDir,behavDir,subj_id ,sprintf('glm%d_events.tsv', glm)));
-            eventtype = unique(events.eventtype);
-            regr = zeros(2760, length(eventtype));
-
-            for e = 1:length(eventtype)
-                
-                onset = events.Onset(strcmp(eventtype(e), events.eventtype));
-                block = events.BN(strcmp(eventtype(e), events.eventtype));
-                onset = round(onset) + (block - 1) * 276;
-
-                regr(onset, e) = 1;
-                regrC(:, e) = conv(regr(:, e), hrf);             
-            end
+            % % make (dummy) regressors
+            % hrf = spm_hrf(1, hrf_params);
+            % events = dload(fullfile(baseDir,behavDir,subj_id ,sprintf('glm%d_events.tsv', glm)));
+            % eventtype = unique(events.eventtype);
+            % regr = zeros(2760, length(eventtype));
+            % 
+            % for e = 1:length(eventtype)
+            % 
+            %     onset = events.Onset(strcmp(eventtype(e), events.eventtype));
+            %     block = events.BN(strcmp(eventtype(e), events.eventtype));
+            %     onset = round(onset) + (block - 1) * 276;
+            % 
+            %     regr(onset, e) = 1;
+            %     regrC(:, e) = conv(regr(:, e), hrf);             
+            % end
             
             % load ROI definition (R)
             R = load(fullfile(baseDir, regDir,subj_id,[subj_id '_' atlas '_region.mat'])); R=R.R;
@@ -2685,9 +2685,10 @@ function varargout = smp1_imana(what,varargin)
             atlas = 'ROI';
             hem = 'L';
             eventname = [];
+            regr = [];
             glm = [];
 
-            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'eventname', 'hem', 'glm'});
+            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'eventname', 'hem', 'glm', 'regr'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
@@ -2724,8 +2725,18 @@ function varargout = smp1_imana(what,varargin)
                 % ax = gca;
                 % ax.YColor = 'r';
                 
+                % yyaxis right
+                % customColors = [
+                %     0.9290, 0.6940, 0.1250;  % Yellow
+                %     0.4940, 0.1840, 0.5560;  % Purple
+                %     0.4660, 0.6740, 0.1880;  % Green
+                %     0.3010, 0.7450, 0.9330;  % Cyan
+                % ];
+                % plot(xAx, 10 * squeeze(mean(T.regr(strcmp(T.eventname, eventname), regr, :), 1)), 'linestyle','-', 'LineWidth', 2)
+                % set(gca, 'ColorOrder', customColors);
+                
                 if r==1
-                    legend({'y_{hat}', 'residuals', '', '', 'y_{adj}'}, 'Location','northwest')
+                    legend({'y_{adj}', 'y_{hat}'}, 'Location','northwest')
                 end
 
                 hold off;
