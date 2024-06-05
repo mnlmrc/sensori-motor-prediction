@@ -2982,11 +2982,7 @@ function varargout = smp1_imana(what,varargin)
                 % yyaxis left
                 % traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
                 xAx = linspace(-pre, post, pre+post+1);
-<<<<<<< Updated upstream
                 p1 = plot(xAx, squeeze(mean(y_adj(:, r, :), 1)), 'linestyle','-', 'Color', 'red', 'LineWidth', 2)
-=======
-                p1 = plot(xAx, squeeze(mean(y_adj(:, r, :), 1)), 'linestyle','-', 'Color', 'red', LineWidth=2);
->>>>>>> Stashed changes
                 hold on
                 plot(xAx, squeeze(y_adj(:, r, :)), 'linestyle','-', 'Color', [1 0 0 .2])
                 % traceplot([-pre:post],T.y_res,  'subset', subset ,'split', [], 'linestyle',':');
@@ -3076,9 +3072,9 @@ function varargout = smp1_imana(what,varargin)
                 % yyaxis left
                 % traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
                 xAx = linspace(-pre, post, pre+post+1);
-                p1 = plot(xAx, squeeze(mean(y_adj_go(:, r, :), 1)), 'linestyle','-', 'Color', 'magenta', LineWidth=2);
+                p1 = plot(xAx, squeeze(mean(y_adj_go(:, r, :), 1)), 'linestyle','-', 'Color', 'magenta');
                 hold on
-                plot(xAx, squeeze(mean(y_hat_go(:, r, :), 1)), 'linestyle','--', 'Color', 'magenta', LineWidth=1);
+                plot(xAx, squeeze(mean(y_hat_go(:, r, :), 1)), 'linestyle','--', 'Color', 'magenta');
                 % plot(xAx, squeeze(y_adj_go(:, r, :)), 'linestyle','-', 'Color', [1 0 0 .2])
                 % traceplot([-pre:post],T.y_res,  'subset', subset ,'split', [], 'linestyle',':');
                 xline(0);
@@ -3088,8 +3084,8 @@ function varargout = smp1_imana(what,varargin)
                 
     
                 % yyaxis right
-                p2 = plot(xAx, squeeze(mean(y_adj_nogo(:, r, :),1)), 'linestyle','-', 'Color', 'green', LineWidth=2);
-                plot(xAx, squeeze(mean(y_hat_nogo(:, r, :),1)), 'linestyle','--', 'Color', 'green', LineWidth=1);
+                p2 = plot(xAx, squeeze(mean(y_adj_nogo(:, r, :),1)), 'linestyle','-', 'Color', 'green');
+                plot(xAx, squeeze(mean(y_hat_nogo(:, r, :),1)), 'linestyle','--', 'Color', 'green');
                 % plot(xAx, squeeze(y_adj_nogo(:, r, :)), 'linestyle','-', 'Color', [0 0 1 .2], LineWidth=2)
                 % traceplot([-pre:post],T.y_adj,'leg',[],'subset', subset , 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
                 % ax = gca;
