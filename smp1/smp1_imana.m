@@ -2596,7 +2596,7 @@ function varargout = smp1_imana(what,varargin)
                     D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                     D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                     D.y_raw(i,:)=cut(y_raw(:,r),pre,round(D.ons(i)),post,'padding','nan')';
-                    D.regr(i, :, :)=cut(regrC,pre,round(D.ons(i)),post,'padding','nan')';
+%                     D.regr(i, :, :)=cut(regrC,pre,round(D.ons(i)),post,'padding','nan')';
                 end
                 
                 % Add the event and region information to tje structure. 
