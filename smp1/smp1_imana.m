@@ -2542,8 +2542,9 @@ function varargout = smp1_imana(what,varargin)
             post=10;
             atlas = 'ROI';
             glm = 9;
+            hrf_params = [5, 14];
 
-            vararginoptions(varargin,{'ROI','pre','post', 'glm', 'sn', 'atlas'});
+            vararginoptions(varargin,{'ROI','pre','post', 'glm', 'sn', 'atlas', 'hrf_params'});
 
             glmDir = fullfile(baseDir, [glmEstDir num2str(glm)]);
             T=[];
@@ -2557,6 +2558,22 @@ function varargout = smp1_imana(what,varargin)
             
             TR = SPM.xY.RT;
             nScan = SPM.nscan(1);
+
+            % make (dummy) regressors
+            hrf = spm_hrf(1, hrf_params);
+            events = dload(fullfile(baseDir,behavDir,subj_id ,sprintf('glm%d_events.tsv', glm)));
+            eventtype = unique(events.eventtype);
+            regr = zeros(2760, length(eventtype));
+
+            for e = 1:length(eventtype)
+                
+                onset = events.Onset(strcmp(eventtype(e), events.eventtype));
+                block = events.BN(strcmp(eventtype(e), events.eventtype));
+                onset = round(onset) + (block - 1) * 276;
+
+                regr(onset, e) = 1;
+                regrC(:, e) = conv(regr(:, e), hrf);             
+            end
             
             % load ROI definition (R)
             R = load(fullfile(baseDir, regDir,subj_id,[subj_id '_' atlas '_region.mat'])); R=R.R;
@@ -2577,7 +2594,7 @@ function varargout = smp1_imana(what,varargin)
                     D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                     D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                     D.y_raw(i,:)=cut(y_raw(:,r),pre,round(D.ons(i)),post,'padding','nan')';
-                    % D.regr(i, :)=cut()
+                    D.regr(i, :)=cut(regrC(:,r),pre,round(D.ons(i)),post,'padding','nan')';
                 end
                 
                 % Add the event and region information to tje structure. 
@@ -2728,6 +2745,20 @@ function varargout = smp1_imana(what,varargin)
 
             saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.glm%d.%s.%s.png', atlas, glm, hem, eventname)))
             
+        case 'HRF:get_plot'
+            
+            sn = [];
+            ROI = 'all';
+            pre=10;
+            post=10;
+            atlas = 'ROI';
+            glm = 9;
+            hrf_params = [5, 14];
+
+            vararginoptions(varargin,{'ROI','pre','post', 'glm', 'sn', 'atlas', 'hrf_params'});
+
+            smp1_imana('HRF:ROI_hrf_get', 'sn', sn, 'hrf_params', hrf_params)
+            smp1_imana('HRF:ROI_hrf_get', 'sn', sn)
             
     end
 
