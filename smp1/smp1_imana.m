@@ -770,6 +770,10 @@ function varargout = smp1_imana(what,varargin)
             output_folder = fullfile(baseDir, behavDir, subj_id);
             writetable(events, fullfile(output_folder, sprintf('glm%d_events.tsv', glm)), 'FileType', 'text', 'Delimiter','\t')
 
+            if ~isfolder(fullfile(baseDir, glmEstDir, subj_id))
+                mkdir(fullfile(baseDir, glmEstDir, subj_id))
+            end
+
         case 'GLM:calculate_VIF'
 
             sn = [];
@@ -2687,17 +2691,117 @@ function varargout = smp1_imana(what,varargin)
             eventname = [];
             regr = [];
             glm = [];
+            p = true;
 
-            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'eventname', 'hem', 'glm', 'regr'});
+            vararginoptions(varargin,{'sn', 'roi', 'atlas', 'eventname', 'hem', 'glm', 'regr', 'p'});
 
             subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            
+
+                % figure
+    
+            for r=1:length(roi)
+
+                T = load(fullfile(baseDir, regDir, subj_id, sprintf('hrf_glm%d.mat', glm))); T=T.T;
+                T = getrow(T,strcmp(T.name, roi{r}));
+                pre = 10;
+                post = 10;
+                y_adj(r, :) = nanmean(T.y_adj(strcmp(T.eventname, eventname), :), 1);
+                y_hat(r, :) = nanmean(T.y_hat(strcmp(T.eventname, eventname), :), 1);
+                
+                % Select a specific subset of things to plot 
+
+                % subset = find(strcmp(T.eventname, eventname) & strcmp(T.hem, hem));
+
+                if p==true
+
+                    subplot(2, 4, r)
+                    
+                    % yyaxis left
+                    % traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
+                    xAx = linspace(-pre, post, pre+post+1);
+                    
+                    plot(xAx, y_adj(r, :), 'linestyle','-', 'Color', 'red')
+                    hold on;
+                    % traceplot([-pre:post],T.y_res,  'subset', subset ,'split', [], 'linestyle',':');
+                    xline(0);
+                    yline(0);
+                    % ax = gca;
+                    % ax.YColor = 'b';
+                    
+        
+                    % yyaxis right
+                    
+                    plot(xAx, y_hat(r, :), 'linestyle','--', 'Color', 'blue')
+                    % traceplot([-pre:post],T.y_adj,'leg',[],'subset', subset , 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
+                    % ax = gca;
+                    % ax.YColor = 'r';
+                    
+                    % yyaxis right
+                    % customColors = [
+                    %     0.9290, 0.6940, 0.1250;  % Yellow
+                    %     0.4940, 0.1840, 0.5560;  % Purple
+                    %     0.4660, 0.6740, 0.1880;  % Green
+                    %     0.3010, 0.7450, 0.9330;  % Cyan
+                    % ];
+                    % plot(xAx, 10 * squeeze(mean(T.regr(strcmp(T.eventname, eventname), regr, :), 1)), 'linestyle','-', 'LineWidth', 2)
+                    % set(gca, 'ColorOrder', customColors);
+                    
+                    if r==1
+                        legend({'y_{adj}', 'y_{hat}'}, 'Location','northwest')
+                    end
+                
+                    hold off;
+                    xlabel('TR relative to startTrialReal');
+                    ylabel('activation');
+    
+                    ylim([-2, 2])
+        
+                    title(roi{r})
+
+                
+    
+                    sgtitle(sprintf('%s\nhemisphere:%s, eventname:%s', subj_id, hem, eventname), 'interpreter', 'none')
+                    set(gcf, 'Position', [100 100, 1400, 800])
+        
+                    drawnow;
+        
+                    fig = gcf;
+        
+                    saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.glm%d.%s.%s.png', atlas, glm, hem, eventname)))
+
+                end
+            
+            end
+
+            varargout{1} = y_adj;
+            varargout{2} = y_hat;
+
+            
+
+        case 'HRF:plot_all'
+
+            sn = [];
+            glm = 9;
+            eventname = 'go';
+            roi = {'SMA', 'PMd', 'PMv', 'M1', 'S1', 'SPLa', 'SPLp', 'V1'};
+            atlas = 'ROI';
+            hem = 'L';
+
+            vararginoptions(varargin,{'sn', 'glm', 'eventname'});
+
+            min_sn = min(sn);
+
+            for s=sn
+                [y_adj(s - min_sn + 1, :, :), y_hat(s- min_sn + 1, :, :)] = smp1_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', eventname, 'p', false);
+
+            end
 
             figure
 
             for r=1:length(roi)
 
-                T = load(fullfile(baseDir, regDir, subj_id, sprintf('hrf_glm%d.mat', glm))); T=T.T;
-                T = getrow(T,strcmp(T.name, roi{r}));
                 pre = 10;
                 post = 10;
                 
@@ -2705,13 +2809,14 @@ function varargout = smp1_imana(what,varargin)
 
                 % subset = find(strcmp(T.eventname, eventname) & strcmp(T.hem, hem));
 
-                subplot(2, 4, r)
+                h(r) = subplot(2, 4, r);
                 
                 % yyaxis left
                 % traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
                 xAx = linspace(-pre, post, pre+post+1);
-                plot(xAx, mean(T.y_adj(strcmp(T.eventname, eventname), :), 1), 'linestyle','-', 'Color', 'red')
-                hold on;
+                p1 = plot(xAx, squeeze(mean(y_adj(:, r, :), 1)), 'linestyle','-', 'Color', 'red', LineWidth=2)
+                hold on
+                plot(xAx, squeeze(y_adj(:, r, :)), 'linestyle','-', 'Color', [1 0 0 .2])
                 % traceplot([-pre:post],T.y_res,  'subset', subset ,'split', [], 'linestyle',':');
                 xline(0);
                 yline(0);
@@ -2720,7 +2825,8 @@ function varargout = smp1_imana(what,varargin)
                 
     
                 % yyaxis right
-                plot(xAx, mean(T.y_hat(strcmp(T.eventname, eventname), :), 1), 'linestyle','--', 'Color', 'blue')
+                p2 = plot(xAx, squeeze(mean(y_hat(:, r, :),1)), 'linestyle','-', 'Color', 'blue', LineWidth=2);
+                plot(xAx, squeeze(y_hat(:, r, :)), 'linestyle','-', 'Color', [0 0 1 .2], LineWidth=2)
                 % traceplot([-pre:post],T.y_adj,'leg',[],'subset', subset , 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
                 % ax = gca;
                 % ax.YColor = 'r';
@@ -2736,7 +2842,7 @@ function varargout = smp1_imana(what,varargin)
                 % set(gca, 'ColorOrder', customColors);
                 
                 if r==1
-                    legend({'y_{adj}', 'y_{hat}'}, 'Location','northwest')
+                    legend([p1, p2], {'y_{adj}', 'y_{hat}'}, 'Location','northwest')
                 end
 
                 hold off;
@@ -2749,31 +2855,19 @@ function varargout = smp1_imana(what,varargin)
 
             end
 
-            sgtitle(sprintf('%s\nhemisphere:%s, eventname:%s', subj_id, hem, eventname), 'interpreter', 'none')
+            sgtitle(sprintf('%s\nhemisphere:%s, eventname:%s', 'group', hem, eventname), 'interpreter', 'none')
             set(gcf, 'Position', [100 100, 1400, 800])
+
+            % Link the x and y axes of the two subplots
+
+            linkaxes(h, 'y');
 
             drawnow;
 
             fig = gcf;
 
-            saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.glm%d.%s.%s.png', atlas, glm, hem, eventname)))
-            
-        case 'HRF:get_plot'
-            
-            sn = [];
-            ROI = 'all';
-            pre=10;
-            post=10;
-            atlas = 'ROI';
-            glm = 9;
-            hrf_params = [5, 14];
-
-            vararginoptions(varargin,{'ROI','pre','post', 'glm', 'sn', 'atlas', 'hrf_params'});
-
-            smp1_imana('HRF:ROI_hrf_get', 'sn', sn, 'hrf_params', hrf_params)
-            smp1_imana('HRF:ROI_hrf_plot', 'sn', sn)
-
-    end
+            % saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.glm%d.%s.%s.png', atlas, glm, hem, eventname)))
+    
 
 
 end

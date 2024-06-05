@@ -26,10 +26,6 @@ underlay = [f'{meshDir}/fs_L/fs_LR.32k.LR.sulc.dscalar.nii', f'{meshDir}fs_R/fs_
 
 Hem = ['L', 'R']
 
-map_names = {
-
-}
-
 # fig, axs = plt.subplots()
 
 for h, H in enumerate(Hem):

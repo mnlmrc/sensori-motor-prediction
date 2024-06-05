@@ -23,16 +23,17 @@ if __name__ == "__main__":
         'subj101',
         'subj102',
         'subj103',
+        'subj104',
         'subj105',
         'subj106'
     ],
                         help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
-    parser.add_argument('--glm', default='8', help='GLM model (e.g., 1, 2, ...)')
+    parser.add_argument('--glm', default='9', help='GLM model (e.g., 1, 2, ...)')
     # order:
     # glm8 : [2, 4, 6, 1,  0, 3, 5, 7]
     # glm9 : [0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12]
-    parser.add_argument('--index', nargs='+', type=int, default=[2, 4, 6, 1,  0, 3, 5, 7],
+    parser.add_argument('--index', nargs='+', type=int, default=[0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12],
                         help='Label order')
 
     args = parser.parse_args()

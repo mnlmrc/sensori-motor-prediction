@@ -88,6 +88,15 @@ if __name__ == "__main__":
         cbar.set_label('Cross-validated multivariate distance (a.u.)')
         fig.suptitle(f'RDMs, all participants (N={len(participants)}), glm{glm}, hemisphere: {hem}')
 
+        for r, rdm in enumerate(rdms):
+            rsa.vis.scatter_plot.show_MDS(rdm, pattern_descriptor='conds')
+            plt.xlim([-.05, .05])
+            plt.ylim([-.05, .05])
+            plt.title(f'{rdm.rdm_descriptors["roi"], rdm.rdm_descriptors["hem"]}')
+            # plt.tick_params(axis='both', which='both', bottom=True, top=False,
+            #                right=False, left=True, labelbottom=True, labeltop=False,
+            #                labelleft=True, labelright=False)
+
     plt.show()
 
     # execution

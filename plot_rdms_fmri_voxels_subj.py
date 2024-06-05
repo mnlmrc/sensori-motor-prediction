@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # glm9 : [0, 4, 7, 10, 2,  5, 8, 11, 3,  1, 6, 9, 12]
     # Argument parsing
     parser = argparse.ArgumentParser(description="Plot RDM")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj104', help='Participant ID')
     parser.add_argument('--atlas', default='ROI', help='Atlas name')
     parser.add_argument('--glm', default='9', help='GLM model')
     parser.add_argument('--type', default='voxels', help='GLM model')
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # RDMs.pattern_descriptors['conds'] = [c.decode('utf-8').replace(' ', '') for c in RDMs.pattern_descriptors['conds']]
 
     vmin = RDMs.dissimilarities.min()
-    vmax = RDMs.dissimilarities.max()
+    vmax = 1 #RDMs.dissimilarities.max()
 
     if RDMs.n_rdm <= 16:
         num_of_rows = 2
