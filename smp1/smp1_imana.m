@@ -1754,6 +1754,174 @@ function varargout = smp1_imana(what,varargin)
                        
             varargout{1}= events;
 
+        case 'GLM:make_glm10'
+
+            sn = [];
+            vararginoptions(varargin,{'sn'})
+
+            subj_id = pinfo.subj_id{pinfo.sn==sn};
+
+            D = dload(fullfile(baseDir, behavDir, subj_id, ['smp1_' subj_id(5:end) '.dat']));
+
+            go = strcmp(D.GoNogo, "go");
+
+            %% planning 0% (nogo)
+            plan0.BN = D.BN(~go & D.cue==93);
+            plan0.TN = D.TN(~go & D.cue==93);
+            plan0.cue = D.cue(~go & D.cue==93);
+            plan0.stimFinger = D.stimFinger(~go & D.cue==93);
+            plan0.Onset = D.startTimeReal(~go & D.cue==93) + D.baselineWait(~go & D.cue==93);
+            plan0.Duration = zeros(length(plan0.BN), 1);
+            plan0.eventtype = repmat({'0%'}, [length(plan0.BN), 1]);
+
+            %% planning 25% (nogo)
+            plan25.BN = D.BN(~go & D.cue==12);
+            plan25.TN = D.TN(~go & D.cue==12);
+            plan25.cue = D.cue(~go & D.cue==12);
+            plan25.stimFinger = D.stimFinger(~go & D.cue==12);
+            plan25.Onset = D.startTimeReal(~go & D.cue==12) + D.baselineWait(~go & D.cue==12);
+            plan25.Duration = zeros(length(plan25.BN), 1);
+            plan25.eventtype = repmat({'25%'}, [length(plan25.BN), 1]);
+
+            %% planning 50% (nogo)
+            plan50.BN = D.BN(~go & D.cue==44);
+            plan50.TN = D.TN(~go & D.cue==44);
+            plan50.cue = D.cue(~go & D.cue==44);
+            plan50.stimFinger = D.stimFinger(~go & D.cue==44);
+            plan50.Onset = D.startTimeReal(~go & D.cue==44) + D.baselineWait(~go & D.cue==44);
+            plan50.Duration = zeros(length(plan50.BN), 1);
+            plan50.eventtype = repmat({'50%'}, [length(plan50.BN), 1]);
+
+            %% planning 75% (nogo)
+            plan75.BN = D.BN(~go & D.cue==21);
+            plan75.TN = D.TN(~go & D.cue==21);
+            plan75.cue = D.cue(~go & D.cue==21);
+            plan75.stimFinger = D.stimFinger(~go & D.cue==21);
+            plan75.Onset = D.startTimeReal(~go & D.cue==21) + D.baselineWait(~go & D.cue==21);
+            plan75.Duration = zeros(length(plan75.BN), 1);
+            plan75.eventtype = repmat({'75%'}, [length(plan75.BN), 1]);
+
+            %% planning 100% (nogo)
+            plan100.BN = D.BN(~go & D.cue==39);
+            plan100.TN = D.TN(~go & D.cue==39);
+            plan100.cue = D.cue(~go & D.cue==39);
+            plan100.stimFinger = D.stimFinger(~go & D.cue==39);
+            plan100.Onset = D.startTimeReal(~go & D.cue==39) + D.baselineWait(~go & D.cue==39);
+            plan100.Duration = zeros(length(plan100.BN), 1);
+            plan100.eventtype = repmat({'100%'}, [length(plan100.BN), 1]);
+
+            %% ring 0% (go)
+            ring0.BN = D.BN(go & D.cue==93 & D.stimFinger==99919);
+            ring0.TN = D.TN(go & D.cue==93 & D.stimFinger==99919);
+            ring0.cue = D.cue(go & D.cue==93 & D.stimFinger==99919);
+            ring0.stimFinger = D.stimFinger(go & D.cue==93 & D.stimFinger==99919);
+            ring0.Onset = D.startTimeReal(go & D.cue==93 & D.stimFinger==99919)...
+                + D.baselineWait(go & D.cue==93 & D.stimFinger==99919) ...
+                + D.planTime(go & D.cue==93 & D.stimFinger==99919);
+            ring0.Duration = zeros(length(ring0.BN), 1);
+            ring0.eventtype = repmat({'0%,ring'}, [length(ring0.BN), 1]);
+
+            %% ring 25% (go)
+            ring25.BN = D.BN(go & D.cue==12 & D.stimFinger==99919);
+            ring25.TN = D.TN(go & D.cue==12 & D.stimFinger==99919);
+            ring25.cue = D.cue(go & D.cue==12 & D.stimFinger==99919);
+            ring25.stimFinger = D.stimFinger(go & D.cue==12 & D.stimFinger==99919);
+            ring25.Onset = D.startTimeReal(go & D.cue==12 & D.stimFinger==99919)...
+                + D.baselineWait(go & D.cue==12 & D.stimFinger==99919)...
+                + D.planTime(go & D.cue==12 & D.stimFinger==99919);
+            ring25.Duration = zeros(length(ring25.BN), 1);
+            ring25.eventtype = repmat({'25%,ring'}, [length(ring25.BN), 1]);
+
+            %% ring 50% (go)
+            ring50.BN = D.BN(go & D.cue==44 & D.stimFinger==99919);
+            ring50.TN = D.TN(go & D.cue==44 & D.stimFinger==99919);
+            ring50.cue = D.cue(go & D.cue==44 & D.stimFinger==99919);
+            ring50.stimFinger = D.stimFinger(go & D.cue==44 & D.stimFinger==99919);
+            ring50.Onset = D.startTimeReal(go & D.cue==44 & D.stimFinger==99919)... 
+                + D.baselineWait(go & D.cue==44 & D.stimFinger==99919)...
+                + D.planTime(go & D.cue==44 & D.stimFinger==99919);
+            ring50.Duration = zeros(length(ring50.BN), 1);
+            ring50.eventtype = repmat({'50%,ring'}, [length(ring50.BN), 1]);
+
+            %% ring 75% (go)
+            ring75.BN = D.BN(go & D.cue==21 & D.stimFinger==99919);
+            ring75.TN = D.TN(go & D.cue==21 & D.stimFinger==99919);
+            ring75.cue = D.cue(go & D.cue==21 & D.stimFinger==99919);
+            ring75.stimFinger = D.stimFinger(go & D.cue==21 & D.stimFinger==99919);
+            ring75.Onset = D.startTimeReal(go & D.cue==21 & D.stimFinger==99919)...
+                + D.baselineWait(go & D.cue==21 & D.stimFinger==99919)...
+                + D.planTime(go & D.cue==21 & D.stimFinger==99919);
+            ring75.Duration = zeros(length(ring75.BN), 1);
+            ring75.eventtype = repmat({'75%,ring'}, [length(ring75.BN), 1]);
+
+            %% index 25% (go)
+            index25.BN = D.BN(go & D.cue==12 & D.stimFinger==91999);
+            index25.TN = D.TN(go & D.cue==12 & D.stimFinger==91999);
+            index25.cue = D.cue(go & D.cue==12 & D.stimFinger==91999);
+            index25.stimFinger = D.stimFinger(go & D.cue==12 & D.stimFinger==91999);
+            index25.Onset = D.startTimeReal(go & D.cue==12 & D.stimFinger==91999)...
+                + D.baselineWait(go & D.cue==12 & D.stimFinger==91999)...
+                + D.planTime(go & D.cue==12 & D.stimFinger==91999);
+            index25.Duration = zeros(length(index25.BN), 1);
+            index25.eventtype = repmat({'25%,index'}, [length(index25.BN), 1]);
+
+            %% index 50% (go)
+            index50.BN = D.BN(go & D.cue==44 & D.stimFinger==91999);
+            index50.TN = D.TN(go & D.cue==44 & D.stimFinger==91999);
+            index50.cue = D.cue(go & D.cue==44 & D.stimFinger==91999);
+            index50.stimFinger = D.stimFinger(go & D.cue==44 & D.stimFinger==91999);
+            index50.Onset = D.startTimeReal(go & D.cue==44 & D.stimFinger==91999)...
+                + D.baselineWait(go & D.cue==44 & D.stimFinger==91999)...
+                + D.planTime(go & D.cue==44 & D.stimFinger==91999);
+            index50.Duration = zeros(length(index50.BN), 1);
+            index50.eventtype = repmat({'50%,index'}, [length(index50.BN), 1]);
+
+            %% index 75% (go)
+            index75.BN = D.BN(go & D.cue==21 & D.stimFinger==91999);
+            index75.TN = D.TN(go & D.cue==21 & D.stimFinger==91999);
+            index75.cue = D.cue(go & D.cue==21 & D.stimFinger==91999);
+            index75.stimFinger = D.stimFinger(go & D.cue==21 & D.stimFinger==91999);
+            index75.Onset = D.startTimeReal(go & D.cue==21 & D.stimFinger==91999)...
+                + D.baselineWait(go & D.cue==21 & D.stimFinger==91999)...
+                + D.planTime(go & D.cue==21 & D.stimFinger==91999);
+            index75.Duration = zeros(length(index75.BN), 1);
+            index75.eventtype = repmat({'75%,index'}, [length(index75.BN), 1]);
+
+            %% index 100% (go)
+            index100.BN = D.BN(go & D.cue==39 & D.stimFinger==91999);
+            index100.TN = D.TN(go & D.cue==39 & D.stimFinger==91999);
+            index100.cue = D.cue(go & D.cue==39 & D.stimFinger==91999);
+            index100.stimFinger = D.stimFinger(go & D.cue==39 & D.stimFinger==91999);
+            index100.Onset = D.startTimeReal(go & D.cue==39 & D.stimFinger==91999)...
+                + D.baselineWait(go & D.cue==39 & D.stimFinger==91999)...
+                + D.planTime(go & D.cue==39 & D.stimFinger==91999);
+            index100.Duration = zeros(length(index100.BN), 1);
+            index100.eventtype = repmat({'100%,index'}, [length(index100.BN), 1]);
+            
+            %% make table
+            
+            plan0 = struct2table(plan0);
+            plan25 = struct2table(plan25);
+            plan50 = struct2table(plan50);
+            plan75 = struct2table(plan75);
+            plan100 = struct2table(plan100);
+            ring0 = struct2table(ring0);
+            ring25 = struct2table(ring25);
+            ring50 = struct2table(ring50);
+            ring75 = struct2table(ring75);
+            index25 = struct2table(index25);
+            index50 = struct2table(index50);
+            index75 = struct2table(index75);
+            index100 = struct2table(index100);
+
+            events = [plan0; plan25; plan50; plan75; plan100; ring0; ring25; ring50; ring75; index25; index50; index75; index100];
+            
+            %% convert to secs
+            events.Onset = events.Onset ./ 1000;
+            events.Duration = events.Duration ./ 1000;                 
+                       
+            varargout{1}= events;
+
         case 'GLM:design'
 
             % Import globals from spm_defaults 
@@ -2814,7 +2982,11 @@ function varargout = smp1_imana(what,varargin)
                 % yyaxis left
                 % traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
                 xAx = linspace(-pre, post, pre+post+1);
+<<<<<<< Updated upstream
                 p1 = plot(xAx, squeeze(mean(y_adj(:, r, :), 1)), 'linestyle','-', 'Color', 'red', 'LineWidth', 2)
+=======
+                p1 = plot(xAx, squeeze(mean(y_adj(:, r, :), 1)), 'linestyle','-', 'Color', 'red', LineWidth=2);
+>>>>>>> Stashed changes
                 hold on
                 plot(xAx, squeeze(y_adj(:, r, :)), 'linestyle','-', 'Color', [1 0 0 .2])
                 % traceplot([-pre:post],T.y_res,  'subset', subset ,'split', [], 'linestyle',':');
@@ -2867,7 +3039,97 @@ function varargout = smp1_imana(what,varargin)
             fig = gcf;
 
             % saveas(fig, fullfile(baseDir, 'figures', subj_id, sprintf('hrf.%s.glm%d.%s.%s.png', atlas, glm, hem, eventname)))
+
+
+        
+    case 'HRF:plot_all2'
+
+            sn = [];
+            glm = 9;
+            roi = {'SMA', 'PMd', 'PMv', 'M1', 'S1', 'SPLa', 'SPLp', 'V1'};
+            atlas = 'ROI';
+            hem = 'L';
+
+            vararginoptions(varargin,{'sn', 'glm', 'eventname'});
+
+            min_sn = min(sn);
+
+            for s=sn
+                [y_adj_go(s - min_sn + 1, :, :), y_hat_go(s- min_sn + 1, :, :)] = smp1_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', 'go', 'p', false);
+                [y_adj_nogo(s - min_sn + 1, :, :), y_hat_nogo(s- min_sn + 1, :, :)] = smp1_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', 'nogo', 'p', false);
+                
+            end
+            
+            figure
+
+            for r=1:length(roi)
+
+                pre = 10;
+                post = 10;
+                
+                % Select a specific subset of things to plot 
+
+                % subset = find(strcmp(T.eventname, eventname) & strcmp(T.hem, hem));
+
+                h(r) = subplot(2, 4, r);
+                
+                % yyaxis left
+                % traceplot([-pre:post],T.y_hat, 'subset', subset ,'split', [], 'linestyle','--');
+                xAx = linspace(-pre, post, pre+post+1);
+                p1 = plot(xAx, squeeze(mean(y_adj_go(:, r, :), 1)), 'linestyle','-', 'Color', 'magenta', LineWidth=2);
+                hold on
+                plot(xAx, squeeze(mean(y_hat_go(:, r, :), 1)), 'linestyle','--', 'Color', 'magenta', LineWidth=1);
+                % plot(xAx, squeeze(y_adj_go(:, r, :)), 'linestyle','-', 'Color', [1 0 0 .2])
+                % traceplot([-pre:post],T.y_res,  'subset', subset ,'split', [], 'linestyle',':');
+                xline(0);
+                yline(0);
+                % ax = gca;
+                % ax.YColor = 'b';
+                
     
+                % yyaxis right
+                p2 = plot(xAx, squeeze(mean(y_adj_nogo(:, r, :),1)), 'linestyle','-', 'Color', 'green', LineWidth=2);
+                plot(xAx, squeeze(mean(y_hat_nogo(:, r, :),1)), 'linestyle','--', 'Color', 'green', LineWidth=1);
+                % plot(xAx, squeeze(y_adj_nogo(:, r, :)), 'linestyle','-', 'Color', [0 0 1 .2], LineWidth=2)
+                % traceplot([-pre:post],T.y_adj,'leg',[],'subset', subset , 'leglocation','bestoutside', 'linestyle','-', 'linecolor', [1 0 0]);
+                % ax = gca;
+                % ax.YColor = 'r';
+                
+                % yyaxis right
+                % customColors = [
+                %     0.9290, 0.6940, 0.1250;  % Yellow
+                %     0.4940, 0.1840, 0.5560;  % Purple
+                %     0.4660, 0.6740, 0.1880;  % Green
+                %     0.3010, 0.7450, 0.9330;  % Cyan
+                % ];
+                % plot(xAx, 10 * squeeze(mean(T.regr(strcmp(T.eventname, eventname), regr, :), 1)), 'linestyle','-', 'LineWidth', 2)
+                % set(gca, 'ColorOrder', customColors);
+                
+                if r==1
+                    legend({'go adj', 'go hat', 'nogo adj', 'nogo hat'}, 'Location','northwest')
+                end
+
+                hold off;
+                xlabel('TR relative to startTrialReal');
+                ylabel('activation');
+
+                ylim([-2, 2])
+    
+                title(roi{r})
+
+            end
+
+            sgtitle(sprintf('%s\nhemisphere:%s', 'group', hem), 'interpreter', 'none')
+            set(gcf, 'Position', [100 100, 1400, 800])
+
+            % Link the x and y axes of the two subplots
+
+            linkaxes(h, 'y');
+
+            drawnow;
+
+            fig = gcf;
+
 
 
 end
