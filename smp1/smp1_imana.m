@@ -2760,8 +2760,8 @@ function varargout = smp1_imana(what,varargin)
             vararginoptions(varargin,{'ROI','pre','post', 'glm', 'sn', 'atlas', 'hrf_params'});
 
             smp1_imana('HRF:ROI_hrf_get', 'sn', sn, 'hrf_params', hrf_params)
-            smp1_imana('HRF:ROI_hrf_get', 'sn', sn)
-            
+            smp1_imana('HRF:ROI_hrf_plot', 'sn', sn)
+
     end
 
 
