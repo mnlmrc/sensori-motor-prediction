@@ -89,25 +89,28 @@ if __name__ == "__main__":
     colors = make_colors(5)
 
     y = np.nanmean(emg_all, axis=0)
+    yerr = np.nanstd(emg_all, axis=0) / np.sqrt(len(participant_ids))
     for c, cue in enumerate(map_cue.items()):
         axs.plot(tAx, y[c], label=cue[0], color=colors[c])
+        axs.fill_between(tAx, y[c] - yerr[c], y[c] + yerr[c], color=colors[c], lw=0, alpha=.2)
 
+    axs.spines[['top', 'right']].set_visible(False)
     axs.axvline(0, ls='-', color='k', lw=.8)
     axs.axvline(.025, ls='--', color='k', lw=.8)
     axs.axvline(.05, ls='-.', color='k', lw=.8)
     axs.axvline(.1, ls=':', color='k', lw=.8)
-    axs.text(.025 + .0125, .1, 'SLR', ha='center')
-    axs.text(.15, .1, 'Vol', ha='center')
-    axs.text(.075, .1, 'LLR', ha='center')
-    axs.set_title('Average EMG activity from flexor electrode\nwhen the perturbation was delivered to the index finger')
-    axs.set_ylabel('EMG (mV)')
-    axs.set_xlabel('time relative to stimulation (s)')
+    axs.text(.025 + .0125, .14, 'SLR', ha='center', fontsize=14)
+    axs.text(.15, .14, 'Vol', ha='center', fontsize=14)
+    axs.text(.075, .14, 'LLR', ha='center', fontsize=14)
+    # axs.set_title('Average EMG activity from FDS electrode\nwhen the perturbation was delivered to the index finger')
+    axs.set_ylabel('EMG (mV)', fontsize=14)
+    axs.set_xlabel('time relative to stimulation (s)', fontsize=14)
     axs.set_xlim([-.05, .2])
-    axs.legend()
+    axs.legend( fontsize=14, ncol=5)
 
     plt.show()
 
-
+    fig.savefig('/Users/mnlmrc/Library/CloudStorage/OneDrive-TheUniversityofWesternOntario/SensoriMotorPrediction/uksensorimotor2024/electrode.svg', dpi=300)
 
 
 

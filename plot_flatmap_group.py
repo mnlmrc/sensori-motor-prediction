@@ -76,8 +76,8 @@ for h, H in enumerate(Hem):
                       colorbar=True)
 
     plt.ylim([1, 8])
-    plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', 'flatmap.ROI.rois.svg'), dpi=300)
-    plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', 'flatmap.ROI.rois.png'), dpi=300)
+    plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', f'flatmap.ROI.{H}.rois.svg'), dpi=300)
+    plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', f'flatmap.ROI.{H}.rois.png'), dpi=300)
 
     for img in mean.darrays:
 
@@ -89,7 +89,7 @@ for h, H in enumerate(Hem):
         surf.plot.plotmap(img.data, surface[h],
                           underlay=None,
                           borders=borders[h],
-                          cscale=[-300, 300],
+                          cscale=[-40, 40],
                           underscale=[-1.5, 1],
                           alpha=.5,
                           new_figure=False,
