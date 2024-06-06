@@ -12,7 +12,7 @@ from visual import make_colors
 
 if __name__ == "__main__":
     experiment = 'smp1'
-    participant_id = 'subj102'
+    participant_id = 'subj104'
     session = 'scanning'
 
     # extract subject number

@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     colors = ['purple', 'green', 'darkorange']
     labels = ['finger', 'cue', 'interaction']
-    sig_lev = [1.9, 1.95, 2]
+    sig_lev = [1.7, 1.75, 1.8]
 
     t_res = ttest_1samp(dist, 0, axis=0, alternative='greater')
     pval = t_res.pvalue < .05  # corrected with fdr remain just below 0.06
@@ -73,8 +73,8 @@ if __name__ == "__main__":
         for j, k in zip(start, stop):
             axs.hlines(sig_lev[i], j, k,  color=colors[i], lw=3)
 
-    axs.set_xlabel('time relative to stimulation (s)')
-    axs.set_ylabel('cross-validated distance (a.u.)')
+    axs.set_xlabel('time relative to stimulation (s)', fontsize=16)
+    axs.set_ylabel('cross-validated distance (a.u.)', fontsize=16)
 
     axs.axvline(0, color='k', ls='-', lw=.8)
     axs.axvline(.025, color='k', ls=':', lw=.8)
@@ -82,12 +82,14 @@ if __name__ == "__main__":
     axs.axvline(.1, color='k', ls='-.', lw=.8)
     axs.axhline(0, color='k', ls='-', lw=.8)
 
-    axs.set_xlim([-.2, .5])
+    axs.set_xlim([-.05, .5])
+    # axs.set_ylim([0, 1.25])
+    # axs.set_yscale('symlog', linthresh=.05)
 
-    axs.legend(ncols=1, loc='upper right')
+    axs.legend(ncols=1, loc='upper right', ncol=1, fontsize=12)
 
-    axs.set_title('cross-validated distance over time')
+    axs.set_title('cross-validated distance over time', fontsize=16)
 
-    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'dist.timec.png'))
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'dist.timec.svg'))
 
     plt.show()

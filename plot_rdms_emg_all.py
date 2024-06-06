@@ -62,7 +62,7 @@ if __name__ == "__main__":
     mask_cue[[0, 1, 7, 25, 26, 27]] = True
     mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
 
-    fig, axs = plt.subplots(1, 3, sharey='row', figsize=(15, 6))
+    fig, axs = plt.subplots(1, 3, sharey='row', figsize=(12, 5))
     # for sf, stimF in enumerate(stimFinger):
     for t, time in enumerate(timew):
         RDMs = rsa.rdm.RDMs(RDMs_mat_avg[t].reshape(1, 8, 8),
@@ -80,9 +80,9 @@ if __name__ == "__main__":
         axs[t].axhline(3.5, color='k', lw=.8)
 
         axs[t].set_xticks(np.linspace(0, 7, 8))
-        axs[t].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=45, ha='right')
+        axs[t].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=90, ha='right', fontsize=11)
         axs[t].set_yticks(np.linspace(0, 7, 8))
-        axs[t].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'])
+        axs[t].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'], fontsize=11)
 
         masks = [mask_stimFinger, mask_cue, mask_stimFinger_cue]
         # Draw contours for each mask with corresponding symmetry
@@ -112,11 +112,11 @@ if __name__ == "__main__":
                                 )
                             )
 
-    cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
-    cbar.set_label('cross-validated multivariate distance (a.u.)')
+    cbar = fig.colorbar(cax, ax=axs, orientation='vertical', fraction=.01, pad=.5)
+    cbar.set_label('cross-validated multivariate distance (a.u.)', fontsize=12)
 
-    fig.suptitle('Average cross-validated distances between EMG patterns')
+    fig.suptitle('Cross-validated distances between EMG patterns averaged across participants', fontsize=18)
 
-    fig.subplots_adjust(bottom=.3)
+    fig.subplots_adjust(bottom=.2)
 
-    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'RDMs.emg.png'))
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'RDMs.emg.svg'))
