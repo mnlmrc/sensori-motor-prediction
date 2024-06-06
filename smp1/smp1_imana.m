@@ -2409,9 +2409,9 @@ function varargout = smp1_imana(what,varargin)
                     delete(spm_file);
                 end
                 
-                % smp1_imana('GLM:make_event', 'sn', s, 'glm', glm)
-                % smp1_imana('GLM:design', 'sn', s, 'glm', glm, 'hrf_params', hrf_params)
-                % smp1_imana('GLM:estimate', 'sn', s, 'glm', glm)
+                smp1_imana('GLM:make_event', 'sn', s, 'glm', glm)
+                smp1_imana('GLM:design', 'sn', s, 'glm', glm, 'hrf_params', hrf_params)
+                smp1_imana('GLM:estimate', 'sn', s, 'glm', glm)
                 smp1_imana('GLM:T_contrasts', 'sn', s, 'glm', glm)
                 smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'spmT')
                 smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'beta')
