@@ -89,7 +89,7 @@ for h, H in enumerate(Hem):
         surf.plot.plotmap(img.data, surface[h],
                           underlay=None,
                           borders=borders[h],
-                          cscale=[-10, 10],
+                          cscale=[-300, 300],
                           underscale=[-1.5, 1],
                           alpha=.5,
                           new_figure=False,
@@ -98,8 +98,8 @@ for h, H in enumerate(Hem):
 
         plt.ylabel('activation (a.u.)')
         plt.suptitle(f'{map_hem[H]}, {map_names[img.metadata["Name"]]}')
-        plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', f'flatmap.group.{H}.{img.metadata["Name"]}.svg'),
-                    dpi=300)
+        # plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', f'flatmap.group.{H}.{img.metadata["Name"]}.svg'),
+        #             dpi=300)
         plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', f'flatmap.group.{H}.{img.metadata["Name"]}.png'),
                     dpi=300)
 

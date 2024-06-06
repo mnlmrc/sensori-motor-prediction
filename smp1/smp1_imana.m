@@ -2253,6 +2253,7 @@ function varargout = smp1_imana(what,varargin)
                 contrast_name = contrasts{c};
                 xcon = zeros(size(SPM.xX.X,2), 1);
                 xcon(strcmp(T.name, contrast_name)) = 1;
+                xcon = xcon / sum(xcon);
                 if ~isfield(SPM, 'xCon')
                     SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
                     cname_idx = 1;
@@ -2408,9 +2409,9 @@ function varargout = smp1_imana(what,varargin)
                     delete(spm_file);
                 end
                 
-                smp1_imana('GLM:make_event', 'sn', s, 'glm', glm)
-                smp1_imana('GLM:design', 'sn', s, 'glm', glm, 'hrf_params', hrf_params)
-                smp1_imana('GLM:estimate', 'sn', s, 'glm', glm)
+                % smp1_imana('GLM:make_event', 'sn', s, 'glm', glm)
+                % smp1_imana('GLM:design', 'sn', s, 'glm', glm, 'hrf_params', hrf_params)
+                % smp1_imana('GLM:estimate', 'sn', s, 'glm', glm)
                 smp1_imana('GLM:T_contrasts', 'sn', s, 'glm', glm)
                 smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'spmT')
                 smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'beta')
@@ -2594,7 +2595,8 @@ function varargout = smp1_imana(what,varargin)
         
         case 'SURF:group'
             sn = [];
-            vararginoptions(varargin,{'sn'})
+            glm=[];
+            vararginoptions(varargin,{'sn', 'glm'})
             
             PL = {};
             PR = {};
@@ -2602,7 +2604,7 @@ function varargout = smp1_imana(what,varargin)
             namesL = {};
             namesR = {};
             
-            G = gifti(fullfile(baseDir, wbDir, pinfo.subj_id{pinfo.sn==sn(1)}, 'glm9.con.L.func.gii'));
+            G = gifti(fullfile(baseDir, wbDir, pinfo.subj_id{pinfo.sn==sn(1)}, sprintf('glm%d.con.L.func.gii', glm)));
 
             names = surf_getGiftiColumnNames(G);
             for n=1:length(names)
@@ -2615,8 +2617,8 @@ function varargout = smp1_imana(what,varargin)
 
                 participants = [participants, subj_id];
 
-                PL = [PL, fullfile(baseDir, wbDir, subj_id, 'glm9.spmT.L.func.gii')];
-                PR = [PR, fullfile(baseDir, wbDir, subj_id, 'glm9.spmT.R.func.gii')];
+                PL = [PL, fullfile(baseDir, wbDir, subj_id, sprintf('glm%d.con.L.func.gii', glm))];
+                PR = [PR, fullfile(baseDir, wbDir, subj_id, sprintf('glm%d.con.R.func.gii', glm))];
 
             end
 
