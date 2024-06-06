@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     sn = int(''.join([c for c in participant_id if c.isdigit()]))
 
-    participants = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
+    participants = pd.read_csv(os.path.join(path, 'participants.tsv'), sep='\t')
 
     channels = participants[participants['sn'] == sn].channels_emg.iloc[0].split(',')
     blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_emg.iloc[0].split('.')]
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     dat = pd.read_csv(os.path.join(path, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
     dat = dat[dat.BN.isin(blocks)]
 
-    latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'), sep='\t')
+    latency = pd.read_csv(os.path.join(path, 'clamped', 'smp0_clamped_latency.tsv'), sep='\t')
 
     cue = dat.chordID
     stimFinger = dat.stimFinger
@@ -70,8 +70,11 @@ if __name__ == "__main__":
 
     # load emg
     emg = np.load(os.path.join(path, participant_id, 'emg', f'smp0_{sn}.npy'))
+    emg = emg / emg[..., 0:int(fsample * (1 - latency[['ring', 'index']].mean(axis=1).to_numpy()))].mean(axis=(0,-1), keepdims=True)
     win_size = 100
     emg = moving_average(emg, win_size, axis=-1)
+
+    # emg_bs = emg[]
 
     timeAx = (np.linspace(-1 + win_size / (fsample * 2), 2 - win_size / (fsample * 2), emg.shape[-1]) -
               latency[['ring', 'index']].mean(axis=1).to_numpy())
