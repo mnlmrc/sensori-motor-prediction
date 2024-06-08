@@ -135,8 +135,11 @@ if __name__ == "__main__":
             ax.set_yticks(ax.get_xticks())
             ax.set_yticklabels(rdms.pattern_descriptors['conds'])
 
-        cbar = fig.colorbar(cax, ax=axs, orientation='vertical', fraction=.01)
-        cbar.set_label('Cross-validated multivariate distance (a.u.)')
+            ax.axvline(3.5, color='k', lw=.8)
+            ax.axhline(3.5, color='k', lw=.8)
+
+        cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
+        cbar.set_label('cross-validated\nmultivariate distance (a.u.)')
         fig.suptitle(f'RDMs, all participants (N={len(participants)}), glm{glm}, hemisphere: {hem}')
 
 

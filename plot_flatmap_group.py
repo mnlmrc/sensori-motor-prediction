@@ -31,21 +31,21 @@ Hem = ['L', 'R']
 for h, H in enumerate(Hem):
 
     map_names = {
-        f'con_0%,ring.{H}.func.gii': '0%, ring',
-        f'con_25%,ring.{H}.func.gii': '25%, ring',
-        f'con_50%,ring.{H}.func.gii': '50%, ring',
-        f'con_75%,ring.{H}.func.gii': '75%, ring',
-        f'con_25%,index.{H}.func.gii': '25%, ring',
-        f'con_50%,index.{H}.func.gii': '50%, ring',
-        f'con_75%,index.{H}.func.gii': '75%, ring',
-        f'con_100%,index.{H}.func.gii': '100%, ring',
-        f'con_0%.{H}.func.gii': '0%, ring',
-        f'con_25%.{H}.func.gii': '25%, ring',
-        f'con_50%.{H}.func.gii': '50%, ring',
-        f'con_75%.{H}.func.gii': '75%, ring',
-        f'con_100%.{H}.func.gii': '100%, ring',
-        f'exec.{H}.func.gii': 'execution',
-        f'plan.{H}.func.gii': 'planning',
+        f'con_0%,ring.{H}.func.gii, smooth 1': '0%, ring',
+        f'con_25%,ring.{H}.func.gii, smooth 1': '25%, ring',
+        f'con_50%,ring.{H}.func.gii, smooth 1': '50%, ring',
+        f'con_75%,ring.{H}.func.gii, smooth 1': '75%, ring',
+        f'con_25%,index.{H}.func.gii, smooth 1': '25%, ring',
+        f'con_50%,index.{H}.func.gii, smooth 1': '50%, ring',
+        f'con_75%,index.{H}.func.gii, smooth 1': '75%, ring',
+        f'con_100%,index.{H}.func.gii, smooth 1': '100%, ring',
+        f'con_0%.{H}.func.gii, smooth 1': '0%, ring',
+        f'con_25%.{H}.func.gii, smooth 1': '25%, ring',
+        f'con_50%.{H}.func.gii, smooth 1': '50%, ring',
+        f'con_75%.{H}.func.gii, smooth 1': '75%, ring',
+        f'con_100%.{H}.func.gii, smooth 1': '100%, ring',
+        f'exec.{H}.func.gii, smooth 1': 'execution',
+        f'plan.{H}.func.gii, smooth 1': 'planning',
     }
 
     map_hem = {
@@ -53,7 +53,12 @@ for h, H in enumerate(Hem):
         'R': 'right hemisphere',
     }
 
-    mean = nb.load(os.path.join(gl.baseDir, 'smp1', gl.wbDir, 'group', f'mean.{H}.func.gii'))
+    frame = {
+        'L': [-60, 120, -40, 140],
+        'R': [-100, 80, -60, 120]
+    }
+
+    mean = nb.load(os.path.join(gl.baseDir, 'smp1', gl.wbDir, 'group', f'mean.smooth.{H}.func.gii'))
     pval = nb.load(os.path.join(gl.baseDir, 'smp1', gl.wbDir, 'group', f'pval.{H}.func.gii'))
     label = nb.load(f'/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32/ROI.32k.{H}.label.gii')
 
@@ -80,7 +85,6 @@ for h, H in enumerate(Hem):
     plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', f'flatmap.ROI.{H}.rois.png'), dpi=300)
 
     for img in mean.darrays:
-
         # img.data[p.data > .05] = np.nan
         # if ('ring' in map_names[img.metadata["Name"]]) | ('index' in map_names[img.metadata["Name"]])
 
@@ -89,12 +93,14 @@ for h, H in enumerate(Hem):
         surf.plot.plotmap(img.data, surface[h],
                           underlay=None,
                           borders=borders[h],
-                          cscale=[-40, 40],
+                          cscale=[-20, 20],
                           underscale=[-1.5, 1],
                           alpha=.5,
                           new_figure=False,
                           cmap='seismic',
-                          colorbar=True)
+                          colorbar=True,
+                          frame=frame[H]
+                          )
 
         plt.ylabel('activation (a.u.)')
         plt.suptitle(f'{map_hem[H]}, {map_names[img.metadata["Name"]]}')
@@ -102,8 +108,3 @@ for h, H in enumerate(Hem):
         #             dpi=300)
         plt.savefig(os.path.join(gl.baseDir, 'smp1', 'figures', f'flatmap.group.{H}.{img.metadata["Name"]}.png'),
                     dpi=300)
-
-
-
-
-

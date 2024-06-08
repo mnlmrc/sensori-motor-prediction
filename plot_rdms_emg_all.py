@@ -57,10 +57,10 @@ if __name__ == "__main__":
     # make masks
     mask_stimFinger = np.zeros([28], dtype=bool)
     mask_cue = np.zeros([28], dtype=bool)
-    mask_stimFinger_cue = np.zeros([28], dtype=bool)
+    # mask_stimFinger_cue = np.zeros([28], dtype=bool)
     mask_stimFinger[[4, 11, 17]] = True
     mask_cue[[0, 1, 7, 25, 26, 27]] = True
-    mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
+    # mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
 
     fig, axs = plt.subplots(1, 3, sharey='row', figsize=(12, 5))
     # for sf, stimF in enumerate(stimFinger):
@@ -80,11 +80,11 @@ if __name__ == "__main__":
         axs[t].axhline(3.5, color='k', lw=.8)
 
         axs[t].set_xticks(np.linspace(0, 7, 8))
-        axs[t].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=90, ha='right', fontsize=11)
+        axs[t].set_xticklabels(RDMs.pattern_descriptors['stimFinger,cue'], rotation=45, ha='right', fontsize=11)
         axs[t].set_yticks(np.linspace(0, 7, 8))
         axs[t].set_yticklabels(RDMs.pattern_descriptors['stimFinger,cue'], fontsize=11)
 
-        masks = [mask_stimFinger, mask_cue, mask_stimFinger_cue]
+        masks = [mask_stimFinger, mask_cue]
         # Draw contours for each mask with corresponding symmetry
         for m, mask in enumerate(masks):
             mask = squareform(mask)
@@ -113,9 +113,9 @@ if __name__ == "__main__":
                             )
 
     cbar = fig.colorbar(cax, ax=axs, orientation='vertical', fraction=.01, pad=.5)
-    cbar.set_label('cross-validated multivariate distance (a.u.)', fontsize=12)
+    cbar.set_label('cross-validated\nmultivariate distance (a.u.)', fontsize=12)
 
-    fig.suptitle('Cross-validated distances between EMG patterns averaged across participants', fontsize=18)
+    # fig.suptitle('Cross-validated distances between EMG patterns averaged across participants', fontsize=18)
 
     fig.subplots_adjust(bottom=.2)
 

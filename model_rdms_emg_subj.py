@@ -72,7 +72,7 @@ if __name__ == "__main__":
     emg = np.load(os.path.join(path, participant_id, 'emg', f'smp0_{sn}.npy'))
     emg = emg / emg[..., 0:int(fsample * (1 - latency[['ring', 'index']].mean(axis=1).to_numpy()))].mean(axis=(0,-1), keepdims=True)
     win_size = 100
-    # emg = moving_average(emg, win_size, axis=-1)
+    emg = moving_average(emg, win_size, axis=-1)
 
     # emg_bs = emg[]
 
