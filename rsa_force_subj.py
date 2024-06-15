@@ -13,8 +13,8 @@ import globals as gl
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Input parameters")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
-    parser.add_argument('--experiment', default='smp1', help='Experiment...')
+    parser.add_argument('--participant_id', default='subj110', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--experiment', default='smp0', help='Experiment...')
     # parser.add_argument('--channels', nargs='+', default=['thumb', 'index', 'middle', 'ring', 'pinkie'], help='')
     parser.add_argument('--method', default='euclidean', help='')
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
                                      rdm_descriptor='timewin',
                                      vmin=rdms.get_matrices().min(),
                                      vmax=rdms.get_matrices().max(),
-                                     cmap='classic')
+                                     cmap='viridis')
 
         axs[r].axvline(3.5, color='k', lw=.8)
         axs[r].axhline(3.5, color='k', lw=.8)

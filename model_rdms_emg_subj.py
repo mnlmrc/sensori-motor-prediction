@@ -15,7 +15,7 @@ import rsatoolbox as rsa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--participant_id', default='subj102', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj100', help='Participant ID')
     parser.add_argument('--method', default='crossnobis', help='Distance')
     parser.add_argument('--experiment', default='smp0', help='Experiment')
     parser.add_argument('--make_plot', default=False, help='Make plot for single subject')
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         )
         noise = rsa.data.noise.prec_from_unbalanced(dataset,
                                                     obs_desc='stimFinger,cue',
-                                                    method='shrinkage_diag')
+                                                    method='diag')
         rdm = rsa.rdm.calc_rdm_unbalanced(dataset,
                                           method=method,
                                           descriptor='stimFinger,cue',
@@ -133,4 +133,3 @@ if __name__ == "__main__":
     if make_plot:
         plt.show()
 
-    

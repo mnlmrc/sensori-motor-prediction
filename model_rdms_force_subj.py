@@ -15,11 +15,11 @@ import rsatoolbox as rsa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--participant_id', default='subj104', help='Participant ID')
+    parser.add_argument('--participant_id', default='subj109', help='Participant ID')
     parser.add_argument('--method', default='crossnobis', help='Distance')
-    parser.add_argument('--experiment', default='smp1', help='Experiment')
+    parser.add_argument('--experiment', default='smp0', help='Experiment')
     parser.add_argument('--make_plot', default=False, help='Make plot for single subject')
-    parser.add_argument('--session', default='training', help='Session')
+    parser.add_argument('--session', default='behavioural', help='Session')
 
     args = parser.parse_args()
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     participants = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
 
-    if experiment is 'smp0':
+    if session is 'behavioural':
         channels = participants[participants['sn'] == sn].channels_mov.iloc[0].split(',')
         blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_mov.iloc[0].split('.')]
         dat = pd.read_csv(os.path.join(path, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
@@ -47,29 +47,31 @@ if __name__ == "__main__":
         run = dat.BN
         force = np.load(os.path.join(path, participant_id, 'mov', f'{experiment}_{sn}.npy'))
         out_path = os.path.join(path, participant_id, 'mov')
-    elif experiment is 'smp1':
-        channels = ['thumb', 'index', 'middle', 'ring', 'pinkie']
-        if session is 'scanning':
-            blocks = [int(b) for b in participants[participants['sn'] == sn].runsSess1.iloc[0].split('.')]
-            dat = pd.read_csv(os.path.join(path, gl.behavDir, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
-            dat = dat[dat.BN.isin(blocks)]
-            dat = dat[dat.GoNogo == 'go']
-            cue = dat.cue
-            stimFinger = dat.stimFinger
-            run = dat.BN
-            force = np.load(os.path.join(path, gl.behavDir, participant_id, f'{experiment}_{sn}.npz'))['data_array']
-            out_path = os.path.join(path, gl.behavDir, participant_id)
-        elif session is 'training':
-            blocks = [int(b) for b in participants[participants['sn'] == sn].runsTraining.iloc[0].split('.')]
-            dat = pd.read_csv(os.path.join(path, gl.trainDir, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
-            dat = dat[dat.BN.isin(blocks)]
-            dat = dat[dat.GoNogo == 'go']
-            cue = dat.cue
-            stimFinger = dat.stimFinger
-            run = dat.BN
-            force = np.load(os.path.join(path, gl.trainDir, participant_id, f'{experiment}_{sn}.npz'))['data_array']
-            out_path = os.path.join(path, gl.trainDir, participant_id)
+    # elif experiment is 'smp1':
+    #     channels = ['thumb', 'index', 'middle', 'ring', 'pinkie']
+    elif session is 'scanning':
+        blocks = [int(b) for b in participants[participants['sn'] == sn].runsSess1.iloc[0].split('.')]
+        dat = pd.read_csv(os.path.join(path, gl.behavDir, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
+        dat = dat[dat.BN.isin(blocks)]
+        dat = dat[dat.GoNogo == 'go']
+        cue = dat.cue
+        stimFinger = dat.stimFinger
+        run = dat.BN
+        force = np.load(os.path.join(path, gl.behavDir, participant_id, f'{experiment}_{sn}.npz'))['data_array']
+        out_path = os.path.join(path, gl.behavDir, participant_id)
+    elif session is 'training':
+        blocks = [int(b) for b in participants[participants['sn'] == sn].runsTraining.iloc[0].split('.')]
+        dat = pd.read_csv(os.path.join(path, gl.trainDir, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
+        dat = dat[dat.BN.isin(blocks)]
+        dat = dat[dat.GoNogo == 'go']
+        cue = dat.cue
+        stimFinger = dat.stimFinger
+        run = dat.BN
+        force = np.load(os.path.join(path, gl.trainDir, participant_id, f'{experiment}_{sn}.npz'))['data_array']
+        out_path = os.path.join(path, gl.trainDir, participant_id)
 
+    win_size = 10
+    force = moving_average(force, win_size, axis=-1)
 
     latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'), sep='\t')
 
@@ -100,7 +102,7 @@ if __name__ == "__main__":
     # win_size = 100
     # emg = moving_average(emg, win_size, axis=-1)
 
-    timeAx = (np.linspace(-1, 2, force.shape[-1]) -
+    timeAx = (np.linspace(-1 + win_size / (fsample * 2), 2 - win_size / (fsample * 2), force.shape[-1]) -
               latency[['ring', 'index']].mean(axis=1).to_numpy())
     dist_stimFinger = np.zeros(force.shape[-1])
     dist_cue = np.zeros(force.shape[-1])
@@ -117,7 +119,7 @@ if __name__ == "__main__":
         )
         noise = rsa.data.noise.prec_from_unbalanced(dataset,
                                                     obs_desc='stimFinger,cue',
-                                                    method='shrinkage_diag')
+                                                    method='diag')
         rdm = rsa.rdm.calc_rdm_unbalanced(dataset,
                                           method=method,
                                           descriptor='stimFinger,cue',
@@ -162,7 +164,7 @@ if __name__ == "__main__":
 
     axs.legend(loc='upper left')
 
-    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'dist.timec.force.{session}.png'))
+    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', f'dist.timec.force.{participant_id}.{session}.png'))
 
     if make_plot:
         plt.show()

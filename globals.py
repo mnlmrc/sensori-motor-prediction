@@ -4,6 +4,7 @@ from pathlib import Path
 baseDir = [
            "/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/",
            "/cifs/diedrichsen/data/SensoriMotorPrediction/",
+            "/Users/mnlmrc/Documents/data/SensoriMotorPrediction/"
            ]
 for Dir in baseDir:
     if Path(Dir).exists():

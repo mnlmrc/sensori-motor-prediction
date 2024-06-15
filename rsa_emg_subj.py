@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 
-import nibabel as nb
+import nibabel as n05
 import numpy as np
 import pandas as pd
 import rsatoolbox as rsa
@@ -13,7 +13,7 @@ import globals as gl
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Input parameters")
-    parser.add_argument('--participant_id', default='subj100', help='Participant ID (e.g., subj100, subj101, ...)')
+    parser.add_argument('--participant_id', default='subj103', help='Participant ID (e.g., subj100, subj101, ...)')
     parser.add_argument('--method', default='crossnobis', help='')
 
     args = parser.parse_args()
@@ -67,16 +67,18 @@ if __name__ == "__main__":
             channel_descriptors={'channels': channels},
             obs_descriptors={'stimFinger,cue': [sf + ',' + c for c, sf in zip(cue, stimFinger)], 'run': run},
         )
-        noise = rsa.data.noise.prec_from_unbalanced(dataset, obs_desc='stimFinger,cue', method='shrinkage_diag')
-        rdms.append(rsa.rdm.calc_rdm_unbalanced(dataset, method=method, descriptor='stimFinger,cue',
-                                                noise=noise, cv_descriptor='run'))
+        # noise = rsa.data.noise.prec_from_unbalanced(dataset, obs_desc='stimFinger,cue', method='shrinkage_diag')
+        rdms.append(rsa.rdm.calc_rdm(dataset, method=method,
+                                     descriptor='stimFinger,cue',
+                                                # noise=noise,
+                                     cv_descriptor='run'))
 
     rdms = rsa.rdm.concat(rdms)
     rdms.rdm_descriptors = {'timewin': timewin}
 
     # put labels in alphabetical order
-    index = rdms.pattern_descriptors['stimFinger,cue'].argsort()
-    rdms.reorder(index)
+    # index = rdms.pattern_descriptors['stimFinger,cue'].argsort()
+    # rdms.reorder(index)
 
     # adjust order
     index = [1, 2, 3, 0, 4, 5, 6, 7]
@@ -89,7 +91,7 @@ if __name__ == "__main__":
                                      rdm_descriptor='timewin',
                                      vmin=rdms.get_matrices().min(),
                                      vmax=rdms.get_matrices().max(),
-                                     cmap='classic')
+                                     cmap='viridis')
 
         axs[r].axvline(3.5, color='k', lw=.8)
         axs[r].axhline(3.5, color='k', lw=.8)
