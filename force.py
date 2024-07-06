@@ -77,3 +77,34 @@ def force_segment(rawForce, idx, prestim=None, poststim=None, fsample=None):
             pass
 
     return force_segmented
+
+
+def calculate_difference(data, timewin, stim_finger, column, cue1='75%', cue2='25%'):
+    """
+
+    Args:
+        data:
+        timewin:
+        stim_finger:
+        column:
+        cue1:
+        cue2:
+
+    Returns:
+
+    """
+    # Filter the dataset for the given time window and stimFinger
+    filtered_data = data[(data['timewin'] == timewin) & (data['stimFinger'] == stim_finger)]
+
+    # Further filter for the specified cues
+    cue1_data = filtered_data[filtered_data['cue'] == cue1]
+    cue2_data = filtered_data[filtered_data['cue'] == cue2]
+
+    # Calculate the mean value of the specified column for each cue
+    mean_cue1 = cue1_data[column].mean()
+    mean_cue2 = cue2_data[column].mean()
+
+    # Compute the difference between these mean values
+    difference = mean_cue2 - mean_cue1
+
+    return difference

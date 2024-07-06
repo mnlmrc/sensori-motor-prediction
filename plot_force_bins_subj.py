@@ -14,9 +14,9 @@ from visual import make_colors
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--participant_id', default='subj103', help='Participant ID')
-    parser.add_argument('--experiment', default='smp1', help='')
-    parser.add_argument('--session', default='scanning', help='')
+    parser.add_argument('--participant_id', default='subj110', help='Participant ID')
+    parser.add_argument('--experiment', default='smp0', help='')
+    parser.add_argument('--session', default='behav', help='')
 
     args = parser.parse_args()
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         path = os.path.join(gl.baseDir, experiment, participant_id, 'mov')
         force = np.load(os.path.join(path, f'{experiment}_{sn}.npy'))
         blocks = [int(b) for b in participants[participants['sn'] == sn].blocks_mov.iloc[0].split('.')]
-        dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
+        dat = pd.read_csv(os.path.join(gl.baseDir, experiment, participant_id, f'{experiment}_{sn}.dat'), sep='\t')
         dat = dat[dat.BN.isin(blocks)]
         stimFinger = dat.stimFinger
         cue = dat.chordID
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         'time windows': win
     }
 
-    df_force.to_csv(os.path.join(path, f'smp0_{sn}_binned.tsv'), sep='\t')
+    df_force.to_csv(os.path.join(path, f'{experiment}_{sn}_binned.tsv'), sep='\t')
     np.savez(os.path.join(path, f'{experiment}_{sn}_binned.npz'),
              data_array=force_binned, descriptor=descr, allow_pickle=False)
 
@@ -150,6 +150,6 @@ if __name__ == "__main__":
 
     fig.tight_layout()
 
-    fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'force_bins_{session}.png'))
+    # fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', participant_id, f'force_bins_{session}.png'))
 
     plt.show()
