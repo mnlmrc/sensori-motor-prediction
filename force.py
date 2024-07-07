@@ -105,6 +105,6 @@ def calculate_difference(data, timewin, stim_finger, column, cue1='75%', cue2='2
     mean_cue2 = cue2_data[column].mean()
 
     # Compute the difference between these mean values
-    difference = mean_cue2 - mean_cue1
+    difference = mean_cue1 - mean_cue2
 
     return difference

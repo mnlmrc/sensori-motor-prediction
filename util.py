@@ -180,3 +180,8 @@ def sort_key(val):
     if num_match:
         return (0, int(num_match.group(1)))
     return (1, val.lower())
+
+
+def pad_dict_values(d):
+    max_length = max(len(v) for v in d.values())
+    return {k: v + [None] * (max_length - len(v)) for k, v in d.items()}
