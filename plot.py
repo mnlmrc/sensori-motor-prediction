@@ -13,6 +13,9 @@ from visual import make_colors
 
 
 def plot_timec(data, channels=None, xlim=None, ylim=None, title=None, clamp=None, vsep=8):
+
+    # if channels is None:
+
     latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'), sep='\t')
     latency = latency['index'][0], latency['ring'][0]
 
@@ -34,8 +37,8 @@ def plot_timec(data, channels=None, xlim=None, ylim=None, title=None, clamp=None
 
             for col, color in enumerate(palette):
                 ax.plot(tAx[sf], y[col], color=palette[color])
-                # ax.fill_between(tAx[sf], y - yerr, y + yerr,
-                #                 color=palette[color], lw=0, alpha=.2)
+                ax.fill_between(tAx[sf], y[col] - yerr[col], y[col] + yerr[col],
+                                color=palette[color], lw=0, alpha=.2)
 
             ax.set_xlim(xlim)
             ax.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
@@ -72,43 +75,46 @@ def plot_timec(data, channels=None, xlim=None, ylim=None, title=None, clamp=None
 
     return fig, axs
 
+def plot_bins(df):
 
-if __name__ == "__main__":
-    clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
+    pass
 
-    latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'), sep='\t')
-    latency = latency['index'][0], latency['ring'][0]
-
-    plot_timec('smp0',
-               'behav',
-               channels=gl.channels['mov'],
-               clamp=clamp,
-               xlim=[-.1, .5],
-               ylim=[0, 40],
-               filename='force.timec.behav.png')
-
-    plot_timec('smp1',
-               'training',
-               channels=gl.channels['mov'],
-               clamp=clamp,
-               xlim=[-.1, .5],
-               ylim=[0, 40],
-               filename='force.timec.training.png')
-
-    plot_timec('smp1',
-               'scanning',
-               channels=gl.channels['mov'],
-               clamp=clamp,
-               xlim=[-.1, .5],
-               ylim=[0, 40],
-               filename='force.timec.scanning.png')
-
-    plot_timec('smp2',
-               'pilot',
-               channels=gl.channels['mov'],
-               clamp=clamp,
-               xlim=[-.1, .5],
-               ylim=[0, 40],
-               filename='force.timec.pilot.png')
-
-    plt.show()
+# if __name__ == "__main__":
+#     clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
+#
+#     latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'), sep='\t')
+#     latency = latency['index'][0], latency['ring'][0]
+#
+#     plot_timec('smp0',
+#                'behav',
+#                channels=gl.channels['mov'],
+#                clamp=clamp,
+#                xlim=[-.1, .5],
+#                ylim=[0, 40],
+#                filename='force.timec.behav.png')
+#
+#     plot_timec('smp1',
+#                'training',
+#                channels=gl.channels['mov'],
+#                clamp=clamp,
+#                xlim=[-.1, .5],
+#                ylim=[0, 40],
+#                filename='force.timec.training.png')
+#
+#     plot_timec('smp1',
+#                'scanning',
+#                channels=gl.channels['mov'],
+#                clamp=clamp,
+#                xlim=[-.1, .5],
+#                ylim=[0, 40],
+#                filename='force.timec.scanning.png')
+#
+#     plot_timec('smp2',
+#                'pilot',
+#                channels=gl.channels['mov'],
+#                clamp=clamp,
+#                xlim=[-.1, .5],
+#                ylim=[0, 40],
+#                filename='force.timec.pilot.png')
+#
+#     plt.show()
