@@ -88,13 +88,13 @@ dict_bars = {
     'offset': .2
 }
 
-def make_colors(n_labels, ecol=('blue', 'red')):
-    cmap = mcolors.LinearSegmentedColormap.from_list(f"{ecol[0]}_to_{ecol[1]}",
-                                                     [ecol[0], ecol[1]], N=100)
-    norm = plt.Normalize(0, n_labels)
-    colors = [cmap(norm(lab)) for lab in range(n_labels)]
-
-    return colors
+# def make_colors(n_labels, ecol=('blue', 'red')):
+#     cmap = mcolors.LinearSegmentedColormap.from_list(f"{ecol[0]}_to_{ecol[1]}",
+#                                                      [ecol[0], ecol[1]], N=100)
+#     norm = plt.Normalize(0, n_labels)
+#     colors = [cmap(norm(lab)) for lab in range(n_labels)]
+#
+#     return colors
 
 
 

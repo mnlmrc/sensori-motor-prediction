@@ -5,8 +5,6 @@ from scipy.signal import firwin, filtfilt
 
 import globals as gl
 
-from force import load_dat, get_path_mov, get_block_mov
-
 import os
 
 
@@ -26,28 +24,32 @@ def hp_filter(data, n_ord=None, cutoff=None, fsample=None):
     return filtered_data
 
 
-def calc_avg_timec(experiment, session, participant_id):
-    blocks = get_block_mov(experiment, session, participant_id)
-    path = get_path_mov(experiment, session, participant_id)
-
-    dat = load_dat(experiment, session, participant_id)
-    dat = dat[dat.stimFinger != 99999]
-    dat = dat[(dat.BN.isin(blocks) | dat.BN.isin(np.array(list(map(int, blocks)))))]
-
-    sn = int(''.join([c for c in participant_id if c.isdigit()]))
-
-    npz = np.load(os.path.join(path, f'{experiment}_{sn}.npz'))
-    force = npz['data_array']
-
-    force_avg = np.zeros((len(dat.cue.unique()), len(dat.stimFinger.unique()), force.shape[-2], force.shape[-1]))
-    for c, cue in enumerate(dat.cue.unique()):
-        for sf, stimF in enumerate(dat.stimFinger.unique()):
-            force_avg[c, sf] = force[(dat.cue == cue) & (dat.stimFinger == stimF)].mean(axis=0, keepdims=True)
-
-    return force_avg
+# Create a mapping dictionary
 
 
-force = calc_avg_timec('smp2', 'pilot', 'subj100')
+
+# def calc_avg_timec(experiment, session, participant_id):
+#     blocks = get_block_mov(experiment, session, participant_id)
+#     path = get_path_mov(experiment, session, participant_id)
+#
+#     dat = load_dat(experiment, session, participant_id)
+#     dat = dat[dat.stimFinger != 99999]
+#     dat = dat[(dat.BN.isin(blocks) | dat.BN.isin(np.array(list(map(int, blocks)))))]
+#
+#     sn = int(''.join([c for c in participant_id if c.isdigit()]))
+#
+#     npz = np.load(os.path.join(path, f'{experiment}_{sn}.npz'))
+#     force = npz['data_array']
+#
+#     force_avg = np.zeros((len(dat.cue.unique()), len(dat.stimFinger.unique()), force.shape[-2], force.shape[-1]))
+#     for c, cue in enumerate(dat.cue.unique()):
+#         for sf, stimF in enumerate(dat.stimFinger.unique()):
+#             force_avg[c, sf] = force[(dat.cue == cue) & (dat.stimFinger == stimF)].mean(axis=0, keepdims=True)
+#
+#     return force_avg
+
+
+# force = calc_avg_timec('smp2', 'pilot', 'subj100')
 
 # def detect_response_latency(data, threshold=None, fsample=None):
 #     return np.where(data > threshold)[0][0] / fsample

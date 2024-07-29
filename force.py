@@ -9,36 +9,37 @@ import rsatoolbox as rsa
 
 
 class Force:
-    def __init__(self, experiment, session, participant_id):
+    def __init__(self, experiment, session, participant_id=None):
 
         self.experiment = experiment
         self.session = session
-        self.participant_id = participant_id
-        self.sn = int(''.join(filter(str.isdigit, participant_id)))
 
         self.path = self.get_path()
 
         self.pinfo = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
 
-        self.dat = pd.read_csv(os.path.join(self.path, f'{experiment}_{self.sn}.dat'), sep='\t')
-
         self.prestim = int(gl.prestim * gl.fsample_mov)
         self.poststim = int(gl.poststim * gl.fsample_mov)
+
+        if participant_id is not None:
+            self.participant_id = participant_id
+            self.sn = int(''.join(filter(str.isdigit, participant_id)))
+            self.dat = pd.read_csv(os.path.join(self.path, participant_id, f'{experiment}_{self.sn}.dat'), sep='\t')
 
     def get_path(self):
 
         session = self.session
         experiment = self.experiment
-        participant_id = self.participant_id
+        # participant_id = self.participant_id
 
         if session == 'scanning':
-            path = os.path.join(gl.baseDir, experiment, gl.behavDir, participant_id)
+            path = os.path.join(gl.baseDir, experiment, gl.behavDir)
         elif session == 'training':
-            path = os.path.join(gl.baseDir, experiment, gl.trainDir, participant_id)
-        elif session == 'behav':
-            path = os.path.join(gl.baseDir, experiment, gl.behavDir, participant_id)
+            path = os.path.join(gl.baseDir, experiment, gl.trainDir)
+        elif session == 'behavioural':
+            path = os.path.join(gl.baseDir, experiment, gl.behavDir)
         elif session == 'pilot':
-            path = os.path.join(gl.baseDir, experiment, gl.pilotDir, participant_id)
+            path = os.path.join(gl.baseDir, experiment, gl.pilotDir)
         else:
             raise ValueError('Session name not recognized.')
 
@@ -53,7 +54,7 @@ class Force:
             blocks = pinfo[pinfo.sn == sn].runsSess1.iloc[0].split('.')
         elif self.session == 'training':
             blocks = pinfo[pinfo.sn == sn].runsTraining.iloc[0].split('.')
-        elif self.session == 'behav':
+        elif self.session == 'behavioural':
             blocks = pinfo[pinfo.sn == sn].blocks_mov.iloc[0].split('.')
         elif self.session == 'pilot':
             blocks = pinfo[pinfo.sn == sn].blocks_mov.iloc[0].split('.')
@@ -94,6 +95,7 @@ class Force:
 
         sn = self.sn
         experiment = self.experiment
+        participant_id = self.participant_id
         path = self.get_path()
         blocks = self.get_block()
         ch_idx = [col in gl.channels['mov'] for col in gl.col_mov[experiment]]
@@ -103,7 +105,7 @@ class Force:
         force = []
         for bl in blocks:
             block = f'{int(bl):02d}'
-            filename = os.path.join(path, f'{experiment}_{sn}_{block}.mov')
+            filename = os.path.join(path, participant_id, f'{experiment}_{sn}_{block}.mov')
 
             mov = self.load_mov(filename)
             mov = np.concatenate(mov, axis=0)
@@ -115,8 +117,8 @@ class Force:
             print(f'Processing... {self.participant_id}, block {bl}, {len(stimOnset)} trials found...')
 
             for ons, onset in enumerate(stimOnset):
-                if self.dat.GoNogo.iloc[ons] == 'go':
-                    force.append(mov[onset - prestim:onset + poststim, ch_idx].T)
+                # if self.dat.GoNogo.iloc[ons] == 'go':
+                force.append(mov[onset - prestim:onset + poststim, ch_idx].T)
 
         descr = json.dumps({
             'experiment': self.experiment,
@@ -128,7 +130,7 @@ class Force:
 
         return np.array(force), descr
 
-    def calc_avg_timec(self):
+    def calc_avg_timec(self, GoNogo='go'):
         """
         Calculate the average force data across trials for each cue and stimulation finger.
 
@@ -140,10 +142,14 @@ class Force:
 
         blocks = self.get_block()
 
-        dat = dat[dat.stimFinger != 99999]
+        # remove excluded blocks (as per participant.tsv)
         dat = dat[(dat.BN.isin(blocks) | dat.BN.isin(np.array(list(map(int, blocks)))))]
 
-        force = self.load_npz()
+        # keep only go trials
+        keep_trials = dat.GoNogo == GoNogo
+        dat = dat[keep_trials]
+
+        force = self.load_npz()[keep_trials]
 
         force_avg = np.zeros((len(gl.cue_code), len(gl.stimFinger_code), force.shape[-2], force.shape[-1]))
         for c, cue in enumerate(gl.cue_code):
@@ -159,8 +165,8 @@ class Force:
         force = self.load_npz()
 
         win = {'Pre': (prestim - int(.5 * gl.fsample_mov), prestim),
-               'LLR': (prestim + int(.2 * gl.fsample_mov), prestim + int(.4 * gl.fsample_mov)),
-               'Vol': (prestim + int(.4 * gl.fsample_mov), prestim + int(1 * gl.fsample_mov))}
+               'LLR': (prestim + int(.2 * gl.fsample_mov), prestim + int(.5 * gl.fsample_mov)),
+               'Vol': (prestim + int(.5 * gl.fsample_mov), prestim + int(1 * gl.fsample_mov))}
 
         df = pd.DataFrame()
         for w in win.keys():
@@ -179,31 +185,36 @@ class Force:
 
         sn = int(''.join([c for c in participant_id if c.isdigit()]))
 
-        npz = np.load(os.path.join(path, f'{experiment}_{sn}.npz'))
+        npz = np.load(os.path.join(path, participant_id, f'{experiment}_{sn}.npz'))
         force = npz['data_array']
 
         return force
 
-    def calc_dist_timec(self, method='euclidean'):
+    def calc_dist_timec(self, method='euclidean', GoNogo='go'):
 
         force = self.load_npz()
-
-        dat = self.dat
         blocks = self.get_block()
-        dat = dat[dat.stimFinger != 99999]
-        dat = dat[(dat.BN.isin(blocks) | dat.BN.isin(np.array(list(map(int, blocks)))))]
+
+        # take only rows in dat that belong to good blocks based on participants.tsv
+        dat = self.dat[(self.dat.BN.isin(blocks) |
+                        self.dat.BN.isin(np.array(list(map(int, blocks)))))]
+
+        keep_trials = (dat.GoNogo == GoNogo)
+        force = force[keep_trials]
+        dat = dat[keep_trials]
 
         run = dat.BN
         cue = dat.cue
         stimFinger = dat.stimFinger
 
         # make masks
-        mask_stimFinger = np.zeros([28], dtype=bool)
-        mask_cue = np.zeros([28], dtype=bool)
-        mask_stimFinger_cue = np.zeros([28], dtype=bool)
-        mask_stimFinger[[4, 11, 17]] = True
-        mask_cue[[0, 1, 7, 25, 26, 27]] = True
-        mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
+        if GoNogo == 'go':
+            mask_stimFinger = np.zeros([28], dtype=bool)
+            mask_cue = np.zeros([28], dtype=bool)
+            mask_stimFinger_cue = np.zeros([28], dtype=bool)
+            mask_stimFinger[[4, 11, 17]] = True
+            mask_cue[[0, 1, 7, 25, 26, 27]] = True
+            mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
 
         dist_stimFinger = np.zeros(force.shape[-1])
         dist_cue = np.zeros(force.shape[-1])
@@ -227,17 +238,29 @@ class Force:
                                               noise=noise,
                                               cv_descriptor='run')
             rdm.reorder(rdm.pattern_descriptors['stimFinger,cue'].argsort())
-            rdm.reorder(np.array([1, 2, 3, 0, 4, 5, 6, 7]))
+            if GoNogo == 'go':
+                rdm.reorder(np.array([0, 3, 1, 2, 7, 4, 6, 5]))
+            elif GoNogo == 'nogo':
+                rdm.reorder(np.array([4, 0, 3, 1, 2]))
 
-            dist_stimFinger[t] = rdm.dissimilarities[:, mask_stimFinger].mean()
-            dist_cue[t] = rdm.dissimilarities[:, mask_cue].mean()
-            dist_stimFinger_cue[t] = rdm.dissimilarities[:, mask_stimFinger_cue].mean()
+            if GoNogo == 'go':
+
+                dist_stimFinger[t] = rdm.dissimilarities[:, mask_stimFinger].mean()
+                dist_cue[t] = rdm.dissimilarities[:, mask_cue].mean()
+                dist_stimFinger_cue[t] = rdm.dissimilarities[:, mask_stimFinger_cue].mean()
+
+            elif GoNogo == 'nogo':
+
+                dist_cue[t] = rdm.dissimilarities.mean()
+
+                pass
+
 
         descr = json.dumps({
             'participant': self.participant_id,
-            'mask_stimFinger': list(mask_stimFinger.astype(str)),
-            'mask_cue': list(mask_cue.astype(str)),
-            'mask_stimFinger_by_cue': list(mask_stimFinger_cue.astype(str)),
+            'mask_stimFinger': list(mask_stimFinger.astype(str)) if GoNogo == 'go' else None,
+            'mask_cue': list(mask_cue.astype(str)) if GoNogo == 'go' else None,
+            'mask_stimFinger_by_cue': list(mask_stimFinger_cue.astype(str)) if GoNogo == 'go' else None,
             'factor_order': ['stimFinger', 'cue', 'stimFinger_by_cue'],
         })
 

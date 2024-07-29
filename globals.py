@@ -64,7 +64,7 @@ clabels = ['0%', '25%', '50%', '75%', '100%']
 channels = {'mov': ['thumb', 'index', 'middle', 'ring', 'pinkie']}
 
 prestim = 1
-poststim = 2
+poststim = 1
 fsample_mov = 500
 N = {
     'smp0': len(participants['smp0']),
@@ -79,3 +79,11 @@ planState = {
 
 cue_code = [93, 12, 44, 21, 39]
 stimFinger_code = [91999, 99919]
+
+cue_mapping = {
+                93: '0%',
+                12: '25%',
+                44: '50%',
+                21: '75%',
+                39: '100%'
+            }
