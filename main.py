@@ -15,9 +15,6 @@ import tkinter as tk
 
 import seaborn as sns
 
-import argcomplete
-from argcomplete.completers import ChoicesCompleter
-
 from rsa import plot_rdm, draw_contours
 
 
