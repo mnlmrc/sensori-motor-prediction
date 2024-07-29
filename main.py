@@ -9,7 +9,7 @@ import globals as gl
 import pandas as pd
 
 from force import Force
-from plot import make_colors, make_tAx
+from plot import make_colors, make_tAx, make_yref
 
 import tkinter as tk
 
@@ -17,6 +17,8 @@ import seaborn as sns
 
 import argcomplete
 from argcomplete.completers import ChoicesCompleter
+
+from rsa import plot_rdm, draw_contours
 
 
 def GUI():
@@ -119,6 +121,91 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
                 np.savez(os.path.join(force.get_path(), p, f'{force.experiment}_{force.sn}_dist_{GoNogo}.npz'),
                          data_array=dist, descriptor=descr, allow_pickle=False)
 
+        case 'PLOT:timec_force':
+
+            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
+            vsep = float(varargin['vsep']) if 'vsep' in varargin else 8
+            xlim = varargin['xlim'] if 'xlim' in varargin else [-.1, .5]
+            ylim = varargin['ylim'] if 'ylim' in varargin else None
+            title = varargin['title'] if 'title' in varargin else f'{session}, N={len(participant_id)}'
+            ref_len = float(varargin['ref_len']) if 'ref_len' in varargin else 5
+
+            force = main('FORCE:timec_avg', experiment, session, participant_id, varargin)
+            clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
+
+            tAx = make_tAx(force) if GoNogo == 'go' else make_tAx(force, (0, 0))
+
+            fig, axs = plt.subplots(1, 2 if GoNogo == 'go' else 1, sharey=True, sharex=True, figsize=(4, 6))
+
+            colors = make_colors(5)
+            palette = {cue: color for cue, color in zip(gl.clabels, colors)}
+
+            for col, color in enumerate(palette):
+                for c, ch in enumerate(gl.channels['mov']):
+                    if GoNogo == 'go':
+                        for sf, stimF in enumerate(['index', 'ring']):
+                            axs[sf].set_title(f'{stimF} perturbation')
+
+                            y = force.mean(axis=0)[:, sf, c] + c * vsep
+                            yerr = force.std(axis=0)[:, sf, c] / np.sqrt(force.shape[0])
+
+                            axs[sf].plot(tAx[sf], y[col], color=palette[color])
+                            axs[sf].fill_between(tAx[sf], y[col] - yerr[col], y[col] + yerr[col],
+                                                 color=palette[color], lw=0, alpha=.2)
+
+                    elif GoNogo == 'nogo':
+
+                        axs.set_title(f'nogo trials')
+
+                        y = force.mean(axis=0)[:, c] + c * vsep
+                        yerr = force.std(axis=0)[:, c] / np.sqrt(force.shape[0])
+                        axs.plot(tAx[0], y[col], color=palette[color])
+                        axs.fill_between(tAx[0], y[col] - yerr[col], y[col] + yerr[col],
+                                         color=palette[color], lw=0, alpha=.2)
+
+            if GoNogo == 'go':
+
+                for ax in axs:
+                    ax.set_xlim(xlim)
+                    ax.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
+                    ax.axvline(0, ls='-', color='k', lw=.8)
+                    ax.set_yticks([])
+                    ax.set_ylim(ylim)
+                    ax.spines[['bottom']].set_visible(True)
+
+                    for c, ch in enumerate(gl.channels['mov']):
+                        ax.axhline(c * vsep, ls='-', color='k', lw=.8)
+                        ax.text(xlim[1], c * vsep, ch, va='top', ha='right')
+
+                make_yref(axs[0], reference_length=5)
+
+                for c, col in enumerate(colors):
+                    axs[0].plot(np.nan, label=gl.clabels[c], color=col)
+
+            elif GoNogo == 'nogo':
+
+                axs.set_xlim(xlim)
+                axs.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
+                axs.axvline(0, ls='-', color='k', lw=.8)
+                axs.set_yticks([])
+
+                for c, ch in enumerate(gl.channels['mov']):
+                    axs.axhline(c * vsep, ls='-', color='k', lw=.8)
+                    axs.text(xlim[1], c * vsep, ch, va='top', ha='right')
+
+                make_yref(axs, reference_length=ref_len)
+
+                for c, col in enumerate(colors):
+                    axs.plot(np.nan, label=gl.clabels[c], color=col)
+
+            fig.legend(ncol=3, loc='upper center')
+            fig.supxlabel('time relative to perturbation (s)')
+            fig.suptitle(title, y=.9)
+            fig.subplots_adjust(top=.82)
+            # fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'force.timec.behav.png'))
+
+            plt.show()
+
         case 'PLOT:bins_force':
 
             GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
@@ -175,69 +262,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
             plt.show()
 
-        case 'PLOT:timec_force':
-
-            vsep = varargin['vsep'] if 'vsep' in varargin else 8
-            xlim = varargin['xlim'] if 'xlim' in varargin else [-.1, .5]
-            ylim = varargin['ylim'] if 'ylim' in varargin else None
-            title = varargin['title'] if 'title' in varargin else f'{session}, N={len(participant_id)}'
-
-            force = main('FORCE:timec_avg', experiment, session, participant_id, varargin)
-            clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
-
-            tAx = make_tAx(force)
-
-            fig, axs = plt.subplots(1, 2, sharey=True, sharex=True, figsize=(4, 6))
-
-            colors = make_colors(5)
-            palette = {cue: color for cue, color in zip(gl.clabels, colors)}
-
-            for sf, stimF in enumerate(['index', 'ring']):
-                ax = axs[sf]
-                ax.set_title(f'{stimF} perturbation')
-
-                for c, ch in enumerate(gl.channels['mov']):
-                    y = force.mean(axis=0)[:, sf, c] + c * vsep
-                    yerr = force.std(axis=0)[:, sf, c] / np.sqrt(force.shape[0])
-
-                    for col, color in enumerate(palette):
-                        ax.plot(tAx[sf], y[col], color=palette[color])
-                        ax.fill_between(tAx[sf], y[col] - yerr[col], y[col] + yerr[col],
-                                        color=palette[color], lw=0, alpha=.2)
-
-                    ax.set_xlim(xlim)
-                    ax.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
-
-                ax.axvline(0, ls='-', color='k', lw=.8)
-                ax.set_yticks([])  # Remove y-ticks
-
-            axs[0].set_ylim(ylim)
-
-            for ax in axs:
-                ax.spines[['bottom']].set_visible(True)
-
-            # Add a vertical line for y-scale reference
-            reference_length = 5  # Length of the reference line
-            reference_x = xlim[0]  # Position of the reference line
-            midpoint_y = (axs[0].get_ylim()[0] + axs[0].get_ylim()[1]) / 2  # Calculate the one-third of the y-axis
-            axs[0].plot([reference_x, reference_x],
-                        [midpoint_y - reference_length / 2, midpoint_y + reference_length / 2],
-                        ls='-', color='k', lw=3)
-            axs[0].text(reference_x, midpoint_y, f'{reference_length}N ', color='k',
-                        ha='right', va='center')
-
-            for c, col in enumerate(colors):
-                axs[0].plot(np.nan, label=gl.clabels[c], color=col)
-
-            fig.legend(ncol=3, loc='upper center')
-            fig.supxlabel('time relative to perturbation (s)')
-            fig.suptitle(title, y=.9)
-            fig.subplots_adjust(top=.82)
-
-            fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'force.timec.behav.png'))
-
-            plt.show()
-
         case 'PLOT:timec_dist_force':
 
             GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
@@ -283,6 +307,41 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
             plt.show()
 
+        case 'PLOT:rdm_force':
+
+            timew = varargin['timew'] if 'timew' in varargin else [(-.5, 0), (.1, .4), (.4, 1)]
+            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
+            vmin = varargin['vmin'] if 'vmin' in varargin else 0
+            vmax = varargin['vmax'] if 'vmax' in varargin else 35
+
+            colors = ['purple', 'darkorange', 'darkgreen']
+            symmetry = [1, 1, -1]
+            masks = [gl.mask_stimFinger, gl.mask_cue]
+
+            fig, axs = plt.subplots(1, len(timew), sharey=True, sharex=True, figsize=(10, 5))
+
+            for T, t in enumerate(timew):
+                rdm = list()
+                for p in participant_id:
+                    force = Force(experiment, session, p)
+                    rdm.append(force.calc_rdm(t, GoNogo=GoNogo))
+
+                cax, axs[T] = plot_rdm(rdm, ax=axs[T], vmin=vmin, vmax=vmax)
+                axs[T].set_title(f'{t[0]} to {t[1]}s')
+
+                if GoNogo == 'go':
+                    draw_contours(masks, symmetry, colors, axs=axs[T])
+
+            cbar = fig.colorbar(cax, ax=axs, orientation='horizontal', fraction=.02)
+            cbar.set_label('cross-validated multivariate distance (a.u.)')
+
+            fig.subplots_adjust(bottom=.35)
+            fig.suptitle(f'{session}, {GoNogo} trials (N={len(participant_id)})')
+
+            plt.show()
+
+            return fig, axs
+
         case 'PLOT:timec_dist_force_session':
 
             GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
@@ -307,7 +366,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
                 dist_tmp = list()
                 for P, p in enumerate(participants):
-
                     path = Force(exp, s, p).get_path()
                     sn = int(''.join([c for c in p if c.isdigit()]))
                     npz = np.load(os.path.join(path, p, f'{exp}_{sn}_dist_{GoNogo}.npz'))
@@ -356,6 +414,7 @@ if __name__ == "__main__":
         'FORCE:timec2bins',
         'FORCE:timec_dist',
         'PLOT:bins_force',
+        'PLOT:rdm_force',
         'PLOT:timec_force',
         'PLOT:timec_dist_force',
         'PLOT:timec_dist_force_session'

@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import numpy as np
+
 Dirs = ["/Volumes/diedrichsen_data$/data/SensoriMotorPrediction/",
         "/cifs/diedrichsen/data/SensoriMotorPrediction/",
         "/Users/mnlmrc/Documents/data/SensoriMotorPrediction/"]
@@ -87,3 +89,14 @@ cue_mapping = {
                 21: '75%',
                 39: '100%'
             }
+stimFinger_mapping = {91999: 'index',
+                      99919: 'ring',
+                      99999: 'nogo'}
+
+# make rdm masks for cue vs stimFinger effect (plus interaction)
+mask_stimFinger = np.zeros([28], dtype=bool)
+mask_cue = np.zeros([28], dtype=bool)
+mask_stimFinger_cue = np.zeros([28], dtype=bool)
+mask_stimFinger[[4, 11, 17]] = True
+mask_cue[[0, 1, 7, 25, 26, 27]] = True
+mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True

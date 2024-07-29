@@ -7,6 +7,8 @@ import globals as gl
 
 import rsatoolbox as rsa
 
+from rsa import calc_rdm_unbalanced, calc_rdm
+
 
 class Force:
     def __init__(self, experiment, session, participant_id=None):
@@ -20,6 +22,13 @@ class Force:
 
         self.prestim = int(gl.prestim * gl.fsample_mov)
         self.poststim = int(gl.poststim * gl.fsample_mov)
+
+        # time windows in seconds
+        self.win = {
+            'Pre': (-.5, 0),
+            'LLR': (.1, .4),
+            'VOl': (.4, 1)
+        }
 
         if participant_id is not None:
             self.participant_id = participant_id
@@ -62,6 +71,11 @@ class Force:
             raise ValueError('Session name not recognized.')
 
         return blocks
+
+    def sec2sample(self, sec):
+        samples = self.prestim + int(sec * gl.fsample_mov)
+
+        return samples
 
     def load_mov(self, filename):
         try:
@@ -138,23 +152,28 @@ class Force:
             force_avg (numpy.ndarray): A 4D array with dimensions (cue, stimFinger, channel, time).
         """
 
-        dat = self.dat
-
+        force = self.load_npz()
         blocks = self.get_block()
 
-        # remove excluded blocks (as per participant.tsv)
-        dat = dat[(dat.BN.isin(blocks) | dat.BN.isin(np.array(list(map(int, blocks)))))]
+        # take only rows in dat that belong to good blocks based on participants.tsv
+        dat = self.dat[(self.dat.BN.isin(blocks) |
+                        self.dat.BN.isin(np.array(list(map(int, blocks)))))]
 
-        # keep only go trials
-        keep_trials = dat.GoNogo == GoNogo
+        keep_trials = (dat.GoNogo == GoNogo)
+        force = force[keep_trials]
         dat = dat[keep_trials]
 
-        force = self.load_npz()[keep_trials]
-
-        force_avg = np.zeros((len(gl.cue_code), len(gl.stimFinger_code), force.shape[-2], force.shape[-1]))
-        for c, cue in enumerate(gl.cue_code):
-            for sf, stimF in enumerate(gl.stimFinger_code):
-                force_avg[c, sf] = force[(dat.cue == cue) & (dat.stimFinger == stimF)].mean(axis=0, keepdims=True)
+        if GoNogo == 'go':
+            force_avg = np.zeros((len(gl.cue_code), len(gl.stimFinger_code), force.shape[-2], force.shape[-1]))
+            for c, cue in enumerate(gl.cue_code):
+                for sf, stimF in enumerate(gl.stimFinger_code):
+                    force_avg[c, sf] = force[(dat.cue == cue) & (dat.stimFinger == stimF)].mean(axis=0, keepdims=True)
+        elif GoNogo == 'nogo':
+            force_avg = np.zeros((len(gl.cue_code), force.shape[-2], force.shape[-1]))
+            for c, cue in enumerate(gl.cue_code):
+                force_avg[c] = force[(dat.cue == cue)].mean(axis=0, keepdims=True)
+        else:
+            force_avg = None
 
         return force_avg
 
@@ -163,10 +182,6 @@ class Force:
         prestim = self.prestim
 
         force = self.load_npz()
-
-        win = {'Pre': (prestim - int(.5 * gl.fsample_mov), prestim),
-               'LLR': (prestim + int(.2 * gl.fsample_mov), prestim + int(.5 * gl.fsample_mov)),
-               'Vol': (prestim + int(.5 * gl.fsample_mov), prestim + int(1 * gl.fsample_mov))}
 
         df = pd.DataFrame()
         for w in win.keys():
@@ -190,6 +205,41 @@ class Force:
 
         return force
 
+    def calc_rdm(self, timew, GoNogo='go'):
+
+        force = self.load_npz()
+        blocks = self.get_block()
+
+        # take only rows in dat that belong to good blocks based on participants.tsv
+        dat = self.dat[(self.dat.BN.isin(blocks) |
+                        self.dat.BN.isin(np.array(list(map(int, blocks)))))]
+
+        keep_trials = (dat.GoNogo == GoNogo)
+        force = force[keep_trials]
+        dat = dat[keep_trials]
+
+        run = dat.BN
+        cue = dat.cue
+        stimFinger = dat.stimFinger
+
+        cue = cue.map(gl.cue_mapping)
+        stimFinger = stimFinger.map(gl.stimFinger_mapping)
+
+        cond_vec = [f'{sf},{c}' for c, sf in zip(cue, stimFinger)]
+
+        timew = (self.sec2sample(timew[0]), self.sec2sample(timew[1]))
+        timew = np.arange(timew[0], timew[1])
+
+        rdm = calc_rdm_unbalanced(force[..., timew].mean(axis=-1), gl.channels['mov'], cond_vec, run,
+                                  method='crossnobis')
+
+        if GoNogo == 'go':
+            rdm.reorder(np.array([1, 2, 3, 0, 4, 5, 6, 7]))
+        elif GoNogo == 'nogo':
+            rdm.reorder(np.array([0, 2, 3, 4, 1]))
+
+        return rdm
+
     def calc_dist_timec(self, method='euclidean', GoNogo='go'):
 
         force = self.load_npz()
@@ -207,14 +257,10 @@ class Force:
         cue = dat.cue
         stimFinger = dat.stimFinger
 
-        # make masks
-        if GoNogo == 'go':
-            mask_stimFinger = np.zeros([28], dtype=bool)
-            mask_cue = np.zeros([28], dtype=bool)
-            mask_stimFinger_cue = np.zeros([28], dtype=bool)
-            mask_stimFinger[[4, 11, 17]] = True
-            mask_cue[[0, 1, 7, 25, 26, 27]] = True
-            mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
+        cue = cue.map(gl.cue_mapping)
+        stimFinger = stimFinger.map(gl.stimFinger_mapping)
+
+        cond_vec = [f'{sf},{c}' for c, sf in zip(cue, stimFinger)]
 
         dist_stimFinger = np.zeros(force.shape[-1])
         dist_cue = np.zeros(force.shape[-1])
@@ -224,43 +270,27 @@ class Force:
 
             # calculate rdm for timepoint t
             force_tmp = force[:, :, t]
-            dataset = rsa.data.Dataset(
-                force_tmp,
-                channel_descriptors={'channels': gl.channels['mov']},
-                obs_descriptors={'stimFinger,cue': [f'{sf},{c}' for c, sf in zip(cue, stimFinger)], 'run': run},
-            )
-            noise = rsa.data.noise.prec_from_unbalanced(dataset,
-                                                        obs_desc='stimFinger,cue',
-                                                        method='diag')
-            rdm = rsa.rdm.calc_rdm_unbalanced(dataset,
-                                              method=method,
-                                              descriptor='stimFinger,cue',
-                                              noise=noise,
-                                              cv_descriptor='run')
-            rdm.reorder(rdm.pattern_descriptors['stimFinger,cue'].argsort())
+
+            rdm = calc_rdm(force_tmp, gl.channels['mov'], cond_vec, run, method=method)
+
             if GoNogo == 'go':
                 rdm.reorder(np.array([0, 3, 1, 2, 7, 4, 6, 5]))
             elif GoNogo == 'nogo':
-                rdm.reorder(np.array([4, 0, 3, 1, 2]))
+                rdm.reorder(np.array([1, 4, 2, 0, 3]))
 
             if GoNogo == 'go':
-
-                dist_stimFinger[t] = rdm.dissimilarities[:, mask_stimFinger].mean()
-                dist_cue[t] = rdm.dissimilarities[:, mask_cue].mean()
-                dist_stimFinger_cue[t] = rdm.dissimilarities[:, mask_stimFinger_cue].mean()
+                dist_stimFinger[t] = rdm.dissimilarities[:, gl.mask_stimFinger].mean()
+                dist_cue[t] = rdm.dissimilarities[:, gl.mask_cue].mean()
+                dist_stimFinger_cue[t] = rdm.dissimilarities[:, gl.mask_stimFinger_cue].mean()
 
             elif GoNogo == 'nogo':
-
                 dist_cue[t] = rdm.dissimilarities.mean()
-
-                pass
-
 
         descr = json.dumps({
             'participant': self.participant_id,
-            'mask_stimFinger': list(mask_stimFinger.astype(str)) if GoNogo == 'go' else None,
-            'mask_cue': list(mask_cue.astype(str)) if GoNogo == 'go' else None,
-            'mask_stimFinger_by_cue': list(mask_stimFinger_cue.astype(str)) if GoNogo == 'go' else None,
+            'mask_stimFinger': list(gl.mask_stimFinger.astype(str)) if GoNogo == 'go' else None,
+            'mask_cue': list(gl.mask_cue.astype(str)) if GoNogo == 'go' else None,
+            'mask_stimFinger_by_cue': list(gl.mask_stimFinger_cue.astype(str)) if GoNogo == 'go' else None,
             'factor_order': ['stimFinger', 'cue', 'stimFinger_by_cue'],
         })
 

@@ -24,7 +24,9 @@ def hp_filter(data, n_ord=None, cutoff=None, fsample=None):
     return filtered_data
 
 
-# Create a mapping dictionary
+def apply_map_dictionary():
+
+    pass
 
 
 
