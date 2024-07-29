@@ -66,6 +66,7 @@ def GUI():
 
 
 def main(what, experiment=None, session=None, participant_id=None, varargin=None):
+
     if varargin is None:
         varargin = {}
 
@@ -128,7 +129,7 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
             ref_len = float(varargin['ref_len']) if 'ref_len' in varargin else 5
 
             force = main('FORCE:timec_avg', experiment, session, participant_id, varargin)
-            clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
+            # clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
 
             tAx = make_tAx(force) if GoNogo == 'go' else make_tAx(force, (0, 0))
 
