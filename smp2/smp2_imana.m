@@ -1505,10 +1505,10 @@ function varargout = smp2_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
             % Set the SUBJECTS_DIR environment variable
-            setenv('SUBJECTS_DIR', sprintf('/cifs/diedrichsen/data/SensoriMotorPrediction/smp1/surfaceFreesurfer/%s', subj_id));
+            setenv('SUBJECTS_DIR', sprintf('/cifs/diedrichsen/data/SensoriMotorPrediction/smp2/surfaceFreesurfer/%s', subj_id));
             
             % Execute the recon-all command with real-time output
-            system(sprintf('recon-all -s %s -i /cifs/diedrichsen/data/SensoriMotorPrediction/smp1/anatomicals/%s/%s_anatomical.nii -all -cw256 & echo', subj_id, subj_id, subj_id));
+            system(sprintf('recon-all -s %s -i /cifs/diedrichsen/data/SensoriMotorPrediction/smp2/anatomicals/%s/%s_anatomical.nii -all -cw256 & echo', subj_id, subj_id, subj_id));
 
             
             % Display the command output
