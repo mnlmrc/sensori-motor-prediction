@@ -55,14 +55,14 @@ def calc_rdm(data, channels, cond_vec, run_vec, method='euclidean'):
         channel_descriptors={'channels': channels},
         obs_descriptors={'cond': cond_vec, 'run': run_vec},
     )
-    noise = rsa.data.noise.prec_from_measurements(dataset,
-                                                  obs_desc='cond',
-                                                  method='diag')
-    rdm = rsa.rdm.calc_rdm(dataset,
-                           method=method,
-                           descriptor='cond',
-                           noise=noise,
-                           cv_descriptor='run')
+    noise = rsa.data.noise.prec_from_unbalanced(dataset,
+                                                obs_desc='cond',
+                                                method='diag')
+    rdm = rsa.rdm.calc_rdm_unbalanced(dataset,
+                                      method=method,
+                                      descriptor='cond',
+                                      noise=noise,
+                                      cv_descriptor='run')
     rdm.reorder(rdm.pattern_descriptors['cond'].argsort())
 
     return rdm

@@ -72,7 +72,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
     match what:
         case 'FORCE:mov2npz':
-
             for p in participant_id:
                 force = Force(experiment, session, p)
                 force_segmented, descr = force.segment_mov()
@@ -254,7 +253,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
             fig.suptitle(title)
             fig.supylabel(ylabel)
-
             fig.suptitle(title, y=.92)
             fig.subplots_adjust(top=.85, hspace=.4, bottom=.05)
 

@@ -55,10 +55,11 @@ participants = {
              'subj105',
              'subj106'],
     'smp2': ['subj100',
-             'subj101',
-             'subj102',
-             'subj103',
-             'subj104']
+             # 'subj101',
+             # 'subj102',
+             # 'subj103',
+             # 'subj104'
+             ]
 }
 
 clabels = ['0%', '25%', '50%', '75%', '100%']
