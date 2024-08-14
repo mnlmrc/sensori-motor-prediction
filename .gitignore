@@ -5,4 +5,7 @@ smp0/venv/
 smp0/.DS_Store
 smp1/.DS_Store
 .idea
-.idea
+__pycache__/
+smp0/__pycache__/
+smp1/__pycache__/
+smp2/__pycache__/
