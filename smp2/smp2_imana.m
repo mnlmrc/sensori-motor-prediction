@@ -1832,7 +1832,7 @@ function varargout = smp2_imana(what,varargin)
             [y_raw, y_adj, y_hat, y_res,B] = region_getts(SPM,R);
             
 %             D = spmj_get_ons_struct(SPM);
-            Dd = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp1_%d.dat', sn)));
+            Dd = dload(fullfile(baseDir, behavDir, subj_id, sprintf('smp2_%d.dat', sn)));
             
             D = [];
             D.ons = (Dd.startTimeReal / 1000) / TR;
@@ -1925,7 +1925,7 @@ function varargout = smp2_imana(what,varargin)
             vararginoptions(varargin,{'sn', 'atlas'});
             
             for s=sn
-                smp1_imana('ROI:define', 'sn', s)
+                smp2_imana('ROI:define', 'sn', s)
                 clc
             end
 
