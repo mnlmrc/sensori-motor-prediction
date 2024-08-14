@@ -1024,7 +1024,7 @@ function varargout = smp2_imana(what,varargin)
             subj_id = pinfo.subj_id{pinfo.sn==sn};
 
             % Load data once, outside of session loop
-            % D = dload(fullfile(baseDir,behavDir,subj_id, sprintf('smp1_%d.dat', sn)));
+            % D = dload(fullfile(baseDir,behavDir,subj_id, sprintf('smp2_%d.dat', sn)));
             events_file = sprintf('glm%d_events.tsv', glm);
 
             Dd = dload(fullfile(baseDir,behavDir,subj_id, events_file));
@@ -1231,7 +1231,7 @@ function varargout = smp2_imana(what,varargin)
             
             force = [];
             for run = 1:length(runs)
-                force_tmp = smp1_forceFromMov(fullfile(baseDir, behavDir, subj_id, sprintf('smp2_%d_%02d.mov', sn, runs(run))));
+                force_tmp = forceFromMov(fullfile(baseDir, behavDir, subj_id, sprintf('smp2_%d_%02d.mov', sn, runs(run))));
                 force_tmp(:, 1) = force_tmp(:, 1) + force_tmp(:, 2) / 1000 + 366 * (runs(run) -1);
                 force = [force; force_tmp];
             end
@@ -1485,14 +1485,14 @@ function varargout = smp2_imana(what,varargin)
                     delete(spm_file);
                 end
                 
-                smp1_imana('GLM:make_event', 'sn', s, 'glm', glm)
-                smp1_imana('GLM:design', 'sn', s, 'glm', glm, 'hrf_params', hrf_params)
-                smp1_imana('GLM:estimate', 'sn', s, 'glm', glm)
-                smp1_imana('GLM:T_contrasts', 'sn', s, 'glm', glm)
-                smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'spmT')
-                smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'beta')
-                smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'res')
-                smp1_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'con')
+                smp2_imana('GLM:make_event', 'sn', s, 'glm', glm)
+                smp2_imana('GLM:design', 'sn', s, 'glm', glm, 'hrf_params', hrf_params)
+                smp2_imana('GLM:estimate', 'sn', s, 'glm', glm)
+                smp2_imana('GLM:T_contrasts', 'sn', s, 'glm', glm)
+                smp2_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'spmT')
+                smp2_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'beta')
+                smp2_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'res')
+                smp2_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'con')
             end
             
         case 'SURF:reconall'
@@ -2040,7 +2040,7 @@ function varargout = smp2_imana(what,varargin)
             min_sn = min(sn);
 
             for s=sn
-                [y_adj(s - min_sn + 1, :, :), y_hat(s- min_sn + 1, :, :)] = smp1_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', eventname, 'p', false);
+                [y_adj(s - min_sn + 1, :, :), y_hat(s- min_sn + 1, :, :)] = smp2_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', eventname, 'p', false);
 
             end
 
@@ -2129,8 +2129,8 @@ function varargout = smp2_imana(what,varargin)
             min_sn = min(sn);
 
             for s=sn
-                [y_adj_go(s - min_sn + 1, :, :), y_hat_go(s- min_sn + 1, :, :)] = smp1_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', 'go', 'p', false);
-                [y_adj_nogo(s - min_sn + 1, :, :), y_hat_nogo(s- min_sn + 1, :, :)] = smp1_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', 'nogo', 'p', false);
+                [y_adj_go(s - min_sn + 1, :, :), y_hat_go(s- min_sn + 1, :, :)] = smp2_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', 'go', 'p', false);
+                [y_adj_nogo(s - min_sn + 1, :, :), y_hat_nogo(s- min_sn + 1, :, :)] = smp2_imana('HRF:ROI_hrf_plot', 'sn', s, 'glm', glm, 'eventname', 'nogo', 'p', false);
                 
             end
             

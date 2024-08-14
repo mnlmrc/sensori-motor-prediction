@@ -21,7 +21,7 @@ behavDir = "behavioural"
 trainDir = "training"
 imagingDir = "imaging_data"
 RDM = "rdm"
-ROI = 'ROI'
+roiDir = 'ROI'
 pilotDir = 'pilot'
 
 print("Base directory:", baseDir)
@@ -52,8 +52,9 @@ participants = {
              'subj102',
              'subj103',
              'subj104',
-             'subj105',
-             'subj106'],
+             # 'subj105',
+             # 'subj106'
+             ],
     'smp2': ['subj100',
              # 'subj101',
              # 'subj102',
@@ -69,6 +70,7 @@ channels = {'mov': ['thumb', 'index', 'middle', 'ring', 'pinkie']}
 prestim = 1
 poststim = 1
 fsample_mov = 500
+TR = 1
 N = {
     'smp0': len(participants['smp0']),
     'smp1': len(participants['smp1']),

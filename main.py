@@ -2,6 +2,7 @@ import argparse
 import os
 import nitools.gifti
 import numpy as np
+import scipy
 from matplotlib import pyplot as plt
 import globals as gl
 import pandas as pd
@@ -67,7 +68,7 @@ def GUI():
 
 
 def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, glm=None, Hem=None, regressor=None,
-         fig=None, axs=None, vsep=None, xlim=None, ylim=None, vmin=None, vmax=None, ref_len=None):
+         roi=None, fig=None, axs=None, vsep=None, xlim=None, ylim=None, vmin=None, vmax=None, ref_len=None):
     if participant_id is None:
         participant_id = gl.participants[experiment]
 
@@ -415,6 +416,45 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
 
             return fig, axs
 
+        case 'PLOT:hrf_roi':
+
+            if fig is None or axs is None:
+                fig, axs = plt.subplots()
+
+            y_adj_go, y_hat_go, y_adj_nogo, y_hat_nogo = [], [], [], []
+            for p in participant_id:
+                mat = scipy.io.loadmat(os.path.join(gl.baseDir, experiment, gl.roiDir, p, f'hrf_glm{glm}.mat'))
+                T = mat['T'][0, 0]
+                T_fields = T.dtype.names
+                T_dict = {field: T[field] for field in T_fields}
+
+                y_adj_go.append(np.nanmean(T_dict['y_adj'][((T_dict['name'] == roi) &
+                                                            (T_dict['eventname'] == 'go') &
+                                                            (T_dict['hem'] == Hem)).flatten()], axis=0))
+                y_hat_go.append(np.nanmean(T_dict['y_hat'][((T_dict['name'] == roi) &
+                                                            (T_dict['eventname'] == 'go') &
+                                                            (T_dict['hem'] == Hem)).flatten()], axis=0))
+                y_adj_nogo.append(np.nanmean(T_dict['y_adj'][((T_dict['name'] == roi) &
+                                                              (T_dict['eventname'] == 'nogo') &
+                                                              (T_dict['hem'] == Hem)).flatten()], axis=0))
+                y_hat_nogo.append(np.nanmean(T_dict['y_hat'][((T_dict['name'] == roi) &
+                                                              (T_dict['eventname'] == 'nogo') &
+                                                              (T_dict['hem'] == Hem)).flatten()], axis=0))
+
+            y_adj_go = np.array(y_adj_go).mean(axis=0)
+            y_hat_go = np.array(y_hat_go).mean(axis=0)
+            y_adj_nogo = np.array(y_adj_nogo).mean(axis=0)
+            y_hat_nogo = np.array(y_hat_nogo).mean(axis=0)
+
+            tAx = np.linspace(-10, 10, 21)
+
+            axs.plot(tAx, y_adj_go, color='magenta', label='go adj', ls='-')
+            axs.plot(tAx, y_hat_go, color='magenta', label='go hat', ls='--')
+            axs.plot(tAx, y_adj_nogo, color='green', label='nogo adj', ls='-')
+            axs.plot(tAx, y_hat_nogo, color='green', label='nogo hat', ls='--')
+
+            return fig, axs
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -429,7 +469,8 @@ if __name__ == "__main__":
         'PLOT:timec_force',
         'PLOT:timec_dist_force',
         'PLOT:timec_dist_force_session',
-        'PLOT:flatmap'
+        'PLOT:flatmap',
+        'PLOT:hrf_roi'
     ]
 
     parser.add_argument('what', nargs='?', default=None, choices=cases)
@@ -439,6 +480,7 @@ if __name__ == "__main__":
     parser.add_argument('--glm', default=None, help='')
     parser.add_argument('--Hem', default=None, help='')
     parser.add_argument('--regressor', nargs='+', default=None, help='')
+    parser.add_argument('--roi', default=None, help='')
 
     args = parser.parse_args()
 
@@ -449,6 +491,7 @@ if __name__ == "__main__":
     glm = args.glm
     Hem = args.Hem
     regressor = args.regressor
+    roi = args.roi
 
     if what is None:
         GUI()
@@ -456,6 +499,6 @@ if __name__ == "__main__":
     pinfo = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
 
     main(what=what, experiment=experiment, session=session, participant_id=participant_id, glm=glm, Hem=Hem,
-         regressor=regressor)
+         regressor=regressor, roi=roi)
 
     plt.show()

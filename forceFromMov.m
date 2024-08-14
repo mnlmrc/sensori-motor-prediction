@@ -1,4 +1,4 @@
-function filteredData = smp1_forceFromMov(filePath)
+function filteredData = forceFromMov(filePath)
     % Read the data from the file
     data = readmatrix(filePath, 'Delimiter', '\t', 'FileType', 'text');
     
