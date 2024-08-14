@@ -765,7 +765,7 @@ function varargout = smp2_imana(what,varargin)
             
             operation  = sprintf('GLM:make_glm%d', glm);
             
-            events = smp1_imana(operation, 'sn', sn);
+            events = smp2_imana(operation, 'sn', sn);
             events = events(ismember(events.BN, runs), :);
             
             %% export
