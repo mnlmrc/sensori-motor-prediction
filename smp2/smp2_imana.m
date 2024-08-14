@@ -1868,10 +1868,10 @@ function varargout = smp2_imana(what,varargin)
         case 'ROI:define'
             
             sn = [];
-            glm = 9;
+            glm = 10;
             atlas = 'ROI';
             
-            vararginoptions(varargin,{'sn', 'atlas'});
+            vararginoptions(varargin,{'sn', 'atlas', 'glm'});
             
             if isfolder('/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32')
                 atlasDir = '/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32';
@@ -1906,15 +1906,15 @@ function varargout = smp2_imana(what,varargin)
             R = region_calcregions(R, 'exclude', [2 3; 2 4; 2 5; 4 5; 8 9; 2 8;...
                 11 12; 11 13; 11 14; 13 14; 17 18; 11 17], 'exclude_thres', .8);
             
-            Vol = fullfile(baseDir, [glmEstDir num2str(glm)], subj_id, 'mask.nii');
-            for r = 1:length(R)
-                img = region_saveasimg(R{r}, Vol, 'name',fullfile(baseDir, regDir, subj_id, sprintf('%s.%s.%s.nii', atlas, R{r}.hem, R{r}.name)));
-            end
-
             output_path = fullfile(baseDir, regDir, subj_id);
             if ~exist(output_path, 'dir')
                 mkdir(output_path)
             end
+            
+            Vol = fullfile(baseDir, [glmEstDir num2str(glm)], subj_id, 'mask.nii');
+            for r = 1:length(R)
+                img = region_saveasimg(R{r}, Vol, 'name',fullfile(baseDir, regDir, subj_id, sprintf('%s.%s.%s.nii', atlas, R{r}.hem, R{r}.name)));
+            end       
             
             save(fullfile(output_path, sprintf('%s_%s_region.mat',subj_id, atlas)), 'R');
 
