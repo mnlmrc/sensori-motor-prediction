@@ -1,4 +1,4 @@
-function varargout = smp1_imana(what,varargin)
+function varargout = smp2_imana(what,varargin)
     % Template function for preprocessing of the fMRI data.
     % Rename this function to <experiment_name>_imana.m 
     % Don't forget to add path the required tools!
@@ -28,25 +28,25 @@ function varargout = smp1_imana(what,varargin)
     
     % automatic detection of datashare location:
     % After mounting the diedrichsen datashare on a mac computer.
-    if isfolder("/Volumes/diedrichsen_data$//data/SensoriMotorPrediction/smp1")
-        workdir = "/Volumes/diedrichsen_data$//data/SensoriMotorPrediction/smp1";
-    elseif isfolder("/cifs/diedrichsen/data/SensoriMotorPrediction/smp1")
-        workdir = "/cifs/diedrichsen/data/SensoriMotorPrediction/smp1";
+    if isfolder("/Volumes/diedrichsen_data$//data/SensoriMotorPrediction/smp2")
+        workdir = "/Volumes/diedrichsen_data$//data/SensoriMotorPrediction/smp2";
+    elseif isfolder("/cifs/diedrichsen/data/SensoriMotorPrediction/smp2")
+        workdir = "/cifs/diedrichsen/data/SensoriMotorPrediction/smp2";
     else
         fprintf('Workdir not found. Mount or connect to server and try again.');
     end
     
     baseDir         = (sprintf('%s/',workdir));                            % Base directory of the project
-    bidsDir        = 'BIDS';                                              % Raw data post AutoBids conversion
-    behavDir = 'behavioural';       
+    bidsDir         = 'BIDS';                                              % Raw data post AutoBids conversion
+    behavDir        = 'behavioural';       
     imagingRawDir   = 'imaging_data_raw';                                  % Temporary directory for raw functional data
     imagingDir      = 'imaging_data';                                      % Preprocesses functional data
     anatomicalDir   = 'anatomicals';                                       % Preprocessed anatomical data (LPI + center AC + segemnt)
     fmapDir         = 'fieldmaps';                                         % Fieldmap dir after moving from BIDS and SPM make fieldmap
     glmEstDir       = 'glm';
     regDir          = 'ROI';
-    suitDir = 'suit';
-    wbDir   = 'surfaceWB';
+    suitDir         = 'suit';
+    wbDir           = 'surfaceWB';
     numDummys       = 5;                                                   % number of dummy scans at the beginning of each run
     
     
@@ -124,7 +124,7 @@ function varargout = smp1_imana(what,varargin)
                     FuncRawName_tmp = [pinfo.(['FuncRawNameSess', num2str(sess)]){pinfo.sn==sn} '.nii.gz'];  
     
                     % add run number to the name of the file:
-                    FuncRawName_tmp = replace(FuncRawName_tmp,'XX',sprintf('%.02d',i));
+                    FuncRawName_tmp = replace(FuncRawName_tmp,'XX',sprintf('%.02d',run_list(i)));
     
                     % path to the subj func data:
                     func_raw_path = fullfile(baseDir,bidsDir,sprintf('subj%.02d',sn),'func',FuncRawName_tmp);
@@ -3040,7 +3040,7 @@ function varargout = smp1_imana(what,varargin)
 
 
         
-    case 'HRF:plot_all2'
+        case 'HRF:plot_all2'
 
             sn = [];
             glm = 9;

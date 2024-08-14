@@ -5,73 +5,71 @@ import numpy as np
 import pandas as pd
 from scipy.signal import resample
 
-import smp0.globals as gl
+import globals as gl
+from force import get_path_mov
 
 
-def load_participants(experiment):
-    """
-
-    :param experiment:
-    :return:
-    """
-    filepath = os.path.join(gl.base_dir, experiment, "participants.tsv")
-    fid = open(filepath, 'rt')
-    participants = pd.read_csv(fid, delimiter='\t', engine='python', index_col='participant_id')
-
-    return participants
-
-
-def load_dat(experiment, participant_id):
-    """
-
-    :param experiment:
-    :param participant_id:
-    :return:
-    """
-    fname = f"{experiment}_{participant_id}.dat"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id), fname)
-
-    try:
-        fid = open(filepath, 'rt')
-        D = pd.read_csv(fid, delimiter='\t', engine='python')
-    except IOError as e:
-        raise IOError(f"Could not open {filepath}") from e
-
-    return D
+# def load_participants(experiment):
+#     """
+#
+#     :param experiment:
+#     :return:
+#     """
+#     filepath = os.path.join(gl.base_dir, experiment, "participants.tsv")
+#     fid = open(filepath, 'rt')
+#     participants = pd.read_csv(fid, delimiter='\t', engine='python', index_col='participant_id')
+#
+#     return participants
 
 
-def save_npy(data, experiment=None, participant_id=None, datatype=None):
-    """
-
-    :param data:
-    :param experiment:
-    :param participant_id:
-    :param datatype:
-    :return:
-    """
-
-    fname = f"{experiment}_{participant_id}"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, datatype), fname)
-    print(f"Saving data to {filepath}")
-    np.save(filepath, data, allow_pickle=False)
-    print("Data saved!")
+# def load_dat(experiment, session, participant_id):
+#
+#     path = get_path_mov(experiment, session, participant_id)
+#     sn = int(''.join([c for c in participant_id if c.isdigit()]))
+#     dat = pd.read_csv(os.path.join(path, f'{experiment}_{sn}.dat'), sep='\t')
+#
+#     return dat
 
 
-def load_npy(experiment=None, participant_id=None, datatype=None):
-    """
+# def save_npy(data, descriptor, experiment=None, folder=None, participant_id=None):
+#     """
+#
+#     Args:
+#         data:
+#         descriptor:
+#         experiment:
+#         folder:
+#         participant_id:
+#
+#     Returns:
+#
+#     """
+#
+#     fname = f"{experiment}_{participant_id}"
+#     filepath = os.path.join(gl.make_dirs(experiment, folder, participant_id), fname)
+#     print(f"Saving data to {filepath}")
+#     np.savez(filepath, data_array=data, descriptor=descriptor, allow_pickle=False)
+#     print("Data saved!")
 
-    :param experiment:
-    :param datatype:
-    :param participant_id:
-    :return:
-    """
 
-    fname = f"{experiment}_{participant_id}.npy"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, datatype), fname)
-    print(f"Loading data from {filepath}")
-    data = np.load(filepath)
-
-    return data
+# def load_npy(experiment=None, folder=None, participant_id=None):
+#     """
+#
+#     Args:
+#         experiment:
+#         folder:
+#         participant_id:
+#
+#     Returns:
+#
+#     """
+#
+#     fname = f"{experiment}_{participant_id}.npy"
+#     filepath = os.path.join(gl.make_dirs(experiment, folder, participant_id), fname)
+#     print(f"Loading data from {filepath}")
+#     data = np.load(filepath)
+#
+#     return data
 
 
 def load_delsys(experiment=None, participant_id=None, block=None, muscle_names=None, trigger_name=None):
@@ -85,7 +83,7 @@ def load_delsys(experiment=None, participant_id=None, block=None, muscle_names=N
     :return:
     """
     fname = f"{experiment}_{participant_id}_{block}.csv"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, "emg"), fname)
+    filepath = os.path.join(gl.make_dirs(experiment, "emg", participant_id), fname)
 
     # read data from .csv file (Delsys output)
     with open(filepath, 'rt') as fid:
@@ -134,17 +132,15 @@ def load_delsys(experiment=None, participant_id=None, block=None, muscle_names=N
     return df_out
 
 
-def load_mov(experiment=None, participant_id=None, block=None):
+def load_mov(filename):
     """
     load .mov file of one block
 
     :return:
     """
-    fname = f"{experiment}_{participant_id}_{'{:02d}'.format(int(block))}.mov"
-    filepath = os.path.join(gl.make_dirs(experiment, participant_id, "mov"), fname)
 
     try:
-        with open(filepath, 'rt') as fid:
+        with open(filename, 'rt') as fid:
             trial = 0
             A = []
             for line in fid:
@@ -166,13 +162,13 @@ def load_mov(experiment=None, participant_id=None, block=None):
                         A.append([data])
 
             # Convert all sublists to numpy arrays
-            rawForce = [np.array(trial_data)[:, 4:9] for trial_data in A]
-            # vizForce = [np.array(trial_data)[:, 9:] for trial_data in A]
-            state = [np.array(trial_data)[:, 1] for trial_data in A]
+            mov = [np.array(trial_data) for trial_data in A]
+            # # vizForce = [np.array(trial_data)[:, 9:] for trial_data in A]
+            # state = [np.array(trial_data) for trial_data in A]
 
     except IOError as e:
-        raise IOError(f"Could not open {filepath}") from e
+        raise IOError(f"Could not open {filename}") from e
 
-    return rawForce, state
+    return mov
 
 

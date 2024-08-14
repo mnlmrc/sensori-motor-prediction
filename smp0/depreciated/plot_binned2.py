@@ -11,7 +11,7 @@ from smp0.globals import base_dir
 from smp0.fetch import load_npy
 from smp0.stat import Anova3D, rm_anova, pairwise
 from smp0.utils import bin_traces, split_column_df
-from smp0.visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
+from visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants3D, list_participants2D
 
 if __name__ == "__main__":
@@ -66,6 +66,7 @@ if __name__ == "__main__":
         bins = np.concatenate((bins_i, bins_r), axis=0)
         Info_p.cond_vec[p] = np.concatenate((Info_p.cond_vec[p][Zf[:, 0]], Info_p.cond_vec[p][Zf[:, 1]]),
                                             axis=0).astype(int)
+        bins /= bins[..., 0][..., None]
         Data.append(bins)
 
     # create list of participants

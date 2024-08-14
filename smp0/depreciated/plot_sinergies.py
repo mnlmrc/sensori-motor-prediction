@@ -6,9 +6,9 @@ from matplotlib import pyplot as plt
 
 from smp0.experiment import Info, Clamped, Param
 from smp0.fetch import load_npy
-from smp0.synergies import decompose_up_to_R, nnmf
+from smp0.sinergies import decompose_up_to_R, nnmf
 from smp0.utils import bin_traces
-from smp0.visual import Plotter, dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
+from visual import dict_vlines, dict_bars, dict_text, dict_lims, add_entry_to_legend, dict_legend
 from smp0.workflow import list_participants3D, list_participants2D
 
 if __name__ == "__main__":
@@ -23,7 +23,9 @@ if __name__ == "__main__":
     Info_p = Info(experiment, participants, datatype, ['stimFinger', 'cues'])
     c_vec_f = Info(experiment, participants, datatype, ['stimFinger']).cond_vec
 
-    win_syn = [(.06, .1)]
+    win_syn = [
+        (-1, 0),
+        (.06, .1)]
 
     # define channels to plot for each datatype
     channels = {
@@ -53,12 +55,14 @@ if __name__ == "__main__":
         bins_r = bin_traces(data[Zf[:, 1]], win_syn, fsample=Params.fsample,
                             offset=Params.prestim + Clamp.latency[1])
         bins = np.concatenate((bins_i, bins_r), axis=0)
+        bins /= bins[..., 0][..., None]
+        bins = bins[..., -1]
         Info_p.cond_vec[p] = np.concatenate((Info_p.cond_vec[p][Zf[:, 0]], Info_p.cond_vec[p][Zf[:, 1]]),
                                             axis=0).astype(int)
 
         print(f"processing participant: {participant_id}")
-        # W, H, R = decompose_up_to_R(bins.squeeze())
-        W, H, R = nnmf(bins.squeeze(), )
+        W, H, R = decompose_up_to_R(bins.squeeze())
+        # W, H, R = nnmf(bins.squeeze(), )
 
         Info_pi = Info(experiment, [participant_id], datatype, ['stimFinger', 'cues'])
         Info_pi.set_manual_channels([f"synergy #{syn + 1}" for syn in range(W.shape[1])])

@@ -48,7 +48,7 @@ def decompose_up_to_R(X, Rtarget=.9):
     return W, H, R
 
 
-def assign_synergy(W, H, H_pred):
+def sort_sinergies(W, H, H_pred):
     idx_synergy = np.zeros(H.shape[0], dtype=int)
     for h in range(H.shape[0]):
         max_d_prod = 0
