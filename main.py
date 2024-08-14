@@ -1,21 +1,22 @@
 import argparse
 import os
-
+import nitools.gifti
 import numpy as np
 from matplotlib import pyplot as plt
-
 import globals as gl
-
 import pandas as pd
-
 from force import Force
 from plot import make_colors, make_tAx, make_yref
-
 import tkinter as tk
-
 import seaborn as sns
-
 from rsa import plot_rdm, draw_contours
+import nibabel as nb
+
+import sys
+
+sys.path.append('/Users/mnlmrc/Documents/GitHub')
+
+import surfAnalysisPy as surf
 
 
 def GUI():
@@ -65,10 +66,10 @@ def GUI():
     root.mainloop()
 
 
-def main(what, experiment=None, session=None, participant_id=None, varargin=None):
-
-    if varargin is None:
-        varargin = {}
+def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, glm=None, Hem=None, regressor=None,
+         fig=None, axs=None, vsep=None, xlim=None, ylim=None, vmin=None, vmax=None, ref_len=None):
+    if participant_id is None:
+        participant_id = gl.participants[experiment]
 
     match what:
         case 'FORCE:mov2npz':
@@ -81,8 +82,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
                          data_array=force_segmented, descriptor=descr, allow_pickle=False)
 
         case 'FORCE:timec_avg':
-
-            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
 
             force_avg = list()
             for p in participant_id:
@@ -108,8 +107,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
         case 'FORCE:timec_dist':
 
-            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
-
             for p in participant_id:
                 force = Force(experiment, session, p)
                 dist, descr = force.calc_dist_timec(method='crossnobis', GoNogo=GoNogo)
@@ -120,19 +117,13 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
         case 'PLOT:timec_force':
 
-            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
-            vsep = float(varargin['vsep']) if 'vsep' in varargin else 8
-            xlim = varargin['xlim'] if 'xlim' in varargin else [-.1, .5]
-            ylim = varargin['ylim'] if 'ylim' in varargin else None
-            title = varargin['title'] if 'title' in varargin else f'{session}, N={len(participant_id)}'
-            ref_len = float(varargin['ref_len']) if 'ref_len' in varargin else 5
+            if fig is None or axs is None:
+                fig, axs = plt.subplots(1, 2 if GoNogo == 'go' else 1, sharey=True, sharex=True, figsize=(4, 6))
 
-            force = main('FORCE:timec_avg', experiment, session, participant_id, varargin)
+            force = main('FORCE:timec_avg', experiment, session, participant_id, GoNogo=GoNogo)
             # clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
 
             tAx = make_tAx(force) if GoNogo == 'go' else make_tAx(force, (0, 0))
-
-            fig, axs = plt.subplots(1, 2 if GoNogo == 'go' else 1, sharey=True, sharex=True, figsize=(4, 6))
 
             colors = make_colors(5)
             palette = {cue: color for cue, color in zip(gl.clabels, colors)}
@@ -195,21 +186,21 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
                 for c, col in enumerate(colors):
                     axs.plot(np.nan, label=gl.clabels[c], color=col)
 
-            fig.legend(ncol=3, loc='upper center')
-            fig.supxlabel('time relative to perturbation (s)')
-            fig.suptitle(title, y=.9)
-            fig.subplots_adjust(top=.82)
+            # fig.legend(ncol=3, loc='upper center')
+            # fig.supxlabel('time relative to perturbation (s)')
+            # fig.suptitle(title, y=.9)
+            # fig.subplots_adjust(top=.82)
             # fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'force.timec.behav.png'))
 
-            plt.show()
+            return fig, axs
 
         case 'PLOT:bins_force':
 
-            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
-            timew = varargin['timew'] if 'timew' in varargin else ['Pre', 'LLR', 'Vol']
-            title = varargin['title'] if 'title' in varargin else f'{session}, N={len(participant_id)}'
-            yscale = varargin['yscale'] if 'yscale' in varargin else 'linear'
-            ylabel = varargin['ylabel'] if 'ylabel' in varargin else 'force (N)'
+            if fig is None or axs is None:
+                fig, axs = plt.subplots(len(gl.channels['mov']), len(gl.stimFinger_code),
+                                        figsize=(5, 8), sharex=True, sharey=True)
+
+            timew = ['Pre', 'LLR', 'Vol']
 
             df = pd.read_csv(os.path.join(Force(experiment, session).get_path(), 'bins.force.csv'))
             df = df[df['GoNogo'] == GoNogo]
@@ -227,9 +218,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
             df['cue'] = df['cue'].map(gl.cue_mapping)
 
-            fig, axs = plt.subplots(len(gl.channels['mov']), len(gl.stimFinger_code),
-                                    figsize=(5, 8), sharex=True, sharey=True)
-
             colors = make_colors(5)
             palette = {cue: color for cue, color in zip(gl.clabels, colors)}
 
@@ -245,22 +233,23 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
                     axs[c, sF].set_ylabel('')
                     axs[c, sF].set_xlabel('')
 
-                    axs[c, sF].set_yscale(yscale)
+                    # axs[c, sF].set_yscale(yscale)
 
             # Create a single legend at the top
             handles, labels = axs[0, 0].get_legend_handles_labels()
             fig.legend(handles, labels, loc='upper center', ncol=3)
 
-            fig.suptitle(title)
-            fig.supylabel(ylabel)
-            fig.suptitle(title, y=.92)
-            fig.subplots_adjust(top=.85, hspace=.4, bottom=.05)
+            # fig.suptitle(title)
+            # fig.supylabel(ylabel)
+            # fig.suptitle(title, y=.92)
+            # fig.subplots_adjust(top=.85, hspace=.4, bottom=.05)
 
-            plt.show()
+            return fig, axs
 
         case 'PLOT:timec_dist_force':
 
-            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
+            if fig is None or axs is None:
+                fig, axs = plt.subplots()
 
             dist = list()
             for p in participant_id:
@@ -276,7 +265,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
             latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'),
                                   sep='\t').mean(axis=1).to_numpy()
 
-            fig, axs = plt.subplots()
             color = ['darkorange', 'darkviolet']
             label = ['stimFinger', 'cue']
             tAx = np.linspace(-gl.prestim, gl.poststim, int(gl.fsample_mov * (gl.poststim + gl.prestim))) - latency
@@ -299,22 +287,18 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
             axs.set_ylabel('cross-validated multivariate distance (a.u.)')
             axs.legend()
 
-            fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'force.timec.dist.force.png'))
-
-            plt.show()
+            return fig, axs
 
         case 'PLOT:rdm_force':
 
-            timew = varargin['timew'] if 'timew' in varargin else [(-.5, 0), (.1, .4), (.4, 1)]
-            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
-            vmin = varargin['vmin'] if 'vmin' in varargin else 0
-            vmax = varargin['vmax'] if 'vmax' in varargin else 35
+            timew = [(-.5, 0), (.1, .4), (.4, 1)]
+
+            if fig is None or axs is None:
+                fig, axs = plt.subplots(1, len(timew), sharey=True, sharex=True, figsize=(10, 5))
 
             colors = ['purple', 'darkorange', 'darkgreen']
             symmetry = [1, 1, -1]
             masks = [gl.mask_stimFinger, gl.mask_cue]
-
-            fig, axs = plt.subplots(1, len(timew), sharey=True, sharex=True, figsize=(10, 5))
 
             for T, t in enumerate(timew):
                 rdm = list()
@@ -340,8 +324,8 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
         case 'PLOT:timec_dist_force_session':
 
-            GoNogo = varargin['GoNogo'] if 'GoNogo' in varargin else 'go'
-            title = varargin['title'] if 'title' in varargin else f'expectation effect, {GoNogo} trials'
+            if fig is None or axs is None:
+                fig, axs = plt.subplots()
 
             if GoNogo == 'go':
                 sessions = ['behavioural', 'training', 'scanning', 'pilot']
@@ -370,8 +354,6 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
 
                 dist.append(np.array(dist_tmp))
 
-            fig, axs = plt.subplots()
-
             palette = sns.color_palette("husl", len(sessions))
 
             latency = pd.read_csv(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped_latency.tsv'),
@@ -396,9 +378,42 @@ def main(what, experiment=None, session=None, participant_id=None, varargin=None
             axs.set_xlim([-.3, .5])
 
             axs.legend(loc='upper left')
-            axs.set_title(title)
 
-            plt.show()
+            return fig, axs
+
+        case 'PLOT:flatmap':
+            if fig is None or axs is None:
+                fig, axs = plt.subplots()
+
+            darray_avg_subj = list()
+            for p in participant_id:
+                data = os.path.join(gl.baseDir, experiment, gl.wbDir, p, f'glm{glm}.spmT.{Hem}.func.gii')
+
+                D = nb.load(data)
+                darray = nitools.get_gifti_data_matrix(D)
+
+                # make indeces to plot
+                col_names = nitools.get_gifti_column_names(D)
+                regressor = [f'spmT_{r}.nii' for r in regressor]
+                im = np.array([x in regressor for x in col_names])
+
+                # avg darray
+                darray_avg_subj.append(darray[:, im].mean(axis=1))
+
+            darray_avg = np.array(darray_avg_subj).mean(axis=0)
+            plt.sca(axs)
+            surf.plot.plotmap(darray_avg, f'fs32k_{Hem}',
+                              underlay=None,
+                              borders=gl.borders[Hem],
+                              cscale=[vmin, vmax],
+                              cmap='jet',
+                              underscale=[-1.5, 1],
+                              alpha=.5,
+                              new_figure=False,
+                              colorbar=False,
+                              frame=[xlim[0], xlim[1], ylim[0], ylim[1]])
+
+            return fig, axs
 
 
 if __name__ == "__main__":
@@ -413,31 +428,34 @@ if __name__ == "__main__":
         'PLOT:rdm_force',
         'PLOT:timec_force',
         'PLOT:timec_dist_force',
-        'PLOT:timec_dist_force_session'
+        'PLOT:timec_dist_force_session',
+        'PLOT:flatmap'
     ]
 
     parser.add_argument('what', nargs='?', default=None, choices=cases)
     parser.add_argument('--experiment', default='smp2', help='')
     parser.add_argument('--session', default='pilot', help='')
     parser.add_argument('--participant_id', nargs='+', default=None, help='')
+    parser.add_argument('--glm', default=None, help='')
+    parser.add_argument('--Hem', default=None, help='')
+    parser.add_argument('--regressor', nargs='+', default=None, help='')
 
-    args, extra_args = parser.parse_known_args()
+    args = parser.parse_args()
 
     what = args.what
     experiment = args.experiment
     session = args.session
     participant_id = args.participant_id
-
-    varargin = dict()
-    for i in range(0, len(extra_args), 2):
-        varargin[extra_args[i][2:]] = extra_args[i + 1]
+    glm = args.glm
+    Hem = args.Hem
+    regressor = args.regressor
 
     if what is None:
         GUI()
 
-    if participant_id is None:
-        participant_id = gl.participants[experiment]
-
     pinfo = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
 
-    main(what, experiment, session, participant_id, varargin=varargin)
+    main(what=what, experiment=experiment, session=session, participant_id=participant_id, glm=glm, Hem=Hem,
+         regressor=regressor)
+
+    plt.show()

@@ -101,3 +101,7 @@ mask_stimFinger_cue = np.zeros([28], dtype=bool)
 mask_stimFinger[[4, 11, 17]] = True
 mask_cue[[0, 1, 7, 25, 26, 27]] = True
 mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
+
+# flatmap stuff
+borders = {'L': '/Users/mnlmrc/Documents/GitHub/surfAnalysisPy/standard_mesh/fs_L/fs_LR.32k.L.border',
+           'R': '/Users/mnlmrc/Documents/GitHub/surfAnalysisPy/standard_mesh/fs_R/fs_LR.32k.R.border'}

@@ -179,14 +179,12 @@ class Force:
 
     def calc_bins(self):
 
-        prestim = self.prestim
-
         force = self.load_npz()
 
         df = pd.DataFrame()
-        for w in win.keys():
+        for w in self.win.items():
             for c, ch in enumerate(gl.channels['mov']):
-                df[f'{w}/{ch}'] = force[:, c, win[w][0]:win[w][1]].mean(axis=-1)
+                df[f'{w}/{ch}'] = force[:, c, w[0]:w[1]].mean(axis=-1)
 
         df = pd.concat([self.dat, df], axis=1)
 
