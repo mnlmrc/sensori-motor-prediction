@@ -10,3 +10,4 @@ smp0/__pycache__/
 smp1/__pycache__/
 smp2/__pycache__/
 venv/
+.DS_Store
