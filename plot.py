@@ -60,14 +60,25 @@ def plot_bins(df):
     pass
 
 
-def make_yref(axs, reference_length=5):
-    reference_x = axs.get_xlim()[0]  # Position of the reference line
+def make_yref(axs, reference_length=5, pos='left'):
     midpoint_y = (axs.get_ylim()[0] + axs.get_ylim()[1]) / 2  # Calculate the one-third of the y-axis
-    axs.plot([reference_x, reference_x],
-             [midpoint_y - reference_length / 2, midpoint_y + reference_length / 2],
-             ls='-', color='k', lw=3)
-    axs.text(reference_x, midpoint_y, f'{reference_length}N ', color='k',
-             ha='right', va='center')
+
+    if pos == 'left':
+        reference_x = axs.get_xlim()[0]
+        axs.plot([reference_x, reference_x],
+                 [midpoint_y - reference_length / 2, midpoint_y + reference_length / 2],
+                 ls='-', color='k', lw=3, zorder=100)
+        axs.text(reference_x, midpoint_y, f'{reference_length}N ', color='k',
+                 ha='right', va='center', zorder=100)
+    elif pos == 'right':
+        reference_x = axs.get_xlim()[1]  # Position of the reference line
+        axs.plot([reference_x, reference_x],
+                 [midpoint_y - reference_length / 2, midpoint_y + reference_length / 2],
+                 ls='-', color='k', lw=3, zorder=100)
+        axs.text(reference_x, midpoint_y, f'{reference_length}N ', color='k',
+                 ha='left', va='center', zorder=100)
+
+
 
 # if __name__ == "__main__":
 #     clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]

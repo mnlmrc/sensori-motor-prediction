@@ -67,8 +67,9 @@ def GUI():
     root.mainloop()
 
 
-def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, glm=None, Hem=None, regressor=None,
-         roi=None, fig=None, axs=None, vsep=None, xlim=None, ylim=None, vmin=None, vmax=None, ref_len=None):
+def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, stimFinger=None, cue=None,
+         glm=None, Hem=None, regressor=None, roi=None,
+         fig=None, axs=None, vsep=None, xlim=None, ylim=None, vmin=None, vmax=None, ref_len=None):
     if participant_id is None:
         participant_id = gl.participants[experiment]
 
@@ -121,30 +122,32 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             if fig is None or axs is None:
                 fig, axs = plt.subplots(1, 2 if GoNogo == 'go' else 1, sharey=True, sharex=True, figsize=(4, 6))
 
-            force = main('FORCE:timec_avg', experiment, session, participant_id, GoNogo=GoNogo)
+            force = main('FORCE:timec_avg', experiment, session, participant_id, GoNogo=GoNogo)  # dimord: (subj, cue, stimFinger, channel, time)
             # clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
 
-            tAx = make_tAx(force) if GoNogo == 'go' else make_tAx(force, (0, 0))
+            tAx = make_tAx(force) if GoNogo == 'go' else make_tAx(force, (0, 0))  # in nogo trials tAx is not corrected for the latency of perturbation
 
             colors = make_colors(5)
             palette = {cue: color for cue, color in zip(gl.clabels, colors)}
 
+            sf = gl.stimFinger.index(stimFinger) if GoNogo == 'go' else None
+
             for col, color in enumerate(palette):
                 for c, ch in enumerate(gl.channels['mov']):
                     if GoNogo == 'go':
-                        for sf, stimF in enumerate(['index', 'ring']):
-                            axs[sf].set_title(f'{stimF} perturbation')
+                        # for sf, stimF in enumerate(['index', 'ring']):
+                            # axs[sf].set_title(f'{stimF} perturbation')
 
-                            y = force.mean(axis=0)[:, sf, c] + c * vsep
-                            yerr = force.std(axis=0)[:, sf, c] / np.sqrt(force.shape[0])
+                        y = force.mean(axis=0)[:, sf, c] + c * vsep
+                        yerr = force.std(axis=0)[:, sf, c] / np.sqrt(force.shape[0])
 
-                            axs[sf].plot(tAx[sf], y[col], color=palette[color])
-                            axs[sf].fill_between(tAx[sf], y[col] - yerr[col], y[col] + yerr[col],
-                                                 color=palette[color], lw=0, alpha=.2)
+                        axs.plot(tAx[sf], y[col], color=palette[color])
+                        axs.fill_between(tAx[sf], y[col] - yerr[col], y[col] + yerr[col],
+                                             color=palette[color], lw=0, alpha=.2)
 
                     elif GoNogo == 'nogo':
 
-                        axs.set_title(f'nogo trials')
+                        # axs.set_title(f'nogo trials')
 
                         y = force.mean(axis=0)[:, c] + c * vsep
                         yerr = force.std(axis=0)[:, c] / np.sqrt(force.shape[0])
@@ -152,40 +155,41 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                         axs.fill_between(tAx[0], y[col] - yerr[col], y[col] + yerr[col],
                                          color=palette[color], lw=0, alpha=.2)
 
-            if GoNogo == 'go':
-
-                for ax in axs:
-                    ax.set_xlim(xlim)
-                    ax.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
-                    ax.axvline(0, ls='-', color='k', lw=.8)
-                    ax.set_yticks([])
-                    ax.set_ylim(ylim)
-                    ax.spines[['bottom']].set_visible(True)
-
-                    for c, ch in enumerate(gl.channels['mov']):
-                        ax.axhline(c * vsep, ls='-', color='k', lw=.8)
-                        ax.text(xlim[1], c * vsep, ch, va='top', ha='right')
-
-                make_yref(axs[0], reference_length=5)
-
-                for c, col in enumerate(colors):
-                    axs[0].plot(np.nan, label=gl.clabels[c], color=col)
-
-            elif GoNogo == 'nogo':
-
-                axs.set_xlim(xlim)
-                axs.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
-                axs.axvline(0, ls='-', color='k', lw=.8)
-                axs.set_yticks([])
-
-                for c, ch in enumerate(gl.channels['mov']):
-                    axs.axhline(c * vsep, ls='-', color='k', lw=.8)
-                    axs.text(xlim[1], c * vsep, ch, va='top', ha='right')
-
-                make_yref(axs, reference_length=ref_len)
-
-                for c, col in enumerate(colors):
-                    axs.plot(np.nan, label=gl.clabels[c], color=col)
+            return fig, axs
+            # if GoNogo == 'go':
+            #
+            #     for ax in axs:
+            #         ax.set_xlim(xlim)
+            #         ax.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
+            #         ax.axvline(0, ls='-', color='k', lw=.8)
+            #         ax.set_yticks([])
+            #         ax.set_ylim(ylim)
+            #         ax.spines[['bottom']].set_visible(True)
+            #
+            #         for c, ch in enumerate(gl.channels['mov']):
+            #             ax.axhline(c * vsep, ls='-', color='k', lw=.8)
+            #             ax.text(xlim[1], c * vsep, ch, va='top', ha='right')
+            #
+            #     make_yref(axs[0], reference_length=5)
+            #
+            #     for c, col in enumerate(colors):
+            #         axs[0].plot(np.nan, label=gl.clabels[c], color=col)
+            #
+            # elif GoNogo == 'nogo':
+            #
+            #     axs.set_xlim(xlim)
+            #     axs.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
+            #     axs.axvline(0, ls='-', color='k', lw=.8)
+            #     axs.set_yticks([])
+            #
+            #     for c, ch in enumerate(gl.channels['mov']):
+            #         axs.axhline(c * vsep, ls='-', color='k', lw=.8)
+            #         axs.text(xlim[1], c * vsep, ch, va='top', ha='right')
+            #
+            #     make_yref(axs, reference_length=ref_len)
+            #
+            #     for c, col in enumerate(colors):
+            #         axs.plot(np.nan, label=gl.clabels[c], color=col)
 
             # fig.legend(ncol=3, loc='upper center')
             # fig.supxlabel('time relative to perturbation (s)')
@@ -475,12 +479,18 @@ if __name__ == "__main__":
 
     parser.add_argument('what', nargs='?', default=None, choices=cases)
     parser.add_argument('--experiment', default='smp2', help='')
-    parser.add_argument('--session', default='pilot', help='')
+    parser.add_argument('--session', default='training', help='')
     parser.add_argument('--participant_id', nargs='+', default=None, help='')
+    parser.add_argument('--GoNogo', default=None, help='')
+    parser.add_argument('--stimFinger', default=None, help='')
+    parser.add_argument('--cue', default=None, help='')
     parser.add_argument('--glm', default=None, help='')
     parser.add_argument('--Hem', default=None, help='')
     parser.add_argument('--regressor', nargs='+', default=None, help='')
     parser.add_argument('--roi', default=None, help='')
+    parser.add_argument('--xlim', default=None, help='')
+    parser.add_argument('--ylim', default=None, help='')
+    parser.add_argument('--vsep', default=None, help='')
 
     args = parser.parse_args()
 
@@ -488,17 +498,24 @@ if __name__ == "__main__":
     experiment = args.experiment
     session = args.session
     participant_id = args.participant_id
+    GoNogo = args.GoNogo
+    stimFinger = args.stimFinger
+    cue = args.cue
     glm = args.glm
     Hem = args.Hem
     regressor = args.regressor
     roi = args.roi
+    xlim = args.xlim
+    ylim = args.ylim
+    vsep = args.vsep
 
     if what is None:
         GUI()
 
     pinfo = pd.read_csv(os.path.join(gl.baseDir, experiment, 'participants.tsv'), sep='\t')
 
-    main(what=what, experiment=experiment, session=session, participant_id=participant_id, glm=glm, Hem=Hem,
-         regressor=regressor, roi=roi)
+    main(what=what, experiment=experiment, session=session, participant_id=participant_id, GoNogo=GoNogo,
+         stimFinger=stimFinger, cue=cue, glm=glm, Hem=Hem, regressor=regressor, roi=roi,
+         vsep=8, xlim=[-1, 1], ylim=[0, 40])
 
     plt.show()

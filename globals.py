@@ -82,6 +82,9 @@ planState = {
     'smp2': 3
 }
 
+cue = ['0%', '25%', '50%', '75%', '100%']
+stimFinger = ['index', 'ring']
+
 cue_code = [93, 12, 44, 21, 39]
 stimFinger_code = [91999, 99919]
 
