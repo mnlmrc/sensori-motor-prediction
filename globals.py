@@ -56,7 +56,7 @@ participants = {
              # 'subj106'
              ],
     'smp2': ['subj100',
-             # 'subj101',
+             'subj101',
              # 'subj102',
              # 'subj103',
              # 'subj104'

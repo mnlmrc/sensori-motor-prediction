@@ -120,7 +120,7 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
         case 'PLOT:timec_force':
 
             if fig is None or axs is None:
-                fig, axs = plt.subplots(1, 2 if GoNogo == 'go' else 1, sharey=True, sharex=True, figsize=(4, 6))
+                fig, axs = plt.subplots()
 
             force = main('FORCE:timec_avg', experiment, session, participant_id, GoNogo=GoNogo)  # dimord: (subj, cue, stimFinger, channel, time)
             # clamp = np.load(os.path.join(gl.baseDir, 'smp0', 'clamped', 'smp0_clamped.npy')).mean(axis=0)[[1, 3]]
@@ -154,48 +154,6 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                         axs.plot(tAx[0], y[col], color=palette[color])
                         axs.fill_between(tAx[0], y[col] - yerr[col], y[col] + yerr[col],
                                          color=palette[color], lw=0, alpha=.2)
-
-            return fig, axs
-            # if GoNogo == 'go':
-            #
-            #     for ax in axs:
-            #         ax.set_xlim(xlim)
-            #         ax.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
-            #         ax.axvline(0, ls='-', color='k', lw=.8)
-            #         ax.set_yticks([])
-            #         ax.set_ylim(ylim)
-            #         ax.spines[['bottom']].set_visible(True)
-            #
-            #         for c, ch in enumerate(gl.channels['mov']):
-            #             ax.axhline(c * vsep, ls='-', color='k', lw=.8)
-            #             ax.text(xlim[1], c * vsep, ch, va='top', ha='right')
-            #
-            #     make_yref(axs[0], reference_length=5)
-            #
-            #     for c, col in enumerate(colors):
-            #         axs[0].plot(np.nan, label=gl.clabels[c], color=col)
-            #
-            # elif GoNogo == 'nogo':
-            #
-            #     axs.set_xlim(xlim)
-            #     axs.spines[['top', 'bottom', 'right', 'left']].set_visible(False)
-            #     axs.axvline(0, ls='-', color='k', lw=.8)
-            #     axs.set_yticks([])
-            #
-            #     for c, ch in enumerate(gl.channels['mov']):
-            #         axs.axhline(c * vsep, ls='-', color='k', lw=.8)
-            #         axs.text(xlim[1], c * vsep, ch, va='top', ha='right')
-            #
-            #     make_yref(axs, reference_length=ref_len)
-            #
-            #     for c, col in enumerate(colors):
-            #         axs.plot(np.nan, label=gl.clabels[c], color=col)
-
-            # fig.legend(ncol=3, loc='upper center')
-            # fig.supxlabel('time relative to perturbation (s)')
-            # fig.suptitle(title, y=.9)
-            # fig.subplots_adjust(top=.82)
-            # fig.savefig(os.path.join(gl.baseDir, experiment, 'figures', 'force.timec.behav.png'))
 
             return fig, axs
 
