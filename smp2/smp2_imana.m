@@ -624,7 +624,7 @@ function varargout = smp2_imana(what,varargin)
             run_list = arrayfun(@(x) sprintf('%02d', x), run_list, 'UniformOutput', false);
 
             if rtm==0   % if registered to first volume
-                mean_file_name = sprintf('mean%s%s_run_%s.nii', prefix, subj_id, run_list{1});
+                mean_file_name = sprintf('bmean%s%s_run_%s.nii', prefix, subj_id, run_list{1});
             else    % if registered to the mean image
                 mean_file_name = sprintf('rb%smeanepi_%s.nii', prefix, subj_id);
             end
@@ -679,7 +679,7 @@ function varargout = smp2_imana(what,varargin)
             
             % select the reference image:
             if rtm==0
-                P{1} = fullfile(baseDir,imagingDir,subj_id,['mean' prefix subj_id '_run_' run_list{1} '.nii']);
+                P{1} = fullfile(baseDir,imagingDir,subj_id,['bmean' prefix subj_id '_run_' run_list{1} '.nii']);
             else
                 P{1} = fullfile(baseDir,imagingDir,subj_id,['rb' prefix 'meanepi_' subj_id '.nii']);
             end

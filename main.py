@@ -74,6 +74,8 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
         participant_id = gl.participants[experiment]
 
     match what:
+
+        # region FORCE:mov2npz
         case 'FORCE:mov2npz':
             for p in participant_id:
                 force = Force(experiment, session, p)
@@ -82,7 +84,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                 print(f"Saving participant {p}, session {session}...")
                 np.savez(os.path.join(force.get_path(), p, f'{force.experiment}_{force.sn}.npz'),
                          data_array=force_segmented, descriptor=descr, allow_pickle=False)
+        # endregion
 
+        # region FORCE:timec_avg
         case 'FORCE:timec_avg':
 
             force_avg = list()
@@ -93,7 +97,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             force_avg = np.array(force_avg)
 
             return force_avg
+        # endregion
 
+        # region FORCE:timec2bins
         case 'FORCE:timec2bins':
 
             df = pd.DataFrame()
@@ -106,7 +112,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             df.to_csv(os.path.join(Force(experiment, session).get_path(), 'bins.force.csv'))
 
             return df
+        # endregion
 
+        # region FORCE:timec_dist
         case 'FORCE:timec_dist':
 
             for p in participant_id:
@@ -116,7 +124,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                 print(f"Saving participant {p}, session {session}...")
                 np.savez(os.path.join(force.get_path(), p, f'{force.experiment}_{force.sn}_dist_{GoNogo}.npz'),
                          data_array=dist, descriptor=descr, allow_pickle=False)
+        # endregion
 
+        # region PLOT:timec_force
         case 'PLOT:timec_force':
 
             if fig is None or axs is None:
@@ -156,7 +166,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                                          color=palette[color], lw=0, alpha=.2)
 
             return fig, axs
+        # endregion
 
+        # region PLOT:bins_force
         case 'PLOT:bins_force':
 
             if fig is None or axs is None:
@@ -208,7 +220,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             # fig.subplots_adjust(top=.85, hspace=.4, bottom=.05)
 
             return fig, axs
+        # endregion
 
+        # region PLOT:timec_dist_force
         case 'PLOT:timec_dist_force':
 
             if fig is None or axs is None:
@@ -251,7 +265,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             axs.legend()
 
             return fig, axs
+        # endregion
 
+        # region PLOT:rdm_force
         case 'PLOT:rdm_force':
 
             timew = [(-.5, 0), (.1, .4), (.4, 1)]
@@ -284,7 +300,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             plt.show()
 
             return fig, axs
+        # endregion
 
+        # region PLOT:timec_dist_force_session
         case 'PLOT:timec_dist_force_session':
 
             if fig is None or axs is None:
@@ -343,7 +361,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             axs.legend(loc='upper left')
 
             return fig, axs
+        # endregion
 
+        # region PLOT:flatmap
         case 'PLOT:flatmap':
             if fig is None or axs is None:
                 fig, axs = plt.subplots()
@@ -377,7 +397,9 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                               frame=[xlim[0], xlim[1], ylim[0], ylim[1]])
 
             return fig, axs
+        # endregion
 
+        # region PLOT:hrf_roi
         case 'PLOT:hrf_roi':
 
             if fig is None or axs is None:
@@ -416,7 +438,7 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             axs.plot(tAx, y_hat_nogo, color='green', label='nogo hat', ls='--')
 
             return fig, axs
-
+        # endregion
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

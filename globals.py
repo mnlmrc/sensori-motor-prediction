@@ -56,7 +56,7 @@ participants = {
              # 'subj106'
              ],
     'smp2': ['subj100',
-             'subj101',
+             # 'subj101',
              # 'subj102',
              # 'subj103',
              # 'subj104'
@@ -110,3 +110,20 @@ mask_stimFinger_cue[[5, 6, 10, 12, 15, 16]] = True
 # flatmap stuff
 borders = {'L': '/Users/mnlmrc/Documents/GitHub/surfAnalysisPy/standard_mesh/fs_L/fs_LR.32k.L.border',
            'R': '/Users/mnlmrc/Documents/GitHub/surfAnalysisPy/standard_mesh/fs_R/fs_LR.32k.R.border'}
+
+rois = {
+        'Desikan': [
+            'rostralmiddlefrontal',
+            'caudalmiddlefrontal',
+            'precentral',
+            'postcentral',
+            'superiorparietal',
+            'pericalcarine'
+        ],
+        'BA_handArea': [
+            'ba4a', 'ba4p', 'ba3A', 'ba3B', 'ba1', 'ba2'
+        ],
+        'ROI': [
+            'SMA', 'PMd', 'PMv', 'M1', 'S1', 'SPLa', 'SPLp', 'V1'
+        ]
+    }
