@@ -1285,9 +1285,9 @@ function varargout = smp2_imana(what,varargin)
                 SPM = load(fullfile(subj_est_dir,'SPM.mat'));
                 SPM.SPM.swd = subj_est_dir;
 
-                iB = SPM.SPM.Xx.IB;
+                iB = SPM.SPM.xX.iB;
 
-                save(fullfile(baseDir, subj_est_dir, subj_id), "iB");
+                save(fullfile(subj_est_dir, "iB.mat"), "iB");
             
                 spm_rwls_spm(SPM.SPM);
             end
