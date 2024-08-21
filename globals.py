@@ -20,7 +20,7 @@ glmDir = "glm"
 behavDir = "behavioural"
 trainDir = "training"
 imagingDir = "imaging_data"
-RDM = "rdm"
+rdmDir = "rdm"
 roiDir = 'ROI'
 pilotDir = 'pilot'
 
@@ -56,7 +56,7 @@ participants = {
              # 'subj106'
              ],
     'smp2': ['subj100',
-             # 'subj101',
+             'subj101',
              # 'subj102',
              # 'subj103',
              # 'subj104'
@@ -127,3 +127,7 @@ rois = {
             'SMA', 'PMd', 'PMv', 'M1', 'S1', 'SPLa', 'SPLp', 'V1'
         ]
     }
+
+rdm_index = {
+    'glm10': [0, 4, 7, 10, 2, 5, 8, 11, 3, 1, 6, 9, 12]
+}
