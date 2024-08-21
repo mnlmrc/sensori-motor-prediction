@@ -1497,6 +1497,7 @@ function varargout = smp2_imana(what,varargin)
                 smp2_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'beta')
                 smp2_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'res')
                 smp2_imana('SURF:vol2surf', 'sn', s, 'glm', glm, 'type', 'con')
+                smp2_imana('HRF:ROI_hrf_get', 'sn', s, 'glm', 10)
             end
             
         case 'SURF:reconall'
