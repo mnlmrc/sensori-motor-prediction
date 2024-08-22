@@ -144,7 +144,7 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                     R.append({field: r[field].item() for field in r.dtype.names})
 
                 # find roi where to calc RDM
-                R = R[[True if (r['name'] == roi) and (r['hem'] == 'L') else False for r in R].index(True)]
+                R = R[[True if (r['name'] == roi) and (r['hem'] == Hem) else False for r in R].index(True)]
 
                 print(f'region:{roi}, hemisphere:{Hem}, {len(R["data"])} voxels')
 
