@@ -186,13 +186,28 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                 rdm.rdm_descriptors = {'roi': R["name"], 'hem': R["hem"], 'index': [0]}
                 rdm.reorder(np.argsort(rdm.pattern_descriptors['conds']))
                 rdm.reorder(gl.rdm_index[f'glm{glm}'])
+                rdm.pattern_descriptors['conds'] = [c.replace(" ", "") for c in rdm.pattern_descriptors['conds']]
+                rdm.save(os.path.join(gl.baseDir, experiment, gl.rdmDir, p, f'glm{glm}.{Hem}.{roi}.hdf5'),
+                         overwrite=True, file_type='hdf5')
                 RDMs.append(rdm)
 
             RDMs = rsa.rdm.concat(RDMs).mean()
             RDMs.pattern_descriptors['conds'] = [c.replace(" ", "") for c in RDMs.pattern_descriptors['conds']]
-            RDMs.save(os.path.join(gl.baseDir, experiment, gl.rdmDir, f'glm{glm}.{Hem}.{roi}.hdf5'))
+            RDMs.save(os.path.join(gl.baseDir, experiment, gl.rdmDir, f'glm{glm}.{Hem}.{roi}.hdf5'),
+                      overwrite=True, file_type='hdf5')
 
             return RDMs
+        # endregion
+
+        # region RDM:rois
+        case 'RDM:rois':
+            rois = gl.rois['ROI']
+            Hem = ['L', 'R']
+            glm = 10
+            for H in Hem:
+                for r in rois:
+                    main('RDM:roi', experiment=experiment, roi=r, Hem=H, glm=glm)
+
         # endregion
 
         # region PLOT:timec_force
@@ -518,6 +533,7 @@ if __name__ == "__main__":
         'FORCE:timec2bins',
         'FORCE:timec_dist',
         'RDM:roi',
+        'RDM:rois',
         'PLOT:bins_force',
         'PLOT:rdm_force',
         'PLOT:timec_force',
