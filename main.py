@@ -203,7 +203,6 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
         case 'RDM:rois':
             rois = gl.rois['ROI']
             Hem = ['L', 'R']
-            glm = 10
             for H in Hem:
                 for r in rois:
                     main('RDM:roi', experiment=experiment, roi=r, Hem=H, glm=glm)
