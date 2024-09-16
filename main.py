@@ -488,7 +488,7 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
             if fig is None or axs is None:
                 fig, axs = plt.subplots()
 
-            y_adj_go, y_hat_go, y_adj_nogo, y_hat_nogo = [], [], [], []
+            y_adj_go, y_hat_go, y_adj_nogo, y_hat_nogo, y_raw_go, y_raw_nogo = [], [], [], [], [], []
             for p in participant_id:
                 mat = scipy.io.loadmat(os.path.join(gl.baseDir, experiment, gl.roiDir, p, f'hrf_glm{glm}.mat'))
                 T = mat['T'][0, 0]
@@ -507,16 +507,26 @@ def main(what, experiment=None, session=None, participant_id=None, GoNogo=None, 
                 y_hat_nogo.append(np.nanmean(T_dict['y_hat'][((T_dict['name'] == roi) &
                                                               (T_dict['eventname'] == 'nogo') &
                                                               (T_dict['hem'] == Hem)).flatten()], axis=0))
+                y_raw_go.append(np.nanmean(T_dict['y_raw'][((T_dict['name'] == roi) &
+                                                            (T_dict['eventname'] == 'go') &
+                                                            (T_dict['hem'] == Hem)).flatten()], axis=0))
+                y_raw_nogo.append(np.nanmean(T_dict['y_raw'][((T_dict['name'] == roi) &
+                                                            (T_dict['eventname'] == 'nogo') &
+                                                            (T_dict['hem'] == Hem)).flatten()], axis=0))
 
             y_adj_go = np.array(y_adj_go).mean(axis=0)
             y_hat_go = np.array(y_hat_go).mean(axis=0)
             y_adj_nogo = np.array(y_adj_nogo).mean(axis=0)
             y_hat_nogo = np.array(y_hat_nogo).mean(axis=0)
+            y_raw_go = np.array(y_raw_go).mean(axis=0)
+            y_raw_nogo = np.array(y_raw_nogo).mean(axis=0)
 
             tAx = np.linspace(-10, 10, 21)
 
             axs.plot(tAx, y_adj_go, color='magenta', label='go adj', ls='-')
+            axs.plot(tAx, y_raw_go - y_raw_go.mean(), color='magenta', label='go raw', ls='-', alpha=0.3)
             axs.plot(tAx, y_hat_go, color='magenta', label='go hat', ls='--')
+            axs.plot(tAx, y_raw_nogo - y_raw_nogo.mean(), color='green', label='nogo raw', ls='-', alpha=0.3)
             axs.plot(tAx, y_adj_nogo, color='green', label='nogo adj', ls='-')
             axs.plot(tAx, y_hat_nogo, color='green', label='nogo hat', ls='--')
 
